@@ -1,0 +1,49 @@
+{
+  "name": "simple-totem",
+  "version": "1.0.0",
+  "description": "Totem de Autoatendimento SimpleTotem",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite && node copy-electron-files.js",
+    "build": "vite build && node copy-electron-files.js",
+    "preview": "vite preview",
+    "postinstall": "electron-rebuild",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "npm run build && electron-builder --linux"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "escpos": "^3.0.0-alpha.6",
+    "escpos-usb": "^3.0.0-alpha.4",
+    "jimp": "^1.6.1",
+    "koffi": "^2.16.1",
+    "pinia": "^2.1.7",
+    "sharp": "^0.34.5",
+    "usb": "^2.17.0",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "concurrently": "^8.2.2",
+    "electron": "^29.1.4",
+    "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9",
+    "vite": "^5.2.6",
+    "vite-plugin-electron": "^0.28.4",
+    "vite-plugin-electron-renderer": "^0.14.5",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.simpletotem.app",
+    "productName": "SimpleTotem",
+    "linux": {
+      "target": "AppImage",
+      "category": "Utility"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ]
+  }
+}

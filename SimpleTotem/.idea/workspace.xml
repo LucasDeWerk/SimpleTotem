@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="f36925e4-7ea2-46f7-9dc4-d571bbd782fd" name="Changes" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CopilotPersistence">
+    <persistenceIdMap>
+      <entry key="_/home/lucas-de-werk-dev/Documentos/GitHub/SimpleTotem" value="3AoYJVSKfP4HU5CwEnmS9AE9gu4" />
+      <entry key="_/home/lucas-de-werk-dev/Documentos/GitHub/pasta do totem/SimpleTotem" value="3BDyMCJlxVAAbht3cOlxEHAT1e4" />
+    </persistenceIdMap>
+  </component>
+  <component name="CopilotUserSelectedChatMode">
+    <option name="chatModeId" value="Agent" />
+  </component>
+  <component name="CopilotUserSelectedModel">
+    <selectedModels>
+      <entry key="edit-panel" value="GPT-5 mini" />
+      <entry key="chat-panel" value="Claude Sonnet 4.6" />
+      <entry key="agent-panel" value="Claude Sonnet 4.6" />
+    </selectedModels>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="JavaScript File" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
+  <component name="ProjectId" id="3AoYJVSKfP4HU5CwEnmS9AE9gu4" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "javascript.preferred.runtime.type.id": "node",
+    "last_opened_file_path": "/home/lucas-de-werk-dev/Documentos/GitHub/pasta do totem",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.lookFeel",
+    "ts.external.directory.path": "/snap/webstorm/601/plugins/javascript-plugin/jsLanguageServicesImpl/external",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/src/assets" />
+      <recent name="$PROJECT_DIR$/src/components" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/python" />
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/src/assets" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-WS-261.23567.141" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="f36925e4-7ea2-46f7-9dc4-d571bbd782fd" name="Changes" comment="" />
+      <created>1773260319525</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1773260319525</updated>
+      <workItem from="1773260320957" duration="3392000" />
+      <workItem from="1773320057159" duration="19000" />
+      <workItem from="1773430903811" duration="140000" />
+      <workItem from="1773431138411" duration="903000" />
+      <workItem from="1773443175618" duration="12155000" />
+      <workItem from="1773667900234" duration="2089000" />
+      <workItem from="1773673193514" duration="13000" />
+      <workItem from="1773673213662" duration="32000" />
+      <workItem from="1773673255252" duration="81000" />
+      <workItem from="1773673366777" duration="749000" />
+      <workItem from="1773674122962" duration="6061000" />
+      <workItem from="1773685907903" duration="2526000" />
+      <workItem from="1774037886359" duration="2456000" />
+      <workItem from="1774287266276" duration="9811000" />
+      <workItem from="1774358355575" duration="9392000" />
+      <workItem from="1774371673327" duration="7671000" />
+      <workItem from="1774385021619" duration="3919000" />
+      <workItem from="1774445351442" duration="992000" />
+      <workItem from="1775051760239" duration="27585000" />
+      <workItem from="1775496443093" duration="6636000" />
+      <workItem from="1775509332143" duration="145000" />
+      <workItem from="1775573474734" duration="128000" />
+      <workItem from="1775573627284" duration="13339000" />
+      <workItem from="1776094714800" duration="13000" />
+      <workItem from="1776095547952" duration="289000" />
+      <workItem from="1776099879200" duration="5433000" />
+      <workItem from="1776105902091" duration="6188000" />
+      <workItem from="1776373410259" duration="7603000" />
+      <workItem from="1776439016094" duration="8010000" />
+      <workItem from="1776709929401" duration="6247000" />
+      <workItem from="1777322387016" duration="1901000" />
+      <workItem from="1777385965568" duration="3000" />
+      <workItem from="1777389932278" duration="4000" />
+      <workItem from="1777469515125" duration="742000" />
+      <workItem from="1777470779506" duration="9652000" />
+      <workItem from="1777498514011" duration="1222000" />
+      <workItem from="1777554851923" duration="1477000" />
+      <workItem from="1777558778737" duration="1646000" />
+      <workItem from="1777564099246" duration="141000" />
+      <workItem from="1777995268564" duration="4828000" />
+      <workItem from="1778004639584" duration="13341000" />
+      <workItem from="1778073066440" duration="992000" />
+      <workItem from="1778074167913" duration="4612000" />
+      <workItem from="1778079891550" duration="7375000" />
+      <workItem from="1778095130798" duration="19000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnknownFeatures">
+    <option featureType="com.intellij.fileTypeFactory" implementationName="*.py" />
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
+  </component>
+</project>

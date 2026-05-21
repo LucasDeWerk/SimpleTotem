@@ -1,0 +1,167 @@
+{
+  "cupom": "164535",
+  "data": "20260506",
+  "hora": "164538",
+  "transacao": "Crédito",
+  "funcao": 2,
+  "valor": "0",
+  "resultado": 0,
+  "aprovada": true,
+  "campos": {
+    "0": {
+      "descricao": "Coleta de dados concluída",
+      "valor": "77528744"
+    },
+    "1": {
+      "descricao": "Dados de confirmação (DadosConf;IndSiTef;EndSiTef)",
+      "valor": "050606000605;1;192.168.10.50"
+    },
+    "2": {
+      "descricao": "Código de função SiTef",
+      "valor": "32"
+    },
+    "3": {
+      "descricao": "Tipo de parcelamento",
+      "valor": "05006000000;022489F2608E0F30348680380E99F2701809F10120110A04003220000000000000000000000FF9F3704066926A89F360208A1950500000000019A032605069C01009F02060000000000005F2A020986820219809F1A0200769F03060000000000009F34031F03025F3401009F6E07007600003030008407A0000000043060;"
+    },
+    "100": {
+      "descricao": "Modalidade de pagamento (xxnn: grupo+sub)",
+      "valor": "0100"
+    },
+    "101": {
+      "descricao": "Texto da modalidade real de pagamento",
+      "valor": "Cartao de Debito a Vista"
+    },
+    "102": {
+      "descricao": "Texto descritivo do comprovante",
+      "valor": "T.E.F."
+    },
+    "105": {
+      "descricao": "Data/hora da transação (AAAAMMDDHHMMSS)",
+      "valor": "20260506164554"
+    },
+    "121": {
+      "descricao": "1ª via do comprovante (via cliente)",
+      "valor": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                         Valor: 0,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 60006\\MU                      06/05/26 16:45\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999060006\\MU         Transacao Simulada Aprovada\\LA                 SALDO DISP.    0,02\\          SiTef from Fiserv\\"
+    },
+    "122": {
+      "descricao": "2ª via do comprovante (via loja)",
+      "valor": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                         Valor: 0,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 60006\\MU                      06/05/26 16:45\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999060006\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+    },
+    "123": {
+      "descricao": "Tipo do comprovante",
+      "valor": "00"
+    },
+    "131": {
+      "descricao": "Índice da instituição",
+      "valor": "00005"
+    },
+    "132": {
+      "descricao": "Índice do tipo de cartão",
+      "valor": "20001"
+    },
+    "133": {
+      "descricao": "NSU SiTef (6 dígitos)",
+      "valor": "060006"
+    },
+    "134": {
+      "descricao": "NSU Host (até 20 dígitos)",
+      "valor": "999060006"
+    },
+    "135": {
+      "descricao": "Código de autorização de crédito (até 15 chars)",
+      "valor": "060006"
+    },
+    "136": {
+      "descricao": "BIN do cartão (primeiros 6 dígitos)",
+      "valor": "637529"
+    },
+    "156": {
+      "descricao": "Nome da instituição / bandeira",
+      "valor": "MASTERCARD DEBIT"
+    },
+    "157": {
+      "descricao": "Código do estabelecimento",
+      "valor": "000000000000005"
+    },
+    "158": {
+      "descricao": "Código da rede autorizadora",
+      "valor": "05"
+    },
+    "161": {
+      "descricao": "Campo desconhecido TC:161",
+      "valor": "0"
+    },
+    "800": {
+      "descricao": "Campo desconhecido TC:800",
+      "valor": "047AE4E0DD8E1F205E961990FE064EB91B963943"
+    },
+    "951": {
+      "descricao": "Campo desconhecido TC:951",
+      "valor": "02"
+    },
+    "952": {
+      "descricao": "Campo desconhecido TC:952",
+      "valor": "060006"
+    },
+    "1002": {
+      "descricao": "Data de validade do cartão (campo estendido)",
+      "valor": "2712"
+    },
+    "1190": {
+      "descricao": "Campo desconhecido TC:1190",
+      "valor": "9119"
+    },
+    "2010": {
+      "descricao": "Campo desconhecido TC:2010",
+      "valor": "00"
+    },
+    "2021": {
+      "descricao": "Campo desconhecido TC:2021",
+      "valor": "637529******9119"
+    },
+    "2022": {
+      "descricao": "Campo desconhecido TC:2022",
+      "valor": "2712"
+    },
+    "2090": {
+      "descricao": "Tipo de leitura do cartão (0=tarja,1=chip,2=sem contato,3=digitado)",
+      "valor": "6"
+    },
+    "2091": {
+      "descricao": "Resultado da leitura do chip (EMV)",
+      "valor": "0"
+    },
+    "2333": {
+      "descricao": "Campo desconhecido TC:2333",
+      "valor": "5"
+    },
+    "2362": {
+      "descricao": "Campo desconhecido TC:2362",
+      "valor": "1"
+    },
+    "2364": {
+      "descricao": "Campo desconhecido TC:2364",
+      "valor": "0"
+    },
+    "2421": {
+      "descricao": "Campo desconhecido TC:2421",
+      "valor": "0"
+    },
+    "4100": {
+      "descricao": "Diagnóstico de erro de comunicação",
+      "valor": "TCP:C:11:gethostbyname"
+    },
+    "5074": {
+      "descricao": "Campo desconhecido TC:5074",
+      "valor": "0"
+    }
+  },
+  "cupom_linhas": [
+    "32",
+    "05006000000;022489F2608E0F30348680380E99F2701809F10120110A04003220000000000000000000000FF9F3704066926A89F360208A1950500000000019A032605069C01009F02060000000000005F2A020986820219809F1A0200769F03060000000000009F34031F03025F3401009F6E07007600003030008407A0000000043060;",
+    ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                         Valor: 0,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 60006\\MU                      06/05/26 16:45\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999060006\\MU         Transacao Simulada Aprovada\\LA                 SALDO DISP.    0,02\\          SiTef from Fiserv\\",
+    ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                         Valor: 0,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 60006\\MU                      06/05/26 16:45\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999060006\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+    "050606000605;1;192.168.10.50"
+  ]
+}

@@ -1,0 +1,102 @@
+/* ===== LIGHT THEME (default) ===== */
+:root {
+  --bg-color: #ffffff;
+  --bg-color-secondary: #f8f8f8;
+  --bg-color-third: rgba(241, 241, 241, 0.91);
+  --bg-card: #f6f6f6;
+  --color-scroll: rgba(245, 124, 0, 0.38);
+  --color-scroll-hover: #e0e0e0;
+  --color-scroll-track: #c9c9c9;
+  --text-color: rgb(43, 43, 43);
+  --text-color-secondary: rgba(255, 255, 255, 0.93);
+  --text-color-third: #fe9330;
+  --text-color-fourth: #353535;
+  --text-color-laranja: #F57C00;
+  --text-secondary-laranja: #de7e3e;
+  --bg-navbar: #e27602;
+  --bg-navbar-hover: rgba(255, 255, 255, 0.91);
+  --color-text-navbar: #de7e3e;
+
+  /* Cores utilitárias */
+  --color-primary: #F57C00;
+  --color-primary-hover: #e27602;
+  --color-primary-light: rgba(245, 124, 0, 0.12);
+  --color-success: #4caf50;
+  --color-error: #f44336;
+  --color-warning: #ff9800;
+  --color-info: #2196f3;
+  --color-border: #e0e0e0;
+  --color-border-light: #f0f0f0;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+
+  /* Espaçamento */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Tipografia */
+  --font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+  --font-size-3xl: 2.5rem;
+  --font-size-4xl: 3rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Raios de borda */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Touch */
+  --btn-min-height: 60px;
+  --card-min-height: 120px;
+  --input-min-height: 56px;
+
+  /* Transição */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 400ms ease;
+}
+
+/* ===== DARK THEME ===== */
+[data-theme="dark"] {
+  --bg-color: #15191d;
+  --bg-color-secondary: #212529;
+  --bg-color-third: #212529;
+  --bg-card: #25282a;
+  --color-scroll: #4a4a4a;
+  --color-scroll-hover: #3a3a3a;
+  --color-scroll-track: rgba(38, 38, 38, 0.95);
+  --text-color: #ffffff;
+  --text-color-secondary: rgba(255, 255, 255, 0.9);
+  --text-color-third: #474747;
+  --text-color-fourth: #e8a052;
+  --text-color-laranja: #F57C00;
+  --text-secondary-laranja: #d6925f;
+  --bg-navbar: #212529;
+  --bg-navbar-hover: #e8a052;
+  --color-text-navbar: #ffffff;
+
+  --color-border: #3a3a3a;
+  --color-border-light: #2a2a2a;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+}
