@@ -1,26 +1,30 @@
 <template>
   <div class="timeout-overlay">
     <div class="timeout-content animate-fade-in">
-      <div class="timeout-icon">[TIME]</div>
-      <p class="timeout-message">{{ message || 'Sua sessão será encerrada' }}</p>
+      <div class="timeout-icon">⏱</div>
+      <p class="timeout-message">{{ message || lang.t.sessionWillEnd }}</p>
       <div class="timeout-countdown">
         <span class="timeout-seconds">{{ secondsLeft }}</span>
-        <span class="timeout-label">segundos</span>
+        <span class="timeout-label">{{ lang.t.secondsUnit }}</span>
       </div>
       <button class="timeout-continue" @click="$emit('continue')">
-        CONTINUAR COMPRANDO
+        {{ lang.t.continueShoppingBtn }}
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
+import { useLanguageStore } from '@/stores/language'
+
 defineProps({
   secondsLeft: { type: Number, default: 0 },
-  message: { type: String, default: '' }
+  message: { type: String, default: '' },
 })
 
 defineEmits(['continue'])
+
+const lang = useLanguageStore()
 </script>
 
 <style scoped>
@@ -79,6 +83,8 @@ defineEmits(['continue'])
   border-radius: var(--radius-md);
   letter-spacing: 0.5px;
   transition: transform var(--transition-fast);
+  border: none;
+  cursor: pointer;
 }
 
 .timeout-continue:active {

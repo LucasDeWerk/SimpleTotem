@@ -22,10 +22,9 @@
     </div>
 
     <!-- Seletor de idioma -->
-    <button class="lang-btn" @click="lang.cycleLanguage()" title="Mudar idioma">
-      <span class="lang-flag">{{ lang.currentFlag }}</span>
-      <span class="lang-label">{{ lang.currentLabel }}</span>
-    </button>
+    <div class="home-lang-switcher">
+      <LanguageSwitcher />
+    </div>
 
     <!-- Acesso admin oculto: toque 5x no canto inferior direito -->
     <div class="admin-access-area" @click="adminTapCount++"></div>
@@ -37,6 +36,7 @@ import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
 import { useLanguageStore } from '@/stores/language'
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher.vue'
 
 const router = useRouter()
 const session = useSessionStore()
@@ -183,6 +183,7 @@ watch(adminTapCount, () => {
   justify-content: center;
   gap: 12px;
   padding: 18px 48px;
+  min-height: var(--btn-min-height);
   background: linear-gradient(135deg, #F57C00 0%, #E27602 100%);
   color: white;
   font-size: clamp(1rem, 2vw, 1.25rem);
@@ -239,48 +240,11 @@ watch(adminTapCount, () => {
 }
 
 /* ========== Botão de idioma ========== */
-.lang-btn {
+.home-lang-switcher {
   position: fixed;
   top: 24px;
   right: 24px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(245, 124, 0, 0.2);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   z-index: 20;
-  font-weight: 600;
-  color: #0f172a;
-  font-size: 0.95rem;
-}
-
-.lang-btn:hover {
-  background: rgba(255, 255, 255, 1);
-  border-color: rgba(245, 124, 0, 0.4);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
-}
-
-.lang-btn:active {
-  transform: scale(0.95);
-}
-
-.lang-flag {
-  font-size: 1.4rem;
-  line-height: 1;
-}
-
-.lang-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #1e293b;
-  letter-spacing: 0.02em;
 }
 
 /* ========== Admin area ========== */
@@ -323,15 +287,9 @@ watch(adminTapCount, () => {
     opacity: 0.05;
   }
 
-  .lang-btn {
+  .home-lang-switcher {
     top: 16px;
     right: 16px;
-    padding: 10px 16px;
-    font-size: 0.85rem;
-  }
-
-  .lang-flag {
-    font-size: 1.2rem;
   }
 }
 
@@ -350,9 +308,9 @@ watch(adminTapCount, () => {
     gap: 8px;
   }
 
-  .lang-btn {
-    padding: 8px 12px;
-    font-size: 0.8rem;
+  .home-lang-switcher {
+    top: 16px;
+    right: 16px;
   }
 }
 

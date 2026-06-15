@@ -1,11 +1,5 @@
 """
-Serviço SiTef — invoca sitef_worker.py como subprocesso isolado.
-
-A libclisitef.so causa segfault quando chamada de threads de worker do uvicorn.
-Rodando em subprocesso separado:
-  - A lib executa na thread principal do subprocesso
-  - Um crash na lib mata apenas o subprocesso, não o servidor
-  - O resultado é comunicado via JSON em stdout
+Serviço SiTef — subprocesso isolado com suporte a PIX (eventos em tempo real).
 """
 
 import json
@@ -13,92 +7,172 @@ import logging
 import os
 import subprocess
 import sys
+import threading
 from pathlib import Path
+from typing import Optional
+
+from core import config as app_config
+from services.pinpad_service import comando_worker_sitef
+from services.sitef_session import store
 
 logger = logging.getLogger(__name__)
 
 _WORKER_PATH = Path(__file__).resolve().parent / "sitef_worker.py"
 
-SITEF_IP          = os.getenv("SITEF_IP",          "192.168.10.50")
-SITEF_ID_LOJA     = os.getenv("SITEF_ID_LOJA",     "00000000")
-SITEF_ID_TERMINAL = os.getenv("SITEF_ID_TERMINAL", "ST000001")
-SITEF_OPERADOR    = os.getenv("SITEF_OPERADOR",    "01")
+SITEF_IP = app_config.SITEF_IP
+SITEF_ID_LOJA = app_config.SITEF_ID_LOJA
+SITEF_ID_TERMINAL = app_config.SITEF_ID_TERMINAL
+SITEF_OPERADOR = app_config.SITEF_OPERADOR
 
 
-def executar_transacao(funcao: int, valor_centavos: int, cupom: str) -> dict:
-    """
-    Executa uma transação SiTef completa via subprocesso isolado (bloqueante).
-
-    Parâmetros:
-        funcao          : código SiTef (0=menu, 2=crédito, 3=débito, 4=voucher)
-        valor_centavos  : valor total em centavos (inteiro)
-        cupom           : número do cupom fiscal (string)
-
-    Retorna dict com campos:
-        aprovada, resultado, nsu_sitef, nsu_host, autorizacao,
-        modalidade, bandeira, dados, linhas_cupom
-    """
-    # Converter para formato brasileiro "10,00" (o que a lib espera)
-    valor_reais = f"{valor_centavos / 100:.2f}".replace(".", ",")
-
-    logger.info("[SiTef] valor_centavos=%d → valor_reais=%s", valor_centavos, valor_reais)
-
-    payload = json.dumps({
-        "funcao":      funcao,
-        "valor_reais": valor_reais,
-        "cupom":       cupom,
-    })
-
-    env = {
+def _env_base() -> dict:
+    return {
         **os.environ,
-        "SITEF_IP":          SITEF_IP,
-        "SITEF_ID_LOJA":     SITEF_ID_LOJA,
+        "SITEF_IP": SITEF_IP,
+        "SITEF_ID_LOJA": SITEF_ID_LOJA,
         "SITEF_ID_TERMINAL": SITEF_ID_TERMINAL,
-        "SITEF_OPERADOR":    SITEF_OPERADOR,
+        "SITEF_OPERADOR": SITEF_OPERADOR,
+        "SITEF_CNPJ_AUTOMACAO": app_config.SITEF_CNPJ_AUTOMACAO,
     }
 
-    logger.info("[SiTef] Iniciando subprocesso: funcao=%d valor=%s cupom=%s",
-                funcao, valor_reais, cupom)
 
+def _parse_stderr_event(line: str, transacao_id: Optional[str]) -> None:
+    line = line.strip()
+    if not line.startswith("{"):
+        return
     try:
-        proc = subprocess.run(
-            [sys.executable, str(_WORKER_PATH)],
-            input=payload,
-            capture_output=True,
-            text=True,
-            timeout=None,   # sem timeout — a transação pode demorar (digitação de senha, etc.)
-            env=env,
-        )
-    except Exception as exc:
-        raise RuntimeError(f"Falha ao iniciar sitef_worker: {exc}") from exc
+        evento = json.loads(line)
+    except json.JSONDecodeError:
+        return
+    if transacao_id and "evento" in evento:
+        store.atualizar_evento(transacao_id, evento)
 
-    # Propaga logs do worker para o logger do serviço
-    if proc.stderr:
-        for line in proc.stderr.strip().splitlines():
-            logger.debug("[sitef_worker] %s", line)
 
-    # Tenta parsear o JSON de saída independente do returncode —
-    # o worker emite o resultado ANTES de chamar FinalizaFuncao,
-    # então mesmo que a lib crash no Finaliza o JSON já chegou.
-    stdout = proc.stdout.strip()
+def _executar_worker(payload: dict, transacao_id: Optional[str] = None) -> dict:
+    worker_cmd = comando_worker_sitef()
+    body = json.dumps(payload)
+
+    logger.info("[SiTef] Worker: %s modo=%s", " ".join(worker_cmd), payload.get("modo", "transacao"))
+
+    proc = subprocess.Popen(
+        worker_cmd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=_env_base(),
+    )
+    proc.stdin.write(body)
+    proc.stdin.close()
+
+    def _drain_stderr() -> None:
+        assert proc.stderr is not None
+        for line in proc.stderr:
+            line = line.rstrip("\n")
+            if line.startswith("[sitef_worker]"):
+                logger.debug(line)
+            else:
+                _parse_stderr_event(line, transacao_id)
+                if transacao_id and line.startswith("{"):
+                    logger.info("[SiTef][%s] %s", transacao_id[:8], line)
+
+    stderr_thread = threading.Thread(target=_drain_stderr, daemon=True)
+    stderr_thread.start()
+
+    stdout_lines: list[str] = []
+    assert proc.stdout is not None
+    for line in proc.stdout:
+        stdout_lines.append(line.rstrip("\n"))
+
+    proc.wait()
+    stderr_thread.join(timeout=5)
+    stdout = "\n".join(stdout_lines).strip()
     resultado = None
     if stdout:
         try:
-            resultado = json.loads(stdout.splitlines()[-1])  # pega a última linha JSON
+            resultado = json.loads(stdout.splitlines()[-1])
         except json.JSONDecodeError:
             resultado = None
 
-    if resultado is not None and "aprovada" in resultado:
-        logger.info("[SiTef] Resultado recebido: aprovada=%s resultado=%s",
-                    resultado.get("aprovada"), resultado.get("resultado"))
+    if resultado is not None and resultado.get("pendencias_resolvidas"):
         return resultado
 
-    # Se não veio resultado válido, trata como erro
+    if resultado is not None and "aprovada" in resultado:
+        return resultado
+
     if proc.returncode != 0:
         msg = (resultado or {}).get("erro") if resultado else None
         if not msg:
             msg = stdout or "sitef_worker encerrou sem resultado"
         raise RuntimeError(f"SiTef: {msg}")
 
-    raise RuntimeError(f"SiTef: resposta inesperada do worker: {stdout!r}")
+    raise RuntimeError(f"SiTef: resposta inesperada: {stdout!r}")
 
+
+def executar_transacao(
+    funcao: int,
+    valor_centavos: int,
+    cupom: str,
+    cnpj_estabelecimento: str = "",
+    transacao_id: Optional[str] = None,
+) -> dict:
+    valor_reais = f"{valor_centavos / 100:.2f}".replace(".", ",")
+    payload = {
+        "modo": "transacao",
+        "funcao": funcao,
+        "valor_reais": valor_reais,
+        "cupom": cupom,
+        "cnpj_estabelecimento": cnpj_estabelecimento,
+    }
+    return _executar_worker(payload, transacao_id=transacao_id)
+
+
+_sitef_lock = threading.Lock()
+
+
+def iniciar_transacao_async(
+    funcao: int,
+    valor_centavos: int,
+    cupom: str,
+    cnpj_estabelecimento: str = "",
+    total_cobrado: float = 0.0,
+) -> str:
+    if store.transacao_em_andamento():
+        raise RuntimeError("Já existe uma transação SiTef em andamento. Aguarde a conclusão.")
+
+    session = store.criar()
+    tid = session.transacao_id
+
+    def _run() -> None:
+        with _sitef_lock:
+            try:
+                resultado = executar_transacao(
+                    funcao=funcao,
+                    valor_centavos=valor_centavos,
+                    cupom=cupom,
+                    cnpj_estabelecimento=cnpj_estabelecimento,
+                    transacao_id=tid,
+                )
+                resultado["total_cobrado"] = total_cobrado
+                store.finalizar(tid, resultado=resultado)
+            except Exception as exc:
+                logger.exception("[SiTef] Erro na transação %s", tid)
+                store.finalizar(tid, erro=str(exc))
+
+    threading.Thread(target=_run, daemon=True).start()
+    return tid
+
+
+def obter_status_transacao(transacao_id: str) -> Optional[dict]:
+    session = store.obter(transacao_id)
+    return session.to_dict() if session else None
+
+
+def resolver_pendencias(cnpj_estabelecimento: str = "") -> None:
+    try:
+        _executar_worker({
+            "modo": "pendencias",
+            "cnpj_estabelecimento": cnpj_estabelecimento,
+        })
+    except Exception as exc:
+        logger.warning("[SiTef] Pendências: %s", exc)

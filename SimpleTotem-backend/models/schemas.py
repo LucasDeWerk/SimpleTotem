@@ -9,6 +9,15 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class TotemLoginRequest(BaseModel):
+    usuario: str
+    senha: str
+
+
+class EmpresaStatusOut(BaseModel):
+    configurada: bool
+
+
 # ── Hardware (psutil) ─────────────────────────────────────────────────────────
 
 class CPUInfo(BaseModel):
@@ -50,6 +59,35 @@ class EmpresaOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SimpleSfiqueLoginRequest(BaseModel):
+    email: str
+    senha: str
+    os_usuario: Optional[str] = None
+    senha_os: Optional[str] = None
+
+
+class SessaoSimpleSfiqueOut(BaseModel):
+    id_saas: int
+    id_empresa: int
+    email: Optional[str] = None
+    os_usuario: Optional[str] = None
+    expira_em: Optional[int] = None
+    dh_login: Optional[str] = None
+    token_ativo: bool = True
+
+
+class SimpleSfiqueLoginResponse(BaseModel):
+    token_ok: bool = True
+    requires_selection: bool = False
+    expira_em: Optional[int] = None
+    tipo_token: str = "bearer"
+    sessao: Optional[SessaoSimpleSfiqueOut] = None
+    empresa: Optional[EmpresaOut] = None
+    empresas: List[EmpresaOut] = []
+    usuario: Optional[Dict[str, Any]] = None
+    saas: Optional[Dict[str, Any]] = None
 
 
 # ── Catálogo ──────────────────────────────────────────────────────────────────
@@ -137,6 +175,7 @@ class HardwareDBOut(BaseModel):
     vendor_id: Optional[str] = None
     product_id: Optional[str] = None
     descricao: Optional[str] = None
+    driver_id: Optional[str] = None
     ativo: Optional[int] = None
     dhinc: Optional[str] = None
     dhalt: Optional[str] = None
@@ -151,6 +190,7 @@ class HardwareDBCreate(BaseModel):
     vendor_id: Optional[str] = None
     product_id: Optional[str] = None
     descricao: Optional[str] = None
+    driver_id: Optional[str] = None
     ativo: int = 1
 
 
@@ -159,7 +199,17 @@ class HardwareDBUpdate(BaseModel):
     vendor_id: Optional[str] = None
     product_id: Optional[str] = None
     descricao: Optional[str] = None
+    driver_id: Optional[str] = None
     ativo: Optional[int] = None
+
+
+class HardwareAtribuir(BaseModel):
+    """Atribui qualquer dispositivo USB a uma categoria (marca agnóstico)."""
+    categoria: str
+    vendor_id: str
+    product_id: str
+    nome: str = ""
+    fabricante: str = ""
 
 
 # ── Inicia Venda ──────────────────────────────────────────────────────────────
@@ -199,6 +249,31 @@ class IniciaTransacaoRequest(BaseModel):
     cupom: Optional[str] = None   # gerado automaticamente se None
 
 
+class IniciaTransacaoStartResponse(BaseModel):
+    transacao_id: str
+    status: str = "processando"
+
+
+class TransacaoStatusResponse(BaseModel):
+    transacao_id: str
+    status: str                   # processando | aprovada | negada | erro
+    mensagens: List[str] = []
+    mensagem_atual: Optional[str] = None
+    qrcode: Optional[str] = None
+    qrcode_ativo: bool = False
+    erro: Optional[str] = None
+    nsu_sitef: Optional[str] = None
+    nsu_host: Optional[str] = None
+    autorizacao: Optional[str] = None
+    modalidade: Optional[str] = None
+    bandeira: Optional[str] = None
+    total_cobrado: Optional[float] = None
+    linhas_cupom: List[str] = []
+    cupom_bruto: Optional[str] = None
+    pix: bool = False
+    resultado_codigo: Optional[int] = None
+
+
 class IniciaTransacaoResponse(BaseModel):
     status: str                   # "aprovada" | "negada"
     id_venda: Optional[int] = None
@@ -210,5 +285,7 @@ class IniciaTransacaoResponse(BaseModel):
     total_cobrado: float
     linhas_cupom: List[str]
     mensagem: Optional[str] = None
+    transacao_id: Optional[str] = None
+    pix: bool = False
 
 

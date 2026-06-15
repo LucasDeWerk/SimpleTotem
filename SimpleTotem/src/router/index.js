@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import { useCompanyStore } from '@/stores/company'
 
 // Layout Cliente
 import TotemClienteLayout from '@/layouts/TotemClienteLayout.vue'
@@ -15,6 +16,7 @@ import TimeoutView from '@/views/cliente/TimeoutView.vue'
 // Views Admin (mínimo)
 import AdminLoginView from '@/views/admin/AdminLoginView.vue'
 import AdminPanelView from '@/views/admin/AdminPanelView.vue'
+import TotemLoginView from '@/views/TotemLoginView.vue'
 
 const routes = [
   {
@@ -22,10 +24,18 @@ const routes = [
     redirect: '/totem'
   },
 
+  {
+    path: '/login',
+    name: 'totem-login',
+    component: TotemLoginView,
+    meta: { title: 'Configuração do Totem', setupOnly: true }
+  },
+
   // ===== CLIENTE =====
   {
     path: '/totem',
     component: TotemClienteLayout,
+    meta: { requiresCompany: true },
     children: [
       {
         path: '',
@@ -43,13 +53,13 @@ const routes = [
         path: 'carrinho',
         name: 'cart',
         component: CartView,
-        meta: { title: 'Carrinho', showBack: true }
+        meta: { title: 'Carrinho', showBack: true, backTo: 'catalog' }
       },
       {
         path: 'pagamento',
         name: 'payment',
         component: PaymentView,
-        meta: { title: 'Pagamento', showBack: true }
+        meta: { title: 'Pagamento', showBack: true, backTo: 'cart' }
       },
       {
         path: 'processando',
@@ -89,7 +99,7 @@ const routes = [
     path: '/admin/hardware',
     name: 'admin-hardware',
     component: () => import('@/views/admin/AdminHardwareView.vue'),
-    meta: { title: 'Configuração de Hardware', requiresAdmin: true }
+    meta: { title: 'Periféricos USB', requiresAdmin: true }
   }
 ]
 
@@ -98,7 +108,23 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+  const company = useCompanyStore()
+
+  if (company.hasCompanyData === null) {
+    await company.check()
+  }
+
+  if (to.meta.requiresCompany && !company.hasCompanyData) {
+    next({ name: 'totem-login' })
+    return
+  }
+
+  if (to.name === 'totem-login' && company.hasCompanyData) {
+    next({ name: 'home' })
+    return
+  }
+
   if (to.meta.requiresAdmin) {
     const isAuthenticated = localStorage.getItem('admin_authenticated') === 'true'
     if (!isAuthenticated) {
@@ -106,6 +132,7 @@ router.beforeEach((to, from, next) => {
       return
     }
   }
+
   next()
 })
 

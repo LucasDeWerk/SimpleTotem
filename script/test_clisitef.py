@@ -20,7 +20,7 @@ from datetime import datetime
 # CONFIGURAÇÕES — ajuste conforme seu ambiente
 # ─────────────────────────────────────────────────────────────────────────────
 
-IP_SITEF    = "192.168.10.50"
+IP_SITEF    = "192.168.10.12"
 ID_LOJA     = "00000000"   # Código fixo do SiTef Demonstração/Simulado
 ID_TERMINAL = "ST000001"   # Formato XXnnnnnn — nunca use 000900-000999
 OPERADOR    = "01"
@@ -837,7 +837,7 @@ if __name__ == "__main__":
 
     if not configurar(lib):
         print("\n  ❌ Falha na configuração. Verifique:")
-        print("     1. SiTef Simulado está rodando em sitef-server (192.168.10.133) ?")
+        print("     1. SiTef Simulado está rodando em sitef-server (192.168.10.12) ?")
         print("     2. Porta 4096 está acessível? (nc -zv sitef-server 4096)")
         print("     3. CliSiTef.ini está no mesmo diretório da .so ?")
         sys.exit(1)

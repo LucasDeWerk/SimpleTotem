@@ -2,41 +2,10 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const fs   = require("fs");
-const Database = require("better-sqlite3");
+const os   = require("os");
 require("usb");
 const { setupPrinterIPC } = require("./printer");
 let mainWindow = null;
-let db = null;
-function getDbPath() {
-  if (process.env.VITE_DEV_SERVER_URL) {
-    return path.join(__dirname, "..", "..", "simplebd");
-  }
-  return path.join(app.getPath("userData"), "simplebd");
-}
-function openDatabase() {
-  if (db) return db;
-  const dbPath = getDbPath();
-  console.log("[Database] Abrindo banco em:", dbPath);
-  try {
-    db = new Database(dbPath, { readonly: false });
-    db.pragma("journal_mode = WAL");
-    db.pragma("foreign_keys = ON");
-    console.log("[Database] Banco aberto com sucesso");
-  } catch (err) {
-    console.error("[Database] Erro ao abrir banco:", err.message);
-    throw err;
-  }
-  return db;
-}
-function closeDatabase() {
-  if (db) { db.close(); db = null; console.log("[Database] Banco fechado"); }
-}
-function getDb() {
-  if (!db) openDatabase();
-  return db;
-}
-function getGrupos() { return []; }
-function getSubgrupos() { return []; }
 function createWindow() {
    mainWindow = new BrowserWindow({
      width: 1080, height: 1920,
@@ -78,15 +47,7 @@ function listarUSBViaSysfs() {
   }
   return resultado;
 }
-function getSiTefConfig() {}
 app.whenReady().then(() => {
-   // Banco aberto apenas para uso interno (printer)
-   try {
-     openDatabase();
-     console.log("[Main] Banco de dados conectado (uso interno)");
-   } catch (err) {
-     console.error("[Main] Erro ao conectar banco:", err.message);
-   }
    setupPrinterIPC();
    ipcMain.handle("hardware:listar-usb", () => listarUSBViaSysfs());
    ipcMain.handle("toggle-fullscreen", () => {
@@ -95,10 +56,16 @@ app.whenReady().then(() => {
      }
      return true;
    });
+   ipcMain.handle("get-system-user", () => {
+     try {
+       return os.userInfo().username || null;
+     } catch (_) {
+       return null;
+     }
+   });
    createWindow();
 });
 app.on("window-all-closed", () => {
-  closeDatabase();
   if (process.platform !== "darwin") app.quit();
 });
 app.on("activate", () => {

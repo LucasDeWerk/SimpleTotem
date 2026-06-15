@@ -5,9 +5,10 @@
     :disabled="!available"
     @click="$emit('click')"
   >
+    <span class="pm-icon">{{ icon }}</span>
     <span class="pm-label">{{ label }}</span>
     <span v-if="active" class="pm-check">✓</span>
-    <span v-if="!available" class="pm-unavailable">Indisponível</span>
+    <span v-if="!available" class="pm-unavailable">{{ unavailableLabel }}</span>
   </button>
 </template>
 
@@ -15,8 +16,10 @@
 defineProps({
   type: { type: String, required: true },
   label: { type: String, required: true },
+  icon: { type: String, default: '💳' },
   active: { type: Boolean, default: false },
-  available: { type: Boolean, default: true }
+  available: { type: Boolean, default: true },
+  unavailableLabel: { type: String, default: 'Indisponível' },
 })
 
 defineEmits(['click'])
@@ -52,6 +55,11 @@ defineEmits(['click'])
 .payment-method-card.unavailable {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.pm-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
 }
 
 .pm-label {

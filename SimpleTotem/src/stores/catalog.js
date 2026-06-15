@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import * as api from '@/services/api'
+import { getProductImageUrl } from '@/utils/productImage'
 
 export const useCatalogStore = defineStore('catalog', () => {
   const categories = ref([])
@@ -24,6 +25,24 @@ export const useCatalogStore = defineStore('catalog', () => {
     selectedCategoryId.value = categoryId
   }
 
+  function mapProduct(p) {
+    const foto = getProductImageUrl(p.id_produto, p.foto)
+    return {
+      id_produto: p.id_produto,
+      id_grupo: p.id_grupo,
+      id_subgrupo: p.id_subgrupo,
+      descproduto: p.descproduto,
+      preco_venda: p.preco_venda,
+      foto,
+      image: foto,
+      estoque: p.estoque,
+      descgrupo: p.descgrupo,
+      descsubgrupo: p.descsubgrupo,
+      descmarca: p.descmarca,
+      custo_medio: p.custo_medio
+    }
+  }
+
   /**
    * Carrega catálogo do banco de dados
    */
@@ -43,19 +62,7 @@ export const useCatalogStore = defineStore('catalog', () => {
 
       // Buscar produtos
       const prods = await api.obterProdutos()
-      products.value = (prods || []).map(p => ({
-        id_produto: p.id_produto,
-        id_grupo: p.id_grupo,
-        id_subgrupo: p.id_subgrupo,
-        descproduto: p.descproduto,
-        preco_venda: p.preco_venda,
-        foto: p.foto,
-        estoque: p.estoque,
-        descgrupo: p.descgrupo,
-        descsubgrupo: p.descsubgrupo,
-        descmarca: p.descmarca,
-        custo_medio: p.custo_medio
-      }))
+      products.value = (prods || []).map(p => mapProduct(p))
 
       lastSyncAt.value = new Date().toISOString()
       console.log('[Catalog] ✅ Catálogo carregado com sucesso')
@@ -77,19 +84,7 @@ export const useCatalogStore = defineStore('catalog', () => {
     try {
       if (idGrupo) {
         const prods = await api.obterProdutos({ id_grupo: idGrupo })
-        products.value = (prods || []).map(p => ({
-          id_produto: p.id_produto,
-          id_grupo: p.id_grupo,
-          id_subgrupo: p.id_subgrupo,
-          descproduto: p.descproduto,
-          preco_venda: p.preco_venda,
-          foto: p.foto,
-          estoque: p.estoque,
-          descgrupo: p.descgrupo,
-          descsubgrupo: p.descsubgrupo,
-          descmarca: p.descmarca,
-          custo_medio: p.custo_medio
-        }))
+        products.value = (prods || []).map(p => mapProduct(p))
       }
       selectCategory(idGrupo)
     } catch (error) {

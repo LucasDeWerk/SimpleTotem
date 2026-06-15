@@ -1,20 +1,15 @@
-import { ref, computed } from 'vue'
-
-const isInitializing = ref(false)
-const hasCompanyData = ref(true)
-const error = ref(null)
+import { storeToRefs } from 'pinia'
+import { useCompanyStore } from '@/stores/company'
 
 export function useCompanyInitialization() {
-  const checkCompanyData = async () => {
-    // Sem lógica de banco de dados — apenas marca como pronto
-    isInitializing.value = false
-    hasCompanyData.value = true
-  }
+  const company = useCompanyStore()
+  const { isChecking, hasCompanyData, error, isReady } = storeToRefs(company)
 
   return {
-    isInitializing: computed(() => isInitializing.value),
-    hasCompanyData: computed(() => hasCompanyData.value),
-    error: computed(() => error.value),
-    checkCompanyData
+    isInitializing: isChecking,
+    hasCompanyData,
+    error,
+    isReady,
+    checkCompanyData: company.check
   }
 }

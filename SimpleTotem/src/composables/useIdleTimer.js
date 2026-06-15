@@ -7,7 +7,7 @@ export function useIdleTimer() {
   const events = ['touchstart', 'mousedown', 'mousemove', 'keydown', 'scroll']
 
   function handleActivity() {
-    if (session.isActive) {
+    if (session.isActive && !session.paused) {
       session.resetTimer()
     }
   }

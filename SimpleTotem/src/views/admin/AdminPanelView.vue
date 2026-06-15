@@ -43,44 +43,13 @@
         <div class="section-card">
           <div class="card-header">
             <div>
-              <h3 class="card-title">Status dos Dispositivos</h3>
-              <p class="card-description">Verifique a conexão de periféricos</p>
-            </div>
-            <button class="btn-icon-large" @click="scanPeripherals" :disabled="scanning">
-              <span class="material-icons" :class="{ spinning: scanning }">refresh</span>
-            </button>
-          </div>
-
-          <div v-if="scanning" class="loading-state">
-            <span class="material-icons spinner-anim">autorenew</span>
-            <p>Verificando dispositivos...</p>
-          </div>
-
-          <div v-else class="devices-list">
-            <div v-for="p in peripherals" :key="p.id" class="device-item">
-              <div class="device-info">
-                <h4 class="device-name">{{ p.label }}</h4>
-                <p v-if="p.detail" class="device-detail">{{ p.detail }}</p>
-              </div>
-              <div class="device-status">
-                <span class="badge" :class="'badge--' + p.status">
-                  {{ statusLabel(p.status) }}
-                </span>
-                <button
-                  class="btn-sm"
-                  @click="testDevice(p.id)"
-                  :disabled="p.status === 'checking'"
-                >
-                  {{ p.status === 'checking' ? '...' : 'Testar' }}
-                </button>
-              </div>
+              <h3 class="card-title">Status dos Periféricos</h3>
+              <p class="card-description">
+                Impressora, pinpad e leitor configurados no totem
+              </p>
             </div>
           </div>
-
-          <button class="btn-secondary" @click="$router.push({ name: 'admin-hardware' })">
-            <span class="material-icons" style="margin-right: 8px;">settings</span>
-            Configurações Avançadas
-          </button>
+          <PeripheralsConfigPanel ref="peripheralsPanel" embedded />
         </div>
       </section>
 
@@ -90,56 +59,34 @@
           <div class="card-header">
             <div>
               <h3 class="card-title">Sincronização de Dados</h3>
-              <p class="card-description">Sincronize todos os dados da API</p>
-            </div>
-          </div>
-
-          <div class="sync-status-container">
-            <div class="status-info">
-              <p class="status-label">Status:</p>
-              <p class="sync-status-text" :class="'sync--' + fullSyncStatus">
-                {{ fullSyncLabel }}
-              </p>
-              <p class="sync-last">
-                {{ fullSyncLastTime
-                  ? 'Última: ' + new Date(fullSyncLastTime).toLocaleString('pt-BR')
-                  : 'Nenhuma sincronização realizada' }}
+              <p class="card-description">
+                {{ company.hasCompanyData
+                  ? 'Sincronize catálogo e dados do SimpleSfique'
+                  : 'Conecte sua conta SimpleSfique para vincular a empresa' }}
               </p>
             </div>
           </div>
 
-          <button
-            class="btn-primary btn-large"
-            :disabled="fullSyncStatus === 'syncing'"
-            @click="handleFullSync"
-          >
-            <span class="material-icons" style="margin-right: 8px;">sync</span>
-            {{ fullSyncStatus === 'syncing' ? 'Sincronizando...' : 'Sincronizar Tudo' }}
-          </button>
-
-          <!-- Progress -->
-          <div v-if="fullSyncStatus === 'syncing'" class="sync-progress">
-            <div
-              v-for="(item, key) in syncProgress"
-              :key="key"
-              class="progress-item"
-              :class="{ completed: item }"
-            >
-              <span class="progress-bar"></span>
-              <span class="progress-label">{{ formatItemName(key) }}</span>
-              <span v-if="item" class="material-icons progress-check">check_circle</span>
-            </div>
+          <div v-if="syncSectionLoading" class="sync-loading">
+            Verificando empresa...
           </div>
 
-          <!-- Erros -->
-          <div v-if="fullSyncErrors.length > 0" class="alert alert--error">
-            <h4 class="alert-title"><span class="material-icons" style="margin-right: 8px;">warning</span>Erros encontrados</h4>
-            <ul class="error-list">
-              <li v-for="(error, idx) in fullSyncErrors" :key="idx">
-                <strong>{{ error.entidade || error.etapa }}:</strong> {{ error.erro }}
-              </li>
-            </ul>
+          <div v-else-if="!company.hasCompanyData" class="simplesfique-setup">
+            <p class="setup-hint">
+              Faça login com o email e senha da sua conta SimpleSfique.
+              O <strong>id_saas</strong> e a empresa serão obtidos automaticamente.
+            </p>
+            <SimpleSfiqueLoginForm
+              @success="onSimpleSfiqueConnected"
+              @requires-selection="onSimpleSfiqueMultiplas"
+            />
           </div>
+
+          <SyncRoutinePanel
+            v-else
+            :empresa-local="empresaLocal"
+            @synced="onSyncDone"
+          />
         </div>
       </section>
 
@@ -195,10 +142,10 @@
               <option value="">-- Escolha uma empresa --</option>
               <option
                 v-for="empresa in empresasDisponiveis"
-                :key="empresa.id"
-                :value="String(empresa.id)"
+                :key="empresa.id_empresa || empresa.id"
+                :value="String(empresa.id_empresa || empresa.id)"
               >
-                {{ empresa.fantasia || empresa.razao_social }}
+                {{ empresa.nome_fantasia || empresa.razao_social }}
               </option>
             </select>
           </div>
@@ -207,7 +154,7 @@
             <h4 class="preview-title">Detalhes da Empresa:</h4>
             <div class="preview-details">
               <p><strong>Razão Social:</strong> {{ selectedEmpresaData?.razao_social }}</p>
-              <p><strong>Nome Fantasia:</strong> {{ selectedEmpresaData?.fantasia }}</p>
+              <p><strong>Nome Fantasia:</strong> {{ selectedEmpresaData?.nome_fantasia }}</p>
               <p><strong>CNPJ:</strong> {{ selectedEmpresaData?.cpf_cnpj }}</p>
               <p><strong>Contato:</strong> {{ selectedEmpresaData?.whatsapp || 'N/A' }}</p>
             </div>
@@ -233,17 +180,35 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useDeviceStore } from '@/stores/device'
 import { useAdminStore } from '@/stores/admin'
+import { useCompanyStore } from '@/stores/company'
+import { useSimpleSfiqueStore } from '@/stores/simplesfique'
+import PeripheralsConfigPanel from '@/components/admin/PeripheralsConfigPanel.vue'
+import SimpleSfiqueLoginForm from '@/components/admin/SimpleSfiqueLoginForm.vue'
+import SyncRoutinePanel from '@/components/admin/SyncRoutinePanel.vue'
+import * as api from '@/services/api'
 
 const router = useRouter()
+const route = useRoute()
 const device = useDeviceStore()
 const admin = useAdminStore()
+const company = useCompanyStore()
+const simplesfique = useSimpleSfiqueStore()
+
+const ADMIN_SECTIONS = new Set(['peripherals', 'sync', 'token'])
 
 // UI State
 const sidebarOpen = ref(false)
 const activeSection = ref('peripherals')
+
+function applySectionFromRoute() {
+  const secao = route.query.secao
+  if (typeof secao === 'string' && ADMIN_SECTIONS.has(secao)) {
+    activeSection.value = secao
+  }
+}
 
 // Navigation items
 const navItems = [
@@ -252,9 +217,12 @@ const navItems = [
   { id: 'token', icon: 'security', label: 'Autenticação' }
 ]
 
-// Periféricos
-const peripherals = ref([])
-const scanning = ref(false)
+const peripheralsPanel = ref(null)
+
+// Empresa / SimpleSfique
+const syncSectionLoading = ref(false)
+const empresaLocal = ref(null)
+const empresasPendentes = ref([])
 
 // Modal de seleção de empresa
 const showEmpresaModal = ref(false)
@@ -263,7 +231,9 @@ const selectedEmpresaId = ref('')
 const confirmingEmpresa = ref(false)
 
 const selectedEmpresaData = computed(() => {
-  return empresasDisponiveis.value.find(e => String(e.id) === selectedEmpresaId.value)
+  return empresasDisponiveis.value.find(
+    e => String(e.id_empresa || e.id) === selectedEmpresaId.value
+  )
 })
 
 // Token status
@@ -311,13 +281,6 @@ const fullSyncLabel = computed(() => {
   return map[fullSyncStatus.value] || ''
 })
 
-function statusLabel(s) {
-   if (s === 'connected') return '● Conectado'
-   if (s === 'disconnected') return '● Desconectado'
-   if (s === 'checking') return '● Verificando...'
-   return '● Não detectado'
- }
-
  function getSectionTitle() {
    const item = navItems.find(i => i.id === activeSection.value)
    return item?.label || 'Admin'
@@ -335,60 +298,6 @@ function statusLabel(s) {
    return names[key] || key
  }
 
-function buildList() {
-  return [
-    {
-      id: 'device',
-      icon: '',
-      label: 'Dispositivo',
-      status: device.isOnline ? 'connected' : 'disconnected',
-      detail: device.deviceUuid ? `ID ${device.deviceUuid.substring(0, 8)}` : null
-    },
-    {
-      id: 'printer',
-      icon: '',
-      label: 'Impressora',
-      status: 'unknown',
-      detail: null
-    },
-    {
-      id: 'card_reader',
-      icon: '',
-      label: 'Leitor de Cartão',
-      status: 'unknown',
-      detail: null
-    }
-  ]
-}
-
-async function scanPeripherals() {
-  scanning.value = true
-  peripherals.value = buildList()
-  try {
-    await new Promise(r => setTimeout(r, 500))
-    const printer = peripherals.value.find(p => p.id === 'printer')
-    if (printer) printer.status = 'disconnected'
-    const reader = peripherals.value.find(p => p.id === 'card_reader')
-    if (reader) reader.status = 'connected'
-  } catch {
-    peripherals.value.forEach(p => (p.status = 'unknown'))
-  } finally {
-    scanning.value = false
-  }
-}
-
-async function testDevice(id) {
-  const p = peripherals.value.find(x => x.id === id)
-  if (!p) return
-  p.status = 'checking'
-  try {
-    await new Promise(r => setTimeout(r, 600))
-    p.status = Math.random() > 0.4 ? 'connected' : 'disconnected'
-  } catch {
-    p.status = 'unknown'
-  }
-}
-
 async function handleFullSync() {
   fullSyncErrors.value = []
   try {
@@ -402,9 +311,13 @@ async function handleFullSync() {
 }
 
 function backToTotem() {
-   admin.logout()
-   router.push({ name: 'home' })
- }
+  admin.logout()
+  if (company.hasCompanyData) {
+    router.push({ name: 'home' })
+    return
+  }
+  router.push({ name: 'totem-login' })
+}
 
  async function toggleFullscreen() {
    try {
@@ -421,17 +334,71 @@ function closeEmpresaModal() {
 }
 
 async function confirmEmpresaSelection() {
-  if (!selectedEmpresaId.value) return
+  if (!selectedEmpresaId.value || !selectedEmpresaData.value) return
   confirmingEmpresa.value = true
   try {
-    // Salvar ID da empresa selecionada
-    localStorage.setItem('selected_empresa_id', selectedEmpresaId.value)
-    console.log('[Admin] Empresa selecionada:', selectedEmpresaId.value)
+    const salva = await api.salvarEmpresaSimpleSfique(selectedEmpresaData.value)
+    empresaLocal.value = salva
+    await company.check()
+    company.markConfigured()
+    localStorage.setItem('selected_empresa_id', String(salva.id_saas))
   } catch (err) {
     console.error('[Admin] Erro ao salvar empresa:', err)
+    fullSyncErrors.value = [{ etapa: 'Empresa', erro: err.message }]
   } finally {
     closeEmpresaModal()
     confirmingEmpresa.value = false
+  }
+}
+
+async function carregarEmpresaLocal() {
+  syncSectionLoading.value = true
+  try {
+    await company.check()
+
+    try {
+      const sessaoApi = await api.obterSessaoSimpleSfique()
+      if (sessaoApi?.token_ativo) {
+        simplesfique.setSessao(sessaoApi)
+      }
+    } catch {
+      // Sessão opcional neste ponto
+    }
+
+    if (company.hasCompanyData) {
+      empresaLocal.value = await api.obterEmpresaSinc()
+    } else {
+      empresaLocal.value = null
+    }
+  } catch (err) {
+    console.error('[Admin] Erro ao carregar empresa:', err)
+    empresaLocal.value = null
+  } finally {
+    syncSectionLoading.value = false
+  }
+}
+
+async function onSimpleSfiqueConnected(empresa) {
+  empresaLocal.value = empresa
+  await company.check()
+  company.markConfigured()
+  if (empresa?.id_saas) {
+    localStorage.setItem('selected_empresa_id', String(empresa.id_saas))
+  }
+  const sessaoApi = await api.obterSessaoSimpleSfique()
+  if (sessaoApi) simplesfique.setSessao(sessaoApi)
+}
+
+function onSimpleSfiqueMultiplas(empresas) {
+  empresasDisponiveis.value = empresas || []
+  selectedEmpresaId.value = ''
+  showEmpresaModal.value = true
+}
+
+async function onSyncDone() {
+  await company.check()
+  if (company.hasCompanyData && !empresaLocal.value) {
+    empresaLocal.value = await api.obterEmpresaSinc()
   }
 }
 
@@ -439,18 +406,20 @@ async function autoSyncToken() {
   tokenSyncing.value = true
   tokenError.value = ''
   try {
-    // Simular obtém token
-    console.log('[Admin] 🔄 Sincronizando token...')
-    // TODO: Implementar chamada real quando houver credentials
-    tokenStatus.value = 'success'
-    localStorage.setItem('token_last_update', new Date().toISOString())
-    tokenSyncing.value = false
-
-    setTimeout(() => { admin.tokenStatus = 'idle' }, 5000)
+    const sessao = await api.obterSessaoSimpleSfique()
+    if (sessao?.token_ativo) {
+      tokenStatus.value = 'success'
+      localStorage.setItem('token_last_update', new Date().toISOString())
+    } else {
+      tokenStatus.value = 'idle'
+      tokenError.value = 'Faça login no SimpleSfique na aba Sincronização'
+    }
   } catch (err) {
     tokenError.value = err.message
     tokenStatus.value = 'error'
+  } finally {
     tokenSyncing.value = false
+    setTimeout(() => { admin.tokenStatus = 'idle' }, 5000)
   }
 }
 
@@ -464,17 +433,22 @@ watch(() => admin.syncStatus, (newStatus) => {
   }
 })
 
-onMounted(async () => {
-  scanPeripherals()
-  await autoSyncToken()
+watch(activeSection, (section) => {
+  if (section === 'peripherals' && peripheralsPanel.value?.carregarTudo) {
+    peripheralsPanel.value.carregarTudo()
+  }
+  if (section === 'sync' && !syncSectionLoading.value) {
+    carregarEmpresaLocal()
+  }
+})
 
-  // Carregar dados da empresa para modal
-  try {
-    console.log('[Admin] 📡 Buscando empresas disponíveis...')
-    // TODO: Buscar empresas de verdade quando tiver conexão com API
-    empresasDisponiveis.value = []
-  } catch (err) {
-    console.error('[Admin] Erro ao buscar empresas:', err)
+watch(() => route.query.secao, applySectionFromRoute)
+
+onMounted(async () => {
+  applySectionFromRoute()
+  await autoSyncToken()
+  if (activeSection.value === 'sync') {
+    await carregarEmpresaLocal()
   }
 })
 </script>
@@ -810,6 +784,31 @@ onMounted(async () => {
 .badge--unknown {
   background: rgba(158, 158, 158, 0.12);
   color: #9e9e9e;
+}
+
+.sync-loading,
+.setup-hint {
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.simplesfique-setup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  max-width: 440px;
+}
+
+.empresa-vinculada {
+  background: rgba(76, 175, 80, 0.08);
+  border: 1px solid rgba(76, 175, 80, 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
+}
+
+.empresa-vinculada p {
+  margin: 0 0 var(--space-sm);
 }
 
 /* Sync Status Container */

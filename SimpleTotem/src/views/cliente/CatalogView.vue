@@ -6,8 +6,8 @@
     <!-- Sidebar de Grupos/Categorias -->
     <aside
       class="catalog-sidebar"
-      :class="{ expanded: sidebarExpanded }"
-      @click.stop="sidebarExpanded = true"
+      :class="{ expanded: sidebarExpanded && !isWideLayout }"
+      @click.stop="onSidebarClick"
     >
       <div class="sidebar-brand">
 
@@ -30,22 +30,38 @@
 
     <!-- Área principal de produtos -->
     <main class="catalog-main">
-      <!-- Header com busca e info -->
       <div class="catalog-topbar">
-        <h2 class="topbar-title">{{ currentCategoryName }}</h2>
-        <span class="topbar-count">{{ catalog.productsByCategory.length }} {{ catalog.productsByCategory.length === 1 ? 'produto' : 'produtos' }}</span>
+        <button class="home-btn" @click="goHome" type="button">
+          ← {{ lang.t.backToHome }}
+        </button>
+        <div class="topbar-info">
+          <h2 class="topbar-title">{{ currentCategoryName }}</h2>
+          <span class="topbar-count">
+            {{ catalog.productsByCategory.length }}
+            {{ catalog.productsByCategory.length === 1 ? lang.t.product : lang.t.products }}
+          </span>
+        </div>
+        <div
+          v-if="!device.isOnline"
+          class="catalog-offline-badge"
+          :title="lang.t.offline"
+        >
+          <span class="offline-dot" aria-hidden="true"></span>
+          <span>{{ lang.t.offline }}</span>
+        </div>
       </div>
 
       <!-- Grid de produtos -->
       <div class="products-area">
         <div v-if="catalog.loading" class="loading-message">
-          <span class="loading-spinner">Carregando...</span>
-          <p>Carregando produtos...</p>
+          <div class="loading-spinner-ring"></div>
+          <p>{{ lang.t.loadingProducts }}</p>
         </div>
 
         <div v-else-if="catalog.productsByCategory.length === 0" class="empty-message">
-          <span class="empty-icon">Nenhum</span>
-          <p>Nenhum produto disponível nesta categoria</p>
+          <span class="empty-icon">📦</span>
+          <p>{{ lang.t.noProducts }}</p>
+          <p class="empty-hint">{{ lang.t.tryOtherCategory }}</p>
         </div>
 
         <div v-else class="products-grid">
@@ -59,6 +75,7 @@
             :badge="null"
             :shortDescription="`${product.descsubgrupo} - ${product.descmarca || ''}`"
             :hasCustomization="false"
+            :actionHint="lang.t.chooseQuantity"
             @click="handleProductClick(product)"
           />
         </div>
@@ -66,7 +83,7 @@
         <!-- Feedback de adicionado -->
         <transition name="slide-up">
           <div v-if="addedFeedback" class="added-toast">
-            [+] {{ addedProductName }} adicionado!
+            ✓ {{ addedProductName }} {{ lang.t.addedToCart }}
           </div>
         </transition>
       </div>
@@ -75,33 +92,39 @@
     <!-- Footer / Barra do Carrinho -->
     <footer class="catalog-footer" :class="{ 'has-items': cart.itemCount > 0 }">
       <div v-if="cart.itemCount > 0" class="footer-cart">
-        <div class="footer-items-preview">
+        <div class="footer-items-scroll">
+          <div class="footer-items-preview">
           <div
-            v-for="(item, index) in cart.items.slice(0, 3)"
+            v-for="(item, index) in cart.items.slice(0, 4)"
             :key="index"
             class="footer-item-chip"
           >
             <span class="chip-qty">{{ item.quantity }}x</span>
             <span class="chip-name">{{ item.name }}</span>
           </div>
-          <span v-if="cart.items.length > 3" class="chip-more">+{{ cart.items.length - 3 }} mais</span>
+          <span v-if="cart.items.length > 4" class="chip-more">
+            +{{ cart.items.length - 4 }} {{ lang.t.moreItems }}
+          </span>
+          </div>
         </div>
 
-        <div class="footer-summary">
+        <div class="footer-actions">
           <div class="footer-total-info">
-            <span class="footer-item-count">{{ cart.itemCount }} {{ cart.itemCount === 1 ? 'item' : 'itens' }}</span>
+            <span class="footer-item-count">
+              {{ cart.itemCount }} {{ cart.itemCount === 1 ? lang.t.item : lang.t.items }}
+            </span>
             <span class="footer-total">R$ {{ cart.total.toFixed(2) }}</span>
           </div>
           <button class="footer-checkout-btn" @click="goToCart">
-            <span>VER CARRINHO</span>
+            <span>{{ lang.t.viewCart }}</span>
             <span class="checkout-arrow">→</span>
           </button>
         </div>
       </div>
 
       <div v-else class="footer-empty">
-        <span class="footer-empty-icon">Carrinho</span>
-        <span class="footer-empty-text">Seu carrinho está vazio</span>
+        <span class="footer-empty-icon">🛒</span>
+        <span class="footer-empty-text">{{ lang.t.cartEmpty }}</span>
       </div>
     </footer>
 
@@ -113,7 +136,7 @@
 
           <div class="modal-image-area">
             <img v-if="selectedProduct.foto" :src="selectedProduct.foto" :alt="selectedProduct.descproduto" />
-            <div v-else class="modal-image-placeholder">Produto</div>
+            <div v-else class="modal-image-placeholder">📦</div>
           </div>
 
           <div class="modal-body">
@@ -122,27 +145,27 @@
             <span class="modal-product-price">R$ {{ selectedProduct.preco_venda.toFixed(2) }}</span>
 
             <div class="modal-quantity">
-              <span class="modal-qty-label">Quantidade:</span>
+              <span class="modal-qty-label">{{ lang.t.quantity }}</span>
               <QuantityStepper v-model="detailQuantity" :min="1" :max="20" />
             </div>
 
             <div class="modal-notes">
-              <label class="modal-notes-label">Observações (opcional)</label>
+              <label class="modal-notes-label">{{ lang.t.notesOptional }}</label>
               <textarea
                 v-model="detailNotes"
                 class="modal-notes-input"
-                placeholder="Ex: Sem embalagem, cor azul..."
+                :placeholder="lang.t.notesPlaceholder"
                 rows="2"
               ></textarea>
             </div>
 
             <div class="modal-total">
-              <span>Total:</span>
+              <span>{{ lang.t.total }}:</span>
               <strong>R$ {{ (selectedProduct.preco_venda * detailQuantity).toFixed(2) }}</strong>
             </div>
 
             <button class="modal-add-btn" @click="addDetailToCart">
-              ADICIONAR AO CARRINHO
+              {{ lang.t.addToCart }}
             </button>
           </div>
         </div>
@@ -152,33 +175,47 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCatalogStore } from '@/stores/catalog'
 import { useCartStore } from '@/stores/cart'
+import { useSessionStore } from '@/stores/session'
+import { useLanguageStore } from '@/stores/language'
+import { useDeviceStore } from '@/stores/device'
 import ProductCard from '@/components/shared/ProductCard.vue'
 import QuantityStepper from '@/components/shared/QuantityStepper.vue'
 
 const router = useRouter()
 const catalog = useCatalogStore()
 const cart = useCartStore()
+const session = useSessionStore()
+const lang = useLanguageStore()
+const device = useDeviceStore()
 
-// Carregar dados do banco quando a página monta
-  onMounted(async () => {
-    try {
-      if (catalog.categories.length === 0) {
-        console.log('[CatalogView] Carregando catálogo...')
-        await catalog.fetchCatalog()
-      }
+const isWideLayout = ref(typeof window !== 'undefined' ? window.innerWidth >= 1080 : true)
 
-      // Seleciona a primeira categoria se nenhuma selecionada
-      if (!catalog.selectedCategoryId && catalog.categories.length > 0) {
-        catalog.selectCategory(catalog.categories[0].id)
-      }
-    } catch (error) {
-      console.error('[CatalogView] Erro ao carregar catálogo:', error)
+function updateLayout() {
+  isWideLayout.value = window.innerWidth >= 1080
+  if (isWideLayout.value) sidebarExpanded.value = false
+}
+
+onMounted(async () => {
+  window.addEventListener('resize', updateLayout)
+  try {
+    if (catalog.categories.length === 0) {
+      await catalog.fetchCatalog()
     }
-  })
+    if (!catalog.selectedCategoryId && catalog.categories.length > 0) {
+      catalog.selectCategory(catalog.categories[0].id)
+    }
+  } catch (error) {
+    console.error('[CatalogView] Erro ao carregar catálogo:', error)
+  }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateLayout)
+})
 
 const addedFeedback = ref(false)
 const addedProductName = ref('')
@@ -238,6 +275,18 @@ function goToCart() {
   router.push({ name: 'cart' })
 }
 
+async function goHome() {
+  cart.clearCart()
+  await router.replace({ name: 'home' })
+  session.endSession()
+}
+
+function onSidebarClick() {
+  if (!isWideLayout.value) {
+    sidebarExpanded.value = true
+  }
+}
+
 function selectCategory(categoryId) {
   catalog.selectCategory(categoryId)
   sidebarExpanded.value = false
@@ -251,7 +300,7 @@ function closeSidebarExpand() {
 <style scoped>
 .catalog-view {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 300px minmax(0, 1fr);
   grid-template-rows: 1fr auto;
   height: 100%;
   overflow: hidden;
@@ -380,17 +429,45 @@ function closeSidebarExpand() {
   flex-direction: column;
   overflow: hidden;
   background: transparent;
+  min-width: 0;
 }
 
 .catalog-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-lg);
   padding: var(--space-lg) var(--space-xl);
   border-bottom: 1px solid rgba(245, 124, 0, 0.08);
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
+}
+
+.home-btn {
+  flex-shrink: 0;
+  min-height: 48px;
+  padding: var(--space-sm) var(--space-lg);
+  background: rgba(245, 124, 0, 0.08);
+  border: 1px solid rgba(245, 124, 0, 0.2);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.home-btn:active {
+  background: rgba(245, 124, 0, 0.15);
+}
+
+.topbar-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
 }
 
 .topbar-title {
@@ -405,6 +482,30 @@ function closeSidebarExpand() {
   color: #64748b;
   opacity: 0.8;
   font-weight: 500;
+}
+
+.catalog-offline-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  min-height: 48px;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.25);
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+}
+
+.offline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-error);
+  flex-shrink: 0;
 }
 
 .products-area {
@@ -433,10 +534,19 @@ function closeSidebarExpand() {
   text-align: center;
 }
 
-.loading-spinner {
-  font-size: 3rem;
+.loading-spinner-ring {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(245, 124, 0, 0.15);
+  border-top-color: #F57C00;
+  border-radius: 50%;
   animation: spin 1s linear infinite;
-  opacity: 0.7;
+}
+
+.empty-hint {
+  font-size: var(--font-size-md);
+  color: #94a3b8;
+  margin: 0;
 }
 
 @keyframes spin {
@@ -470,11 +580,12 @@ function closeSidebarExpand() {
   grid-column: 2;
   background: rgba(255, 255, 255, 0.95);
   border-top: 1px solid rgba(245, 124, 0, 0.1);
-  padding: var(--space-lg) var(--space-xl);
+  padding: var(--space-md) var(--space-xl);
   flex-shrink: 0;
-  min-height: 120px;
+  min-width: 0;
+  max-width: 100%;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   transition: all var(--transition-fast);
   backdrop-filter: blur(10px);
 }
@@ -482,6 +593,9 @@ function closeSidebarExpand() {
 .catalog-footer.has-items {
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 -4px 24px rgba(245, 124, 0, 0.15);
+  min-height: auto;
+  padding-top: var(--space-sm);
+  padding-bottom: var(--space-md);
 }
 
 .footer-empty {
@@ -505,32 +619,58 @@ function closeSidebarExpand() {
 
 .footer-cart {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   width: 100%;
-  gap: var(--space-lg);
+  min-width: 0;
+  gap: var(--space-sm);
+}
+
+.footer-items-scroll {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+
+.footer-items-scroll::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.98));
+  pointer-events: none;
 }
 
 .footer-items-preview {
-  flex: 1;
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  overflow: hidden;
-  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.footer-items-preview::-webkit-scrollbar {
+  display: none;
 }
 
 .footer-item-chip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   background: rgba(245, 124, 0, 0.08);
   border: 1px solid rgba(245, 124, 0, 0.2);
   border-radius: var(--radius-full);
-  padding: 10px 20px;
-  font-size: var(--font-size-md);
+  padding: 8px 14px;
+  font-size: var(--font-size-sm);
   white-space: nowrap;
   flex-shrink: 0;
-  transition: all var(--transition-fast);
+  max-width: 160px;
 }
 
 .footer-item-chip:hover {
@@ -541,13 +681,15 @@ function closeSidebarExpand() {
 .chip-qty {
   font-weight: var(--font-weight-bold);
   color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 .chip-name {
   color: var(--text-color);
-  max-width: 100px;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chip-more {
@@ -555,19 +697,25 @@ function closeSidebarExpand() {
   color: #64748b;
   flex-shrink: 0;
   font-weight: 600;
+  white-space: nowrap;
+  padding: 8px 12px;
+  background: rgba(245, 124, 0, 0.06);
+  border-radius: var(--radius-full);
 }
 
-.footer-summary {
-  display: flex;
+.footer-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--space-lg);
-  flex-shrink: 0;
+  gap: var(--space-md);
+  width: 100%;
 }
 
 .footer-total-info {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
+  min-width: 0;
 }
 
 .footer-item-count {
@@ -577,7 +725,7 @@ function closeSidebarExpand() {
 }
 
 .footer-total {
-  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-size: clamp(1.25rem, 2.5vw, 2rem);
   font-weight: 900;
   color: var(--text-color-laranja);
   white-space: nowrap;
@@ -591,16 +739,20 @@ function closeSidebarExpand() {
   gap: 10px;
   background: linear-gradient(135deg, #F57C00 0%, #E27602 100%);
   color: white;
-  padding: var(--space-lg) var(--space-2xl);
+  padding: var(--space-md) var(--space-xl);
   border-radius: var(--radius-md);
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
-  min-height: 76px;
+  min-height: var(--btn-min-height);
+  min-width: 200px;
   transition: all var(--transition-fast);
   white-space: nowrap;
   box-shadow: 0 8px 24px rgba(245, 124, 0, 0.3);
   letter-spacing: 0.5px;
   line-height: 1;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .footer-checkout-btn:hover {
@@ -835,6 +987,13 @@ function closeSidebarExpand() {
 
   .catalog-topbar {
     padding: var(--space-md) var(--space-lg);
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .catalog-offline-badge {
+    width: 100%;
+    justify-content: center;
   }
 
   .topbar-title {
@@ -846,24 +1005,21 @@ function closeSidebarExpand() {
     gap: var(--space-md);
   }
 
-  .footer-cart {
-    flex-direction: column;
-    gap: var(--space-md);
-  }
-
-  .footer-summary {
-    width: 100%;
-    justify-content: space-between;
+  .footer-actions {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
   }
 
   .footer-checkout-btn {
-    min-height: 56px;
-    font-size: var(--font-size-md);
+    width: 100%;
+    min-width: 0;
   }
 
   .footer-total-info {
     flex-direction: row;
-    gap: var(--space-lg);
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
   }
 }
 

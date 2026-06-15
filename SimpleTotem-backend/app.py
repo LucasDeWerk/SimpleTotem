@@ -3,15 +3,35 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from routers import auth, hardware, empresa, catalogo, vendas, sinc
-from core.token_cache import fetch_and_cache_token
+from core.database import ensure_schema
+from services.device_service import bootstrap_hardware
+from services.sitef_service import resolver_pendencias
+from services.api_session import restore_session_to_app
+from core.database import SessionLocal
+from models.orm import Empresa
+
+
+def _resolver_pendencias_startup() -> None:
+    db = SessionLocal()
+    try:
+        empresa = db.query(Empresa).first()
+        cnpj = (empresa.cpf_cnpj or "") if empresa else ""
+        resolver_pendencias(cnpj_estabelecimento=cnpj)
+    finally:
+        db.close()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup - busca o token quando a app inicia
-    await fetch_and_cache_token(app)
+    ensure_schema()
+    bootstrap_hardware()
+    _resolver_pendencias_startup()
+    db = SessionLocal()
+    try:
+        restore_session_to_app(app, db)
+    finally:
+        db.close()
     yield
-    # Shutdown - limpeza se necessário
     app.state.external_api_token = None
 
 

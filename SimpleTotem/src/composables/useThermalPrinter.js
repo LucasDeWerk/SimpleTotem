@@ -69,6 +69,66 @@ export function useThermalPrinter() {
     }
   }
 
+  const RECEIPT_WIDTH = 48
+
+  function center(text) {
+    const t = String(text || '')
+    if (t.length >= RECEIPT_WIDTH) return t.substring(0, RECEIPT_WIDTH)
+    const pad = Math.floor((RECEIPT_WIDTH - t.length) / 2)
+    return ' '.repeat(pad) + t
+  }
+
+  function formatMoney(value) {
+    return `R$ ${Number(value || 0).toFixed(2)}`
+  }
+
+  /**
+   * Monta e imprime o comprovante do pedido.
+   */
+  function buildReceiptLines(orderData) {
+    const sep = '-'.repeat(RECEIPT_WIDTH)
+    const lines = [
+      '',
+      center(orderData.company?.name || 'SIMPLETOTEM'),
+      center(orderData.company?.cnpj || ''),
+      sep,
+      center(`Pedido #${orderData.orderNumber || '—'}`),
+      center(orderData.date || ''),
+      sep,
+    ]
+
+    for (const item of orderData.items || []) {
+      const qty = item.quantity ?? 1
+      const total = qty * (item.unitPrice ?? 0)
+      lines.push(`${item.name}`.substring(0, RECEIPT_WIDTH))
+      lines.push(`  ${qty}x ${formatMoney(item.unitPrice)} = ${formatMoney(total)}`)
+    }
+
+    lines.push(sep)
+    lines.push(`Subtotal:${' '.repeat(RECEIPT_WIDTH - 9 - formatMoney(orderData.subtotal).length)}${formatMoney(orderData.subtotal)}`)
+
+    if (orderData.discount > 0) {
+      lines.push(`Desconto:${' '.repeat(RECEIPT_WIDTH - 9 - formatMoney(orderData.discount).length)}-${formatMoney(orderData.discount)}`)
+    }
+
+    lines.push(`TOTAL:${' '.repeat(RECEIPT_WIDTH - 6 - formatMoney(orderData.total).length)}${formatMoney(orderData.total)}`)
+    lines.push(`Pagamento: ${orderData.paymentMethod || '—'}`)
+
+    if (orderData.pickupCode) {
+      lines.push(sep)
+      lines.push(center('Codigo'))
+      lines.push(center(String(orderData.pickupCode)))
+    }
+
+    lines.push(sep, '', '')
+    return lines
+  }
+
+  async function printComplete(orderData) {
+    const lines = buildReceiptLines(orderData)
+    return printLines(lines, { cut: true })
+  }
+
   /**
    * Testa a impressora
    */
@@ -104,6 +164,7 @@ export function useThermalPrinter() {
     lastPrintResult,
     printLines,
     printRaw,
+    printComplete,
     testPrint,
   }
 }

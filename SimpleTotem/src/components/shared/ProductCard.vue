@@ -2,7 +2,7 @@
   <button class="product-card" @click="$emit('click')">
     <div class="product-image-wrap">
       <img v-if="image" :src="image" :alt="name" class="product-image" />
-      <div v-else class="product-image-placeholder">[ ]</div>
+      <div v-else class="product-image-placeholder">📦</div>
       <span v-if="badge" class="product-badge" :class="badgeClass">{{ badge }}</span>
     </div>
     <div class="product-info">
@@ -10,8 +10,8 @@
       <p v-if="shortDescription" class="product-desc">{{ shortDescription }}</p>
       <div class="product-footer">
         <span class="product-price">R$ {{ price.toFixed(2) }}</span>
-        <span v-if="hasCustomization" class="product-customize-hint">Personalizar</span>
-        <span v-else class="product-add-hint">+ Adicionar</span>
+        <span v-if="hasCustomization" class="product-customize-hint">{{ customizeHint }}</span>
+        <span v-else class="product-add-hint">{{ actionHint }}</span>
       </div>
     </div>
   </button>
@@ -27,7 +27,9 @@ const props = defineProps({
   image: { type: String, default: '' },
   badge: { type: String, default: '' },
   shortDescription: { type: String, default: '' },
-  hasCustomization: { type: Boolean, default: false }
+  hasCustomization: { type: Boolean, default: false },
+  actionHint: { type: String, default: 'Escolher quantidade' },
+  customizeHint: { type: String, default: 'Personalizar' }
 })
 
 defineEmits(['click'])

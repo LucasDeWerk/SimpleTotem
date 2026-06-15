@@ -1,17 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as api from '@/services/api'
+import { useCompanyStore } from '@/stores/company'
 
 export const useAdminStore = defineStore('admin', () => {
   const isAuthenticated = ref(localStorage.getItem('admin_authenticated') === 'true')
-  const adminPin = ref(localStorage.getItem('admin_pin') || '1234')
+  const adminUser = ref(localStorage.getItem('admin_user') || '')
+  /** Senha OS em memória — usada ao salvar empresa, nunca no localStorage. */
+  const osSenha = ref('')
 
-  // Token
-  const tokenStatus = ref('idle') // idle | syncing | success | error
-
-  // Sync
+  const tokenStatus = ref('idle')
   const lastFullSync = ref(localStorage.getItem('last_full_sync') || null)
-  const syncStatus = ref('idle') // idle | syncing | success | error
+  const syncStatus = ref('idle')
   const syncMessage = ref('')
   const syncProgress = ref({
     empresas: false,
@@ -22,72 +22,55 @@ export const useAdminStore = defineStore('admin', () => {
     produtos: false
   })
 
-  function login(pin) {
-    // Garantir que ambos sejam strings e comparar
-    const enteredPin = String(pin).trim()
-    const storedPin = String(adminPin.value).trim()
-
-    if (enteredPin === storedPin) {
-      isAuthenticated.value = true
-      localStorage.setItem('admin_authenticated', 'true')
-      return true
-    }
-    return false
-  }
-
-  function loginAuto() {
+  async function login(usuario, senha) {
+    await api.loginSistema(usuario, senha)
     isAuthenticated.value = true
+    adminUser.value = usuario
+    osSenha.value = senha
     localStorage.setItem('admin_authenticated', 'true')
+    localStorage.setItem('admin_user', usuario)
+    return true
   }
 
-  function setCompanyPin(pin) {
-    adminPin.value = pin
-    localStorage.setItem('admin_pin', pin)
+  function markAuthenticated(usuario) {
+    isAuthenticated.value = true
+    adminUser.value = usuario || adminUser.value
+    localStorage.setItem('admin_authenticated', 'true')
+    if (usuario) localStorage.setItem('admin_user', usuario)
   }
 
   function logout() {
     isAuthenticated.value = false
+    adminUser.value = ''
+    osSenha.value = ''
     localStorage.removeItem('admin_authenticated')
+    localStorage.removeItem('admin_user')
   }
 
-  /**
-   * Sincroniza todos os dados da API
-   */
   async function syncAll() {
     syncStatus.value = 'syncing'
     syncMessage.value = 'Iniciando sincronização...'
     resetProgress()
 
     try {
-      console.log('[Admin] 🔄 Sincronizando empresas...')
-      await api.sincronizarEmpresas()
-      syncProgress.value.empresas = true
+      const resultado = await api.sincronizarCompleto()
+      const etapas = resultado?.etapas || {}
 
-      console.log('[Admin] 🔄 Sincronizando grupos...')
-      await api.sincronizarGrupos()
-      syncProgress.value.grupos = true
-
-      console.log('[Admin] 🔄 Sincronizando subgrupos...')
-      await api.sincronizarSubgrupos()
-      syncProgress.value.subgrupos = true
-
-      console.log('[Admin] 🔄 Sincronizando marcas...')
-      await api.sincronizarMarcas()
-      syncProgress.value.marcas = true
-
-      console.log('[Admin] 🔄 Sincronizando medidas...')
-      await api.sincronizarMedidas()
-      syncProgress.value.medidas = true
-
-      console.log('[Admin] 🔄 Sincronizando produtos...')
-      await api.sincronizarProdutos()
-      syncProgress.value.produtos = true
+      syncProgress.value.empresas = Boolean(etapas.empresa)
+      syncProgress.value.grupos = Boolean(etapas.grupos)
+      syncProgress.value.subgrupos = Boolean(etapas.subgrupos)
+      syncProgress.value.marcas = Boolean(etapas.marcas)
+      syncProgress.value.medidas = Boolean(etapas.medidas)
+      syncProgress.value.produtos = Boolean(etapas.produtos)
 
       lastFullSync.value = new Date().toISOString()
       localStorage.setItem('last_full_sync', lastFullSync.value)
-      
+
       syncStatus.value = 'success'
       syncMessage.value = '✅ Sincronização completa realizada com sucesso!'
+
+      const company = useCompanyStore()
+      await company.check()
     } catch (err) {
       console.error('[Admin] ❌ Erro na sincronização:', err)
       syncStatus.value = 'error'
@@ -114,14 +97,15 @@ export const useAdminStore = defineStore('admin', () => {
 
   return {
     isAuthenticated,
+    adminUser,
+    osSenha,
     tokenStatus,
     lastFullSync,
     syncStatus,
     syncMessage,
     syncProgress,
     login,
-    loginAuto,
-    setCompanyPin,
+    markAuthenticated,
     logout,
     syncAll,
     resetSync

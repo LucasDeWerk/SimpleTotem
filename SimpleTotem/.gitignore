@@ -1,6 +1,1 @@
-node_modules/
-dist/
-dist-electron/
-*.local
-.DS_Store
-thumbs.db
+# Regras centralizadas em /.gitignore (raiz do repositório)

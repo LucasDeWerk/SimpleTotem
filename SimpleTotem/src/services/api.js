@@ -85,6 +85,44 @@ export async function obterProduto(idProduto) {
 
 // ─── Empresa / SaaS ───────────────────────────────────────────────────────────
 
+export async function obterStatusEmpresa() {
+  const res = await fetch(`${BASE_URL}/empresa/status`)
+  if (!res.ok) throw new Error(`Erro ${res.status}: ${await res.text()}`)
+  return res.json()
+}
+
+export async function obterUsuarioSugerido() {
+  const res = await fetch(`${BASE_URL}/auth/usuario-sugerido`)
+  if (!res.ok) throw new Error(`Erro ${res.status}`)
+  return res.json()
+}
+
+export async function loginSistema(usuario, senha) {
+  const res = await fetch(`${BASE_URL}/auth/system-login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ usuario, senha })
+  })
+  if (!res.ok) {
+    let detail = `Erro ${res.status}`
+    try {
+      const data = await res.json()
+      detail = data.detail || detail
+    } catch {
+      detail = await res.text()
+    }
+    throw new Error(detail)
+  }
+  const data = await res.json()
+  _token = data.access_token
+  return data
+}
+
+/** @deprecated use loginSistema() */
+export async function loginTotem(usuario, senha) {
+  return loginSistema(usuario, senha)
+}
+
 export async function obterEmpresa() {
   return apiFetch('/empresa')
 }
@@ -120,7 +158,7 @@ export async function listarDispositivosUSB() {
  */
 export async function obterConfigHardware(tipo) {
   const lista = await apiFetch('/hardware/dispositivos')
-  return (lista || []).find(d => d.tipo_dispositivo === tipo && d.ativo) || null
+  return (lista || []).find(d => d.tipo_dispositivo === tipo && d.ativo !== 0 && d.ativo !== false) || null
 }
 
 /**
@@ -143,9 +181,36 @@ export async function salvarConfigHardware(config) {
       vendor_id: config.vendor_id,
       product_id: config.product_id,
       descricao: config.descricao || '',
-      ativo: true
+      driver_id: config.driver_id || null,
+      ativo: 1
     })
   })
+}
+
+/** Status consolidado de todos os periféricos. */
+export async function obterStatusHardware() {
+  return apiFetch('/hardware/status')
+}
+
+/**
+ * Atribui QUALQUER dispositivo USB a um papel (impressora, pinpad, leitor).
+ * Marca agnóstico — só precisa VID:PID.
+ */
+export async function atribuirDispositivoHardware(payload) {
+  return apiFetch('/hardware/atribuir', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+/** Remove atribuição de uma categoria. */
+export async function removerAtribuicaoHardware(categoria) {
+  return apiFetch(`/hardware/atribuir/${categoria}`, { method: 'DELETE' })
+}
+
+/** @deprecated use atribuirDispositivoHardware */
+export async function configurarCategoriaHardware(categoria) {
+  return apiFetch(`/hardware/configurar-categoria/${categoria}`, { method: 'POST' })
 }
 
 /**
@@ -158,11 +223,89 @@ export async function removerConfigHardware(tipo) {
   return apiFetch(`/hardware/dispositivos/${item.id}`, { method: 'DELETE' })
 }
 
+/** Status da impressora Epson (USB, permissões, banco). */
+export async function obterStatusImpressora() {
+  return apiFetch('/hardware/impressora/status')
+}
+
+/** Detecta a impressora USB e sincroniza tconf_hardware. */
+export async function configurarImpressora() {
+  return apiFetch('/hardware/impressora/configurar', { method: 'POST' })
+}
+
+/** Status do pinpad Gertec (porta, permissões, CliSiTef.ini). */
+export async function obterStatusPinpad() {
+  return apiFetch('/hardware/pinpad/status')
+}
+
+/** Detecta o pinpad USB e atualiza script/CliSiTef.ini. */
+export async function configurarPinpad() {
+  return apiFetch('/hardware/pinpad/configurar', { method: 'POST' })
+}
+
 // ─── Sincronização (Admin) ────────────────────────────────────────────────────
-// Valida que o backend responde e retorna os dados atuais.
+
+export async function obterEmpresaSinc() {
+  const res = await fetch(`${BASE_URL}/sinc/empresa`)
+  if (!res.ok) throw new Error(`Erro ${res.status}`)
+  if (res.status === 204) return null
+  const text = await res.text()
+  if (!text) return null
+  return JSON.parse(text)
+}
+
+export async function obterSessaoSimpleSfique() {
+  const res = await fetch(`${BASE_URL}/sinc/sessao`)
+  if (!res.ok) throw new Error(`Erro ${res.status}`)
+  const text = await res.text()
+  if (!text) return null
+  return JSON.parse(text)
+}
+
+export async function loginSimpleSfique(payload) {
+  const token = _token || (await getToken())
+  const res = await fetch(`${BASE_URL}/sinc/simplesfique/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    let detail = `Erro ${res.status}`
+    try {
+      const data = await res.json()
+      detail = data.detail || data.erro || detail
+    } catch {
+      detail = (await res.text()) || detail
+    }
+    throw new Error(detail)
+  }
+  return res.json()
+}
+
+export async function salvarEmpresaSimpleSfique(empresa) {
+  return apiFetch('/sinc/simplesfique/empresa', {
+    method: 'POST',
+    body: JSON.stringify(empresa),
+  })
+}
+
+export async function listarEtapasSync() {
+  return apiFetch('/sinc/etapas')
+}
+
+export async function sincronizarEtapa(etapa) {
+  return apiFetch(`/sinc/pull/${etapa}`, { method: 'POST' })
+}
+
+export async function sincronizarCompleto() {
+  return apiFetch('/sinc/pull/completa', { method: 'POST' })
+}
 
 export async function sincronizarEmpresas() {
-  return obterEmpresas()
+  return obterEmpresaSinc()
 }
 
 export async function sincronizarGrupos() {
@@ -211,8 +354,7 @@ export async function iniciarVenda(itens) {
 }
 
 /**
- * Executa a transação completa (SiTef + gravação + retorno de cupom).
- * Sem timeout — aguarda até o pinpad concluir.
+ * Inicia transação SiTef (cartão ou PIX). Retorna { transacao_id, status }.
  * @param {{ itens, total_cliente, metodo_pagamento_id, cupom? }} payload
  */
 export async function iniciarTransacao(payload) {
@@ -249,6 +391,11 @@ export async function iniciarTransacao(payload) {
     throw new Error(detail)
   }
   return res.json()
+}
+
+/** Status em tempo real da transação SiTef (PIX QR, mensagens, resultado). */
+export async function obterStatusTransacao(transacaoId) {
+  return apiFetch(`/vendas/transacao/${transacaoId}`)
 }
 
 

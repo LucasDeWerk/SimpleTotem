@@ -2,43 +2,46 @@
   <div class="success-view">
     <div class="success-content animate-fade-in">
       <div class="success-icon-wrap">
-        <span class="success-icon">[OK]</span>
+        <span class="success-icon">✓</span>
       </div>
 
-      <h2 class="success-headline">Compra realizada!</h2>
+      <h2 class="success-headline">{{ lang.t.purchaseDone }}</h2>
 
       <div class="success-details">
         <div class="detail-row">
-          <span class="detail-label">Número da compra</span>
+          <span class="detail-label">{{ lang.t.orderNumber }}</span>
           <span class="detail-value">#{{ orderNumber }}</span>
         </div>
-        <div class="detail-row">
-          <span class="detail-label">Código de retirada</span>
-          <span class="detail-value highlight">{{ pickupCode }}</span>
+        <div v-if="authCode" class="detail-row">
+          <span class="detail-label">{{ lang.t.transactionCode }}</span>
+          <span class="detail-value highlight">{{ authCode }}</span>
+        </div>
+        <div v-if="nsuDisplay" class="detail-row">
+          <span class="detail-label">{{ lang.t.nsuLabel }}</span>
+          <span class="detail-value">{{ nsuDisplay }}</span>
         </div>
       </div>
 
-      <!-- Status de impressão -->
       <div v-if="printing" class="print-status">
         <div class="spinner-small"></div>
-        <p>Imprimindo comprovante...</p>
+        <p>{{ lang.t.printing }}</p>
       </div>
 
       <p v-if="printError" class="print-error">
-        ⚠️ Erro na impressão: {{ printError }}
+        ⚠️ {{ lang.t.printError }} {{ printError }}
+        <span class="print-error-hint">{{ lang.t.printFailedHint }}</span>
       </p>
 
       <p v-if="printSuccess" class="print-success">
-        ✓ Comprovante impresso com sucesso!
+        ✓ {{ lang.t.printSuccess }}
       </p>
 
       <p class="success-countdown">
-        Voltando ao início em <strong>{{ countdown }}</strong>s
+        {{ lang.t.backIn }} <strong>{{ countdown }}</strong>{{ lang.t.seconds }}
       </p>
 
       <PrimaryActionButton
-        label="VOLTAR AO INÍCIO"
-        icon="home"
+        :label="lang.t.backToStart"
         @click="newOrder"
         :disabled="printing"
       />
@@ -47,11 +50,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { usePaymentStore } from '@/stores/payment'
 import { useSessionStore } from '@/stores/session'
+import { useLanguageStore } from '@/stores/language'
 import { useThermalPrinter } from '@/composables/useThermalPrinter'
 import PrimaryActionButton from '@/components/shared/PrimaryActionButton.vue'
 
@@ -59,21 +63,36 @@ const router = useRouter()
 const cart = useCartStore()
 const payment = usePaymentStore()
 const session = useSessionStore()
-const { printing, printComplete } = useThermalPrinter()
+const lang = useLanguageStore()
+const { printing, printComplete, printLines } = useThermalPrinter()
 
-const orderNumber = ref(Math.floor(1000 + Math.random() * 9000))
-const pickupCode = ref('A' + Math.floor(10 + Math.random() * 90))
 const countdown = ref(10)
 const printError = ref(null)
 const printSuccess = ref(false)
 
+const order = computed(() => payment.completedOrder)
+const tx = computed(() => payment.transactionResult)
+
+const orderNumber = computed(() => {
+  const id = tx.value?.id_venda
+  if (id && id > 0) return id
+  if (tx.value?.nsu_sitef) return tx.value.nsu_sitef
+  return '—'
+})
+
+const authCode = computed(() => tx.value?.autorizacao || '')
+
+const nsuDisplay = computed(() => {
+  const nsu = tx.value?.nsu_host || tx.value?.nsu_sitef || ''
+  if (!nsu || nsu === authCode.value) return ''
+  return nsu
+})
+
 let timer = null
 
 onMounted(async () => {
-  // Imprimir comprovante automaticamente
   await printReceipt()
 
-  // Iniciar contagem regressiva
   timer = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
@@ -87,45 +106,87 @@ onUnmounted(() => {
   clearInterval(timer)
 })
 
+function buildMinimalTxLines() {
+  const lines = ['', 'COMPROVANTE TEF', '----------------']
+  if (tx.value?.modalidade) lines.push(tx.value.modalidade)
+  if (tx.value?.bandeira) lines.push(tx.value.bandeira)
+  if (tx.value?.nsu_sitef) lines.push(`NSU: ${tx.value.nsu_sitef}`)
+  if (tx.value?.nsu_host) lines.push(`Host: ${tx.value.nsu_host}`)
+  if (tx.value?.autorizacao) lines.push(`AUT: ${tx.value.autorizacao}`)
+  if (tx.value?.total_cobrado != null) {
+    lines.push(`TOTAL: R$ ${Number(tx.value.total_cobrado).toFixed(2)}`)
+  }
+  lines.push('----------------', '')
+  return lines
+}
+
 async function printReceipt() {
   try {
-    const orderData = {
-      company: {
-        name: 'SIMPLETOTEM',
-        cnpj: '00.000.000/0000-00'
-      },
-      orderNumber: orderNumber.value,
-      date: new Date().toLocaleString('pt-BR'),
-      items: cart.items.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice
-      })),
-      subtotal: cart.subtotal,
-      discount: cart.discount,
-      total: cart.total,
-      paymentMethod: payment.selectedMethod?.label || 'Não informado',
-      pickupCode: pickupCode.value
+    if (!window.electronAPI?.printer) {
+      printError.value = 'Impressora indisponível (abra pelo Electron, não pelo navegador)'
+      return
     }
 
-    const result = await printComplete(orderData)
-
-    if (result.success) {
-      printSuccess.value = true
-    } else {
-      printError.value = result.message || 'Erro ao imprimir'
+    // 1) Cupom TEF bruto — exatamente como a Fiserv/SiTef enviou (TC 122)
+    const cupomBruto = tx.value?.cupom_bruto
+    const blocosTef = tx.value?.linhas_cupom || []
+    const temCupomTef = Boolean(cupomBruto) || blocosTef.some(b => String(b).length > 0)
+    if (temCupomTef) {
+      const payload = cupomBruto ? [cupomBruto] : blocosTef
+      console.log('[SuccessView] Imprimindo cupom bruto TEF:', payload.join('').length, 'chars')
+      const result = await printLines(payload, { cut: true, cupomFiserv: true })
+      if (result.success) printSuccess.value = true
+      else printError.value = result.message || lang.t.printError
+      return
     }
+
+    // 2) Recibo do pedido (itens + total)
+    if (order.value?.items?.length) {
+      const orderData = {
+        company: { name: 'SIMPLETOTEM', cnpj: '00.000.000/0000-00' },
+        orderNumber: orderNumber.value,
+        date: new Date().toLocaleString('pt-BR'),
+        items: order.value.items.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        })),
+        subtotal: order.value.subtotal,
+        discount: order.value.discount,
+        total: order.value.total,
+        paymentMethod: order.value.paymentMethod || '—',
+        pickupCode: authCode.value,
+      }
+      console.log('[SuccessView] Imprimindo recibo do pedido')
+      const result = await printComplete(orderData)
+      if (result.success) printSuccess.value = true
+      else printError.value = result.message || lang.t.printError
+      return
+    }
+
+    // 3) Comprovante mínimo com dados da transação
+    const minimal = buildMinimalTxLines()
+    if (minimal.length > 3) {
+      console.log('[SuccessView] Imprimindo comprovante mínimo TEF')
+      const result = await printLines(minimal, { cut: true })
+      if (result.success) printSuccess.value = true
+      else printError.value = result.message || lang.t.printError
+      return
+    }
+
+    printError.value = 'Sem dados para impressão'
+    console.warn('[SuccessView] Nada para imprimir — tx:', tx.value, 'order:', order.value)
   } catch (error) {
-    printError.value = error.message || 'Erro ao imprimir comprovante'
+    printError.value = error.message || lang.t.printError
     console.error('[SuccessView] Erro ao imprimir:', error)
   }
 }
 
-function resetAndGoHome() {
+async function resetAndGoHome() {
   cart.clearCart()
   payment.resetPayment()
+  await router.replace({ name: 'home' })
   session.endSession()
-  router.replace({ name: 'home' })
 }
 
 function newOrder() {
@@ -140,12 +201,7 @@ function newOrder() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(
-    135deg,
-    #f0fdf4 0%,
-    #e8fdf0 50%,
-    #dffce7 100%
-  );
+  background: linear-gradient(135deg, #f0fdf4 0%, #e8fdf0 50%, #dffce7 100%);
 }
 
 .success-content {
@@ -181,9 +237,10 @@ function newOrder() {
 }
 
 .success-icon {
-  font-size: 5rem;
+  font-size: 4rem;
   color: white;
   line-height: 1;
+  font-weight: 900;
 }
 
 .success-headline {
@@ -263,6 +320,14 @@ function newOrder() {
   font-size: var(--font-size-sm);
   border: 1px solid rgba(244, 67, 54, 0.2);
   font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.print-error-hint {
+  font-weight: var(--font-weight-bold);
+  color: #b91c1c;
 }
 
 .print-success {

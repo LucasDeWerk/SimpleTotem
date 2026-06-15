@@ -1,13 +1,37 @@
 <template>
   <router-view v-slot="{ Component, route }">
-    <transition name="fade" mode="out-in">
+    <div v-if="showBootstrapLoading" class="loading-container">
+      <div class="spinner" />
+      <p>Verificando configuração do totem...</p>
+      <p v-if="company.error" class="loading-error">{{ company.error }}</p>
+    </div>
+
+    <transition v-else name="fade" mode="out-in">
       <component :is="Component" :key="route.path" />
     </transition>
   </router-view>
 </template>
 
 <script setup>
-// Apenas visualização — sem lógica de banco de dados ou API
+import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useCompanyStore } from '@/stores/company'
+
+const route = useRoute()
+const company = useCompanyStore()
+
+const SETUP_ROUTES = new Set(['totem-login', 'admin-login', 'admin-panel', 'admin-hardware'])
+
+const showBootstrapLoading = computed(() => {
+  if (company.isReady) return false
+  return !SETUP_ROUTES.has(route.name)
+})
+
+onMounted(() => {
+  if (company.hasCompanyData === null) {
+    company.check()
+  }
+})
 </script>
 
 <style>
@@ -46,5 +70,12 @@
 .loading-container p {
   font-size: 16px;
   margin: 0;
+}
+
+.loading-error {
+  margin-top: 12px !important;
+  max-width: 420px;
+  text-align: center;
+  opacity: 0.9;
 }
 </style>

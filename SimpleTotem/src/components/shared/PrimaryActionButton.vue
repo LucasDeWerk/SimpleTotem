@@ -5,22 +5,29 @@
     :disabled="disabled || loading"
     @click="$emit('click')"
   >
-    <span v-if="loading" class="btn-spinner animate-spin">[.]</span>
-    <span v-else-if="icon" class="btn-icon">{{ icon }}</span>
+    <span v-if="loading" class="btn-spinner" aria-hidden="true"></span>
+    <span v-else-if="icon" class="btn-icon">{{ iconEmoji }}</span>
     <span class="btn-label">{{ label }}</span>
   </button>
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   label: { type: String, required: true },
   icon: { type: String, default: '' },
   loading: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
-  fullWidth: { type: Boolean, default: false }
+  fullWidth: { type: Boolean, default: false },
 })
 
 defineEmits(['click'])
+
+const iconEmoji = computed(() => {
+  if (props.icon === 'home') return '🏠'
+  return props.icon
+})
 </script>
 
 <style scoped>
@@ -38,6 +45,8 @@ defineEmits(['click'])
   border-radius: var(--radius-md);
   letter-spacing: 0.5px;
   transition: background var(--transition-fast), transform var(--transition-fast);
+  border: none;
+  cursor: pointer;
 }
 
 .primary-action-btn:active:not(:disabled) {
@@ -59,8 +68,17 @@ defineEmits(['click'])
 }
 
 .btn-spinner {
-  font-size: 1.3rem;
-  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .btn-icon {

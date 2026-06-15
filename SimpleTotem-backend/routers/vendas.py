@@ -7,11 +7,11 @@ from sqlalchemy.orm import Session
 
 from core.database import get_db
 from core.security import get_current_user
-from models.orm import Saida, SaidaItem, TipoPagamento
+from models.orm import Saida, SaidaItem, TipoPagamento, Empresa
 from models.schemas import (
     SaidaOut, SaidaItemOut, TipoPagamentoOut, MetodoPagamentoOut,
     IniciaVendaRequest, IniciaVendaResponse, ItemVendaCalculado,
-    IniciaTransacaoRequest, IniciaTransacaoResponse,
+    IniciaTransacaoRequest, IniciaTransacaoStartResponse, TransacaoStatusResponse,
 )
 from services import sitef_service
 
@@ -78,20 +78,15 @@ def inicia_venda(
 
 # ─── Inicia Transação — SiTef + gravação + impressão ─────────────────────────
 
-@router.post("/iniciatransacao", response_model=IniciaTransacaoResponse)
+@router.post("/iniciatransacao", response_model=IniciaTransacaoStartResponse)
 def inicia_transacao(
     req: IniciaTransacaoRequest,
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
     """
-    Executa a transação completa:
-      1. Re-calcula o total dos itens (autoritativo).
-      2. Se o total bater com total_cliente, usa o total_cliente;
-         caso contrário, usa o total re-calculado.
-      3. Comunica com o pinpad via CliSiTef/Fiserv (bloqueante, sem timeout).
-      4. Grava venda e itens no banco de dados.
-      5. Retorna dados da transação (incluindo linhas do cupom para impressão).
+    Inicia transação SiTef (cartão ou PIX) em background.
+    O frontend deve consultar GET /vendas/transacao/{id} para QR Code e status.
     """
     # 1. Re-calcular total
     total_recalculado = round(
@@ -119,79 +114,54 @@ def inicia_transacao(
     # Converter para centavos (SiTef espera inteiro em centavos)
     valor_centavos = int(round(total_final * 100))
 
-    # 3. Gerar número de cupom
-    cupom = req.cupom or datetime.now().strftime("%H%M%S%f")[:12]
+    # 3. Cupom fiscal único (AAAAMMDDHHMMSS — exigência PIX/homologação)
+    cupom = req.cupom or datetime.now().strftime("%Y%m%d%H%M%S")
 
-    # 4. Mapear método de pagamento para código SiTef
+    # 4. CNPJ do estabelecimento para ConfiguraIntSiTefInterativoEx
+    empresa = db.query(Empresa).first()
+    cnpj_estabelecimento = (empresa.cpf_cnpj or "") if empresa else ""
+
+    # 5. Mapear método de pagamento para código SiTef
     # Busca a descrição no banco para fazer o mapeamento correto
     tipo_pag = db.query(TipoPagamento).filter(
         TipoPagamento.id == int(req.metodo_pagamento_id)
     ).first() if req.metodo_pagamento_id.isdigit() else None
     descricao_pag = (tipo_pag.desctipopagrec or "") if tipo_pag else req.metodo_pagamento_id
     funcao_sitef = _metodo_para_funcao(descricao_pag)
+    logger.info("[Transacao] funcao_sitef=%d desc=%s cupom=%s", funcao_sitef, descricao_pag, cupom)
 
-    # 5. Executar transação SiTef (bloqueante — sem timeout)
     try:
-        resultado = sitef_service.executar_transacao(
+        transacao_id = sitef_service.iniciar_transacao_async(
             funcao=funcao_sitef,
             valor_centavos=valor_centavos,
             cupom=cupom,
+            cnpj_estabelecimento=cnpj_estabelecimento,
+            total_cobrado=total_final,
         )
     except FileNotFoundError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"CliSiTef não disponível: {exc}",
         )
-    except RuntimeError as exc:
+    except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
         )
 
-    if not resultado["aprovada"]:
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail=f"Transação não aprovada (código {resultado['resultado']})",
-        )
+    return IniciaTransacaoStartResponse(transacao_id=transacao_id, status="processando")
 
-    # TODO: Gravar venda no banco — comentado temporariamente para focar na rotina SiTef
-    # agora = datetime.now()
-    # nova_saida = Saida(
-    #     dtemissao=agora.strftime("%Y-%m-%d %H:%M:%S"),
-    #     id_cfop="5102",
-    #     id_clifor=None,
-    #     id_vendedor=None,
-    #     situacao="F",
-    #     vlr_venda=total_final,
-    #     custo_total_venda=0.0,
-    # )
-    # db.add(nova_saida)
-    # db.flush()
-    # for item in req.itens:
-    #     db.add(SaidaItem(
-    #         id_saida=nova_saida.id,
-    #         id_produto=item.produto_id,
-    #         vlr_unitario_sugerido=item.preco_unitario,
-    #         vlr_unitario_praticado=item.preco_unitario,
-    #         desconto_unit_item=0.0,
-    #         acrescimo_unit_item=0.0,
-    #         quantidade=item.quantidade,
-    #         vlr_total_item=round(item.quantidade * item.preco_unitario, 2),
-    #     ))
-    # db.commit()
-    # logger.info("[Transacao] Venda %d gravada (total=%.2f)", nova_saida.id, total_final)
 
-    return IniciaTransacaoResponse(
-        status="aprovada",
-        id_venda=0,  # temporário — sem gravação em banco
-        nsu_sitef=resultado["nsu_sitef"],
-        nsu_host=resultado["nsu_host"],
-        autorizacao=resultado["autorizacao"],
-        modalidade=resultado["modalidade"],
-        bandeira=resultado["bandeira"],
-        total_cobrado=total_final,
-        linhas_cupom=resultado["linhas_cupom"],
-    )
+@router.get("/transacao/{transacao_id}", response_model=TransacaoStatusResponse)
+def status_transacao(
+    transacao_id: str,
+    _: str = Depends(get_current_user),
+):
+    """Status em tempo real — mensagens CliSiTef, QR Code PIX e resultado final."""
+    data = sitef_service.obter_status_transacao(transacao_id)
+    if not data:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transação não encontrada")
+    return TransacaoStatusResponse(**data)
 
 
 def _metodo_para_funcao(metodo_id: str) -> int:
@@ -207,6 +177,8 @@ def _metodo_para_funcao(metodo_id: str) -> int:
         return 3  # Débito
     if "voucher" in m or "beneficio" in m or "bene" in m:
         return 4
+    if "pix" in m or "carteira" in m or "digital" in m or "qr" in m:
+        return 122  # Carteira Digital — Venda (PIX)
     return 0  # Menu geral
 
 

@@ -7,3 +7,5 @@ psutil
 sqlalchemy
 dotenv
 httpx
+python-pam
+cryptography

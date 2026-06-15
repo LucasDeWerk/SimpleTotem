@@ -2,14 +2,14 @@
   <ScreenContainer v-if="product">
     <div class="product-detail">
       <div class="pd-image-area">
-        <img v-if="product.image" :src="product.image" :alt="product.name" class="pd-image" />
+        <img v-if="productImage" :src="productImage" :alt="product.descproduto" class="pd-image" />
         <div v-else class="pd-image-placeholder">[ Imagem ]</div>
         <span v-if="product.badge" class="pd-badge">{{ product.badge }}</span>
       </div>
 
       <div class="pd-info">
-        <h2 class="pd-name">{{ product.name }}</h2>
-        <p class="pd-description">{{ product.shortDescription }}</p>
+        <h2 class="pd-name">{{ product.descproduto }}</h2>
+        <p class="pd-description">{{ product.descsubgrupo }} - {{ product.descmarca }}</p>
         <span class="pd-price">R$ {{ finalPrice.toFixed(2) }}</span>
       </div>
 
@@ -80,6 +80,8 @@ onMounted(async () => {
   }
 })
 
+const productImage = computed(() => product.value?.foto || product.value?.image || '')
+
 const finalPrice = computed(() => {
   if (!product.value) return 0
   return product.value.preco_venda || product.value.price || 0
@@ -92,7 +94,7 @@ function addToCart() {
     id: product.value.id_produto,
     name: product.value.descproduto,
     price: finalPrice.value,
-    image: product.value.foto
+    image: productImage.value
   }, quantity.value, notes.value)
 
   router.back()

@@ -6,14 +6,20 @@ import httpx
 from datetime import datetime
 
 from core.database import get_db
-from core.config import URL_API_SINC
+from core.config import URL_API
 from models.orm import (
 
     Empresa, Grupo, Subgrupo, Marca, Medida, Produto, 
     TipoPagamento, Saida
     
 )
-from models.schemas import EmpresaOut
+from models.schemas import (
+    EmpresaOut,
+    SessaoSimpleSfiqueOut,
+    SimpleSfiqueLoginRequest,
+    SimpleSfiqueLoginResponse,
+)
+from services import api_session, sync_service
 
 router = APIRouter(prefix="/sinc", tags=["sincronizacao"])
 
@@ -32,7 +38,7 @@ async def call_external_api(request: Request, endpoint: str, dhsinc: Optional[st
             if len(dhsinc) == 10:  # "2024-01-01"
                 dhsinc_formatted = datetime.strptime(dhsinc, "%Y-%m-%d").strftime("%Y-%m-%d%H:%M:%S")
         
-        url = f"{URL_API_SINC}/{endpoint}"
+        url = f"{URL_API}/{endpoint}"
         if dhsinc_formatted:
             url += f"/{dhsinc_formatted}"
         
@@ -66,7 +72,8 @@ def sinc_empresa(
         for empresa_data in empresas:
             try:
                 existing = db.query(Empresa).filter(
-                    Empresa.id_saas == empresa_data.get("id_saas")
+                    Empresa.id_saas == empresa_data.get("id_saas"),
+                    Empresa.id_empresa == empresa_data.get("id_empresa"),
                 ).first()
                 
                 if existing:
@@ -100,6 +107,86 @@ def get_empresa(
     if not empresa:
         return None
     return empresa
+
+
+@router.post("/simplesfique/login", response_model=SimpleSfiqueLoginResponse)
+async def simplesfique_login(
+    body: SimpleSfiqueLoginRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Login API v1 SimpleSfique, persiste sessão e sincroniza empresa."""
+    result = await sync_service.login_simplesfique(
+        db,
+        request,
+        email=body.email,
+        senha=body.senha,
+        os_usuario=body.os_usuario,
+        senha_os=body.senha_os,
+    )
+    return SimpleSfiqueLoginResponse(**result)
+
+
+@router.get("/sessao", response_model=Optional[SessaoSimpleSfiqueOut])
+def obter_sessao(db: Session = Depends(get_db)):
+    return api_session.sessao_to_dict(api_session.get_session(db))
+
+
+@router.get("/etapas")
+def listar_etapas_sync(db: Session = Depends(get_db)):
+    return {"etapas": sync_service.list_etapas(db)}
+
+
+@router.post("/pull/{etapa}")
+async def pull_etapa(
+    etapa: str,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    return await sync_service.pull_etapa(db, request, etapa)
+
+
+@router.post("/simplesfique/empresa", response_model=EmpresaOut)
+def simplesfique_salvar_empresa(
+    data: Dict[str, Any],
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Persiste a empresa escolhida e atualiza id_empresa na sessão."""
+    sessao = api_session.get_session(db)
+    if not sessao or not sessao.token:
+        raise HTTPException(status_code=503, detail="Faça login no SimpleSfique primeiro")
+
+    id_saas = int(sessao.id_saas)
+    id_empresa = int(data.get("id_empresa") or data.get("id") or 0)
+    if id_empresa < 1:
+        raise HTTPException(status_code=400, detail="id_empresa inválido")
+
+    mapped = sync_service.enrich_empresa_from_session(
+        sync_service.map_empresa(data, id_saas, id_empresa),
+        sessao,
+    )
+    results = sync_service.persist_empresas(db, [mapped])
+    if results["errors"]:
+        raise HTTPException(status_code=400, detail=results["errors"][0])
+
+    sessao.id_empresa = id_empresa
+    db.commit()
+    api_session.apply_session_to_app(request, sessao)
+
+    empresa = db.query(Empresa).filter(Empresa.id_saas == id_saas).first()
+    if not empresa:
+        raise HTTPException(status_code=500, detail="Falha ao salvar empresa")
+    return empresa
+
+
+@router.post("/pull/completa")
+async def pull_completa(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Sincroniza empresa e catálogo completo do SimpleSfique."""
+    return await sync_service.pull_completa(request, db)
 
 
 @router.get("/empresasync")

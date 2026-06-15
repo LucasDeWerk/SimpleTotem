@@ -1,12 +1,13 @@
 <template>
-  <ScreenContainer title="Seu Carrinho" :subtitle="cart.itemCount + ' ' + (cart.itemCount === 1 ? 'item' : 'itens')">
-    <!-- Carrinho vazio -->
+  <ScreenContainer
+    :title="lang.t.yourCart"
+    :subtitle="cart.itemCount + ' ' + (cart.itemCount === 1 ? lang.t.item : lang.t.items)"
+  >
     <div v-if="cart.items.length === 0" class="cart-empty">
       <p class="cart-empty-icon">🛒</p>
-      <p class="cart-empty-text">Seu carrinho está vazio</p>
-      <PrimaryActionButton label="VER PRODUTOS" @click="goToCategories" />
+      <p class="cart-empty-text">{{ lang.t.cartEmpty }}</p>
+      <PrimaryActionButton :label="lang.t.viewProducts" @click="goToCategories" />
     </div>
-    <!-- Carrinho com itens -->
     <div v-else class="cart-wrapper">
       <div class="cart-items">
         <CartItemRow
@@ -22,48 +23,53 @@
           @remove="cart.removeItem(index)"
         />
       </div>
-      <!-- Resumo: usa valores do servidor se disponíveis, senão valores locais -->
       <div class="cart-summary">
         <div class="summary-row">
-          <span>Subtotal</span>
+          <span>{{ lang.t.subtotal }}</span>
           <span>R$ {{ (cart.vendaCalculada?.subtotal ?? cart.subtotal).toFixed(2) }}</span>
         </div>
         <div v-if="(cart.vendaCalculada?.desconto ?? cart.discount) > 0" class="summary-row discount">
-          <span>Desconto</span>
+          <span>{{ lang.t.discount }}</span>
           <span>- R$ {{ (cart.vendaCalculada?.desconto ?? cart.discount).toFixed(2) }}</span>
         </div>
         <div class="summary-row total">
-          <span>Total</span>
+          <span>{{ lang.t.total }}</span>
           <span>R$ {{ (cart.vendaCalculada?.total ?? cart.total).toFixed(2) }}</span>
         </div>
       </div>
-      <!-- Erro de cálculo -->
       <p v-if="cart.erroCalculo" class="cart-error">
         {{ cart.erroCalculo }}
       </p>
       <div class="cart-actions">
         <PrimaryActionButton
-          label="FINALIZAR PEDIDO"
+          :label="lang.t.finalizeOrder"
           :fullWidth="true"
           :disabled="cart.calculandoVenda"
+          :loading="cart.calculandoVenda"
           @click="goToPayment"
         />
-        <button class="cart-continue-btn" @click="goToCategories">← Continuar comprando</button>
+        <button class="cart-continue-btn" @click="goToCategories">{{ lang.t.continueShopping }}</button>
       </div>
     </div>
   </ScreenContainer>
 </template>
+
 <script setup>
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
+import { useLanguageStore } from '@/stores/language'
 import ScreenContainer from '@/components/shared/ScreenContainer.vue'
 import CartItemRow from '@/components/shared/CartItemRow.vue'
 import PrimaryActionButton from '@/components/shared/PrimaryActionButton.vue'
+
 const router = useRouter()
 const cart = useCartStore()
+const lang = useLanguageStore()
+
 function goToCategories() {
   router.push({ name: 'catalog' })
 }
+
 async function goToPayment() {
   await cart.calcularVenda()
   if (!cart.erroCalculo) {
@@ -71,6 +77,7 @@ async function goToPayment() {
   }
 }
 </script>
+
 <style scoped>
 .cart-empty {
   display: flex;
@@ -158,7 +165,9 @@ async function goToPayment() {
   color: var(--color-primary);
   font-size: var(--font-size-lg);
   font-weight: 700;
-  padding: var(--space-md) var(--space-lg);
+  min-height: var(--btn-min-height);
+  min-width: 48px;
+  padding: var(--space-md) var(--space-xl);
   cursor: pointer;
   transition: all var(--transition-fast);
   letter-spacing: 0.5px;

@@ -2,11 +2,11 @@
   <div class="timeout-view">
     <div class="timeout-content animate-fade-in">
       <span class="timeout-icon">⏱</span>
-      <h2 class="timeout-headline">Sessão encerrada</h2>
-      <p class="timeout-subheadline">Seu tempo de inatividade expirou.</p>
-      <p class="timeout-redirect">Redirecionando em {{ countdown }}s...</p>
+      <h2 class="timeout-headline">{{ lang.t.sessionEnded }}</h2>
+      <p class="timeout-subheadline">{{ lang.t.inactivityExpired }}</p>
+      <p class="timeout-redirect">{{ lang.t.redirectingIn }} {{ countdown }}{{ lang.t.seconds }}</p>
       <PrimaryActionButton
-        label="VOLTAR AO INÍCIO"
+        :label="lang.t.backToStart"
         @click="goHome"
       />
     </div>
@@ -19,21 +19,20 @@ import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { usePaymentStore } from '@/stores/payment'
 import { useSessionStore } from '@/stores/session'
+import { useLanguageStore } from '@/stores/language'
 import PrimaryActionButton from '@/components/shared/PrimaryActionButton.vue'
 
 const router = useRouter()
 const cart = useCartStore()
 const payment = usePaymentStore()
 const session = useSessionStore()
+const lang = useLanguageStore()
 
 const countdown = ref(5)
 let timer = null
 
 onMounted(() => {
-  // Limpa tudo
-  cart.clearCart()
   payment.resetPayment()
-  session.endSession()
 
   timer = setInterval(() => {
     countdown.value--
@@ -48,9 +47,11 @@ onUnmounted(() => {
   clearInterval(timer)
 })
 
-function goHome() {
+async function goHome() {
   clearInterval(timer)
-  router.replace({ name: 'home' })
+  cart.clearCart()
+  await router.replace({ name: 'home' })
+  session.endSession()
 }
 </script>
 
@@ -60,12 +61,7 @@ function goHome() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(
-    135deg,
-    #fef5f5 0%,
-    #fef0f0 50%,
-    #fee5e5 100%
-  );
+  background: linear-gradient(135deg, #fef5f5 0%, #fef0f0 50%, #fee5e5 100%);
 }
 
 .timeout-content {
@@ -84,14 +80,8 @@ function goHome() {
 }
 
 @keyframes pulse-fade {
-  0%, 100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
 }
 
 .timeout-headline {

@@ -52,7 +52,7 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
             rollupOptions: {
-              external: ['electron', 'better-sqlite3', 'escpos', 'usb', 'jimp']
+              external: ['electron', 'escpos', 'usb', 'jimp']
             }
           },
           plugins: [copyElectronAuxFiles()]
@@ -81,6 +81,9 @@ export default defineConfig({
     }
   },
   server: {
-    port: 5173
+    port: 5173,
+    fs: {
+      allow: [resolve(__dirname, '..')]
+    }
   }
 })

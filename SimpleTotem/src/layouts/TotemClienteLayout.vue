@@ -1,6 +1,5 @@
 <template>
   <div class="totem-cliente-layout">
-    <!-- Header só aparece em telas que não são o catálogo principal -->
     <TotemHeader
       v-if="showHeader"
       :showBack="showBack"
@@ -8,6 +7,7 @@
       :cartTotal="cart.total"
       :currentStep="currentStep"
       :showClock="true"
+      :showLanguage="true"
       :connectionStatus="device.isOnline"
       :hidden="false"
       @back="goBack"
@@ -22,13 +22,16 @@
       </router-view>
     </main>
 
-    <!-- Aviso de inatividade (15 segundos para expiração) -->
     <TimeoutOverlay
       v-if="showTimeoutWarning"
       :secondsLeft="session.secondsLeft"
-      message="Você ainda está aí?"
+      :message="lang.t.stillThere"
       @continue="continueSession"
     />
+
+    <div v-if="showFloatingLanguage" class="layout-lang-switcher">
+      <LanguageSwitcher />
+    </div>
   </div>
 </template>
 
@@ -39,9 +42,11 @@ import { useCartStore } from '@/stores/cart'
 import { useSessionStore } from '@/stores/session'
 import { useDeviceStore } from '@/stores/device'
 import { useCatalogStore } from '@/stores/catalog'
+import { useLanguageStore } from '@/stores/language'
 import { useIdleTimer } from '@/composables/useIdleTimer'
 import TotemHeader from '@/components/shared/TotemHeader.vue'
 import TimeoutOverlay from '@/components/shared/TimeoutOverlay.vue'
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -49,10 +54,12 @@ const cart = useCartStore()
 const session = useSessionStore()
 const device = useDeviceStore()
 const catalog = useCatalogStore()
+const lang = useLanguageStore()
 
 useIdleTimer()
 
-// O header não aparece na home e no catálogo (que tem layout próprio)
+const SESSION_PAUSE_ROUTES = ['payment', 'processing']
+
 const showHeader = computed(() => {
   const noHeader = ['home', 'catalog', 'processing', 'success', 'timeout']
   return !noHeader.includes(route.name)
@@ -60,25 +67,54 @@ const showHeader = computed(() => {
 
 const showBack = computed(() => route.meta.showBack === true)
 
+const showFloatingLanguage = computed(() => route.name === 'catalog')
+
 const currentStep = computed(() => {
   const steps = {
-    cart: 'Revise seu pedido',
-    payment: 'Pagamento'
+    cart: lang.t.reviseOrder,
+    payment: lang.t.payment,
   }
   return steps[route.name] || ''
 })
 
-// Mostrar aviso quando está ativo, a 15 segundos do timeout, e não na home
 const showTimeoutWarning = computed(() => {
+  if (SESSION_PAUSE_ROUTES.includes(route.name)) return false
   return session.isActive &&
+         !session.paused &&
          session.secondsLeft <= 15 &&
          session.secondsLeft > 0 &&
          route.name !== 'home' &&
          route.name !== 'timeout'
 })
 
+watch(
+  () => route.name,
+  (name) => {
+    if (SESSION_PAUSE_ROUTES.includes(name)) {
+      session.pauseSession()
+    } else if (session.isActive && session.paused) {
+      session.resumeSession()
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => session.isActive,
+  (active, wasActive) => {
+    if (wasActive && !active && route.name !== 'home' && route.name !== 'timeout') {
+      router.replace({ name: 'timeout' })
+    }
+  }
+)
+
 function goBack() {
-  router.back()
+  const target = route.meta.backTo
+  if (target) {
+    router.push({ name: target })
+  } else {
+    router.back()
+  }
 }
 
 function goToCart() {
@@ -88,16 +124,6 @@ function goToCart() {
 function continueSession() {
   session.resetTimer()
 }
-
-// Quando a sessão expira (secondsLeft = 0), vai para home
-watch(() => session.secondsLeft, (val) => {
-  if (val <= 0 && session.isActive === false && route.name !== 'home') {
-    // Limpar carrinho e estado
-    cart.clearCart()
-    // Redirecionar para home
-    router.replace({ name: 'home' })
-  }
-})
 
 onMounted(() => {
   device.init()
@@ -119,5 +145,19 @@ onMounted(() => {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.layout-lang-switcher {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 200;
+}
+
+@media (max-width: 768px) {
+  .layout-lang-switcher {
+    top: 16px;
+    right: 16px;
+  }
 }
 </style>
