@@ -33,11 +33,12 @@ def _b(s: str) -> bytes:
 
 
 def _dec(raw: bytes) -> str:
-    """Decodifica buffer CliSiTef removendo apenas NUL e delimitadores externos."""
+    """Decodifica buffer CliSiTef removendo NUL, espaços de padding e delimitadores externos."""
     nul = raw.find(b"\x00")
     if nul >= 0:
         raw = raw[:nul]
-    s = raw.decode("latin-1", errors="replace")
+    # strip() antes de checar delimitadores: buffers chegam preenchidos com espaços
+    s = raw.decode("latin-1", errors="replace").strip()
     if len(s) >= 2 and s[0] in "{([<" and s[-1] in "})]>" and s[0] != s[-1]:
         s = s[1:-1]
     elif s.startswith("{") and s.endswith("}"):
@@ -91,26 +92,46 @@ def _montar_parametros_adicionais(cnpj_estabelecimento: str, cnpj_automacao: str
     )
 
 
+def _norm(texto: str) -> str:
+    """Remove acentos e passa para minúsculo para comparação."""
+    import unicodedata
+    return unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode().lower()
+
+
 def _selecionar_menu(msg: str, funcao: int) -> str:
     opcoes = [o.strip() for o in msg.split(";") if o.strip()]
+
+    def partes_de(opcao):
+        p = opcao.split(":", 1)
+        return (p[0].strip(), _norm(p[1])) if len(p) == 2 else (None, None)
+
+    # PIX / Carteira Digital → procura label específica
     if funcao == 122:
         for opcao in opcoes:
-            partes = opcao.split(":", 1)
-            if len(partes) == 2:
-                idx, label = partes[0].strip(), partes[1].strip().lower()
-                if "pix" in label or "carteira" in label or "digital" in label or "qr" in label:
-                    return idx
-    for keyword in ["debito", "credito", "cartao", "pix"]:
+            idx, label = partes_de(opcao)
+            if idx and any(k in label for k in ("pix", "carteira", "digital", "qr")):
+                return idx
+
+    # Crédito (2) e Débito (3) → "A Vista" é sempre a opção certa para pagamento simples
+    if funcao in (2, 3, 0):
         for opcao in opcoes:
-            partes = opcao.split(":", 1)
-            if len(partes) == 2:
-                idx, label = partes[0].strip(), partes[1].strip().lower()
-                if keyword in label and "cheque" not in label:
-                    return idx
+            idx, label = partes_de(opcao)
+            if idx and any(k in label for k in ("a vista", "avista", "vista")):
+                return idx
+
+    # Fallback: palavras-chave genéricas
+    for keyword in ("debito", "credito", "cartao", "pix"):
+        for opcao in opcoes:
+            idx, label = partes_de(opcao)
+            if idx and keyword in label and "cheque" not in label:
+                return idx
+
+    # Última opção: primeira entrada que não seja cheque
     for opcao in opcoes:
-        partes = opcao.split(":", 1)
-        if len(partes) == 2 and "cheque" not in partes[1].lower():
-            return partes[0].strip()
+        idx, label = partes_de(opcao)
+        if idx and "cheque" not in (label or ""):
+            return idx
+
     return opcoes[0].split(":", 1)[0].strip() if opcoes else "1"
 
 
@@ -280,7 +301,12 @@ def _cupom_bruto_texto(blocos: list) -> str:
     return "".join(blocos)
 
 
-def _executar_loop(lib, funcao: int, on_event: EventCallback) -> tuple[int, dict, list]:
+def _executar_loop(
+    lib,
+    funcao: int,
+    on_event: EventCallback,
+    valor_str: str = "0",
+) -> tuple[int, dict, list]:
     buf_resultado = _mk_buf(8)
     buf_cmd = _mk_buf(14)
     buf_tc = _mk_buf(14)
@@ -376,6 +402,11 @@ def _executar_loop(lib, funcao: int, on_event: EventCallback) -> tuple[int, dict
         elif c == 29:
             _responder(buffer, "1")
 
+        elif c == 34:
+            # Coleta de valor monetário — devolve centavos como string inteira
+            _responder(buffer, valor_str)
+            _emit_event(on_event, "mensagem", texto=msg or valor_str, destino="valor", tipo_campo=tc)
+
         else:
             logger.debug("cmd=%d — resposta vazia", c)
             _responder(buffer, "")
@@ -387,7 +418,7 @@ def gerar_cupom_fiscal() -> str:
 
 def executar_transacao(
     funcao: int,
-    valor_reais: str,
+    valor_centavos: int,
     cupom: str,
     cnpj_estabelecimento: str = "",
     on_event: EventCallback = None,
@@ -398,11 +429,26 @@ def executar_transacao(
     data = datetime.now().strftime("%Y%m%d")
     hora = datetime.now().strftime("%H%M%S")
 
+    # A lib lê Valor como string delimitada por {}: "{34,90}"
+    # ffae5 extrai o conteúdo entre o primeiro char (abre) e seu par (fecha):
+    #   '{' → '}',  '[' → ']',  etc.
+    # Sem as chaves, o primeiro dígito ("3") vira delimitador, o restante ("4,90")
+    # é lido como conteúdo → bug confirmado no pinpad.
+    valor_display = f"{valor_centavos // 100},{valor_centavos % 100:02d}"
+    valor_str = f"{{{valor_display}}}"   # "{34,90}"
+
+    print(
+        f"[sitef_core] IniciaFuncao funcao={funcao}  "
+        f"valor_centavos={valor_centavos}  valor_str(→lib)={valor_str!r}",
+        file=sys.stderr, flush=True,
+    )
+    logger.info("IniciaFuncao(%d, %s, cupom=%s)", funcao, valor_str, cupom)
+
     resultado2 = _mk_buf(8)
     lib.IniciaFuncaoSiTefInterativoA(
         resultado2,
         _b(str(funcao).rjust(6, "0")),
-        _b(valor_reais),
+        _b(valor_str),
         _b(cupom),
         _b(data),
         _b(hora),
@@ -410,15 +456,15 @@ def executar_transacao(
         _b(""),
     )
     ret_inicia = _ascii_resultado(resultado2)
-    logger.info("IniciaFuncao(%d, %s, cupom=%s) → %d", funcao, valor_reais, cupom, ret_inicia)
-    _emit_event(on_event, "iniciada", funcao=funcao, valor=valor_reais, cupom=cupom)
+    logger.info("IniciaFuncao → %d", ret_inicia)
+    _emit_event(on_event, "iniciada", funcao=funcao, valor=valor_display, cupom=cupom)
 
     if ret_inicia != 10000:
         raise RuntimeError(f"IniciaFuncaoSiTef falhou: {ret_inicia}")
 
-    ret_loop, dados, linhas_cupom = _executar_loop(lib, funcao, on_event)
+    ret_loop, dados, linhas_cupom = _executar_loop(lib, funcao, on_event, valor_str)  # valor_str = "{34,90}"
     if not linhas_cupom:
-        linhas_cupom = _resolver_cupom_bruto([], [], dados, valor_reais)
+        linhas_cupom = _resolver_cupom_bruto([], [], dados, valor_display)
     cupom_bruto = _cupom_bruto_texto(linhas_cupom)
     logger.info(
         "Loop finalizado: ret=%d aprovada=%s blocos=%d chars=%d",
@@ -483,7 +529,7 @@ def resolver_pendencias(cnpj_estabelecimento: str = "", on_event: EventCallback 
     lib.IniciaFuncaoSiTefInterativoA(
         resultado2,
         _b("000130"),
-        _b("0,00"),
+        _b("{0,00}"),
         _b(cupom),
         _b(data),
         _b(hora),
@@ -494,7 +540,7 @@ def resolver_pendencias(cnpj_estabelecimento: str = "", on_event: EventCallback 
         logger.warning("IniciaFuncao pendências (130) falhou")
         return qty
 
-    ret_loop, _, _ = _executar_loop(lib, 130, on_event)
+    ret_loop, _, _ = _executar_loop(lib, 130, on_event, "0")
     confirma = 1 if ret_loop == 0 else 0
     resultado_fin = _mk_buf(8)
     confirma_buf = ctypes.create_string_buffer(_b(str(confirma).rjust(6, "0")), 8)

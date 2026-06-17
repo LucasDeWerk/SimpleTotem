@@ -91,6 +91,7 @@ const nsuDisplay = computed(() => {
 let timer = null
 
 onMounted(async () => {
+  session.pauseSession()
   await printReceipt()
 
   timer = setInterval(() => {

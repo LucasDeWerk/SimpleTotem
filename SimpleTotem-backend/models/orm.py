@@ -108,6 +108,37 @@ class Saida(Base):
     situacao = Column(Text)
     vlr_venda = Column(Numeric)
     custo_total_venda = Column(Numeric)
+    id_terminal = Column(Integer)
+
+
+class SaidaPagamento(Base):
+    __tablename__ = "tven_saidapagamento"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    id_saida = Column(Integer, nullable=False)
+    id_tipo_pagamento = Column(Text)
+    vlr_pagamento = Column(Numeric, nullable=False)
+    nsu_sitef = Column(Text)
+    nsu_host = Column(Text)
+    autorizacao = Column(Text)
+    bandeira = Column(Text)
+    modalidade = Column(Text)
+    pix = Column(Integer, nullable=False, default=0)
+    cupom_bruto = Column(Text)
+    dh_pagamento = Column(Text, nullable=False)
+
+
+class Terminal(Base):
+    __tablename__ = "tven_terminal"
+
+    id = Column(Integer, primary_key=True)
+    descterminal = Column(Text, nullable=False)
+    nome_dispositivo = Column(Text)
+    ip_dispositivo = Column(Text)
+    imp_nfe_nfce = Column(Text)
+    imp_ipc_nfe_nfce = Column(Text)
+    totem_autoatendimento = Column(Text, nullable=False)
+    imprime_pedido = Column(Text, nullable=False)
 
 
 class SaidaItem(Base):

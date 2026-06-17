@@ -68,10 +68,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { usePaymentStore } from '@/stores/payment'
+import { useSessionStore } from '@/stores/session'
 import { useLanguageStore } from '@/stores/language'
 import ScreenContainer from '@/components/shared/ScreenContainer.vue'
 import PaymentMethodCard from '@/components/shared/PaymentMethodCard.vue'
@@ -80,6 +81,7 @@ import PrimaryActionButton from '@/components/shared/PrimaryActionButton.vue'
 const router = useRouter()
 const cart = useCartStore()
 const payment = usePaymentStore()
+const session = useSessionStore()
 const lang = useLanguageStore()
 
 const methodsUnavailable = computed(() =>
@@ -94,7 +96,14 @@ const methodsReady = computed(() =>
 )
 
 onMounted(async () => {
+  session.pauseSession()
   await payment.fetchPaymentMethods()
+})
+
+onUnmounted(() => {
+  if (router.currentRoute.value.name !== 'processing') {
+    session.resumeSession()
+  }
 })
 
 function paymentIcon(type, label) {

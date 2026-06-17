@@ -1,14 +1,24 @@
 // ─── Configuração ─────────────────────────────────────────────────────────────
 
-const BASE_URL = localStorage.getItem('api_base_url') || 'http://localhost:8000'
+export function getApiBaseUrl() {
+  return localStorage.getItem('api_base_url') || 'http://localhost:8000'
+}
+
+export function setApiBaseUrl(url) {
+  const normalized = (url || '').trim().replace(/\/$/, '')
+  localStorage.setItem('api_base_url', normalized || 'http://localhost:8000')
+  invalidateToken()
+  _adminToken = null
+}
 
 let _token = null
+let _adminToken = sessionStorage.getItem('admin_token') || null
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 async function getToken() {
   if (_token) return _token
-  const res = await fetch(`${BASE_URL}/auth/login`, { method: 'POST' })
+  const res = await fetch(`${getApiBaseUrl()}/auth/login`, { method: 'POST' })
   if (!res.ok) throw new Error(`Falha ao obter token: ${res.status}`)
   const data = await res.json()
   _token = data.access_token
@@ -21,7 +31,7 @@ function invalidateToken() {
 
 async function apiFetch(path, options = {}) {
   const token = await getToken()
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${getApiBaseUrl()}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -34,7 +44,7 @@ async function apiFetch(path, options = {}) {
   if (res.status === 401) {
     invalidateToken()
     const newToken = await getToken()
-    const retry = await fetch(`${BASE_URL}${path}`, {
+    const retry = await fetch(`${getApiBaseUrl()}${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -86,19 +96,19 @@ export async function obterProduto(idProduto) {
 // ─── Empresa / SaaS ───────────────────────────────────────────────────────────
 
 export async function obterStatusEmpresa() {
-  const res = await fetch(`${BASE_URL}/empresa/status`)
+  const res = await fetch(`${getApiBaseUrl()}/empresa/status`)
   if (!res.ok) throw new Error(`Erro ${res.status}: ${await res.text()}`)
   return res.json()
 }
 
 export async function obterUsuarioSugerido() {
-  const res = await fetch(`${BASE_URL}/auth/usuario-sugerido`)
+  const res = await fetch(`${getApiBaseUrl()}/auth/usuario-sugerido`)
   if (!res.ok) throw new Error(`Erro ${res.status}`)
   return res.json()
 }
 
 export async function loginSistema(usuario, senha) {
-  const res = await fetch(`${BASE_URL}/auth/system-login`, {
+  const res = await fetch(`${getApiBaseUrl()}/auth/system-login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ usuario, senha })
@@ -115,7 +125,30 @@ export async function loginSistema(usuario, senha) {
   }
   const data = await res.json()
   _token = data.access_token
+  _adminToken = data.access_token
+  sessionStorage.setItem('admin_token', data.access_token)
   return data
+}
+
+export async function validarAdmin() {
+  const token = _adminToken || sessionStorage.getItem('admin_token')
+  if (!token) throw new Error('Sessão admin expirada')
+  const res = await fetch(`${getApiBaseUrl()}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  if (!res.ok) throw new Error('Token admin inválido')
+  return res.json()
+}
+
+export async function testarConexaoApi(url) {
+  const base = (url || getApiBaseUrl()).replace(/\/$/, '')
+  const res = await fetch(`${base}/empresa/status`)
+  if (!res.ok) throw new Error(`Erro ${res.status}`)
+  return res.json()
+}
+
+export async function obterTerminalAtual() {
+  return apiFetch('/terminal/atual')
 }
 
 /** @deprecated use loginSistema() */
@@ -246,7 +279,7 @@ export async function configurarPinpad() {
 // ─── Sincronização (Admin) ────────────────────────────────────────────────────
 
 export async function obterEmpresaSinc() {
-  const res = await fetch(`${BASE_URL}/sinc/empresa`)
+  const res = await fetch(`${getApiBaseUrl()}/sinc/empresa`)
   if (!res.ok) throw new Error(`Erro ${res.status}`)
   if (res.status === 204) return null
   const text = await res.text()
@@ -255,7 +288,7 @@ export async function obterEmpresaSinc() {
 }
 
 export async function obterSessaoSimpleSfique() {
-  const res = await fetch(`${BASE_URL}/sinc/sessao`)
+  const res = await fetch(`${getApiBaseUrl()}/sinc/sessao`)
   if (!res.ok) throw new Error(`Erro ${res.status}`)
   const text = await res.text()
   if (!text) return null
@@ -264,7 +297,7 @@ export async function obterSessaoSimpleSfique() {
 
 export async function loginSimpleSfique(payload) {
   const token = _token || (await getToken())
-  const res = await fetch(`${BASE_URL}/sinc/simplesfique/login`, {
+  const res = await fetch(`${getApiBaseUrl()}/sinc/simplesfique/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -360,7 +393,7 @@ export async function iniciarVenda(itens) {
 export async function iniciarTransacao(payload) {
   const token = await getToken()
   // fetch sem timeout — a transação com o pinpad pode demorar
-  const res = await fetch(`${BASE_URL}/vendas/iniciatransacao`, {
+  const res = await fetch(`${getApiBaseUrl()}/vendas/iniciatransacao`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -372,7 +405,7 @@ export async function iniciarTransacao(payload) {
   if (res.status === 401) {
     invalidateToken()
     const newToken = await getToken()
-    const retry = await fetch(`${BASE_URL}/vendas/iniciatransacao`, {
+    const retry = await fetch(`${getApiBaseUrl()}/vendas/iniciatransacao`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

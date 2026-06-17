@@ -1,8 +1,9 @@
 import logging
+import unicodedata
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from core.database import get_db
@@ -14,6 +15,7 @@ from models.schemas import (
     IniciaTransacaoRequest, IniciaTransacaoStartResponse, TransacaoStatusResponse,
 )
 from services import sitef_service
+from services.terminal_service import resolver_terminal_atual
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +83,7 @@ def inicia_venda(
 @router.post("/iniciatransacao", response_model=IniciaTransacaoStartResponse)
 def inicia_transacao(
     req: IniciaTransacaoRequest,
+    request: Request,
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
@@ -88,9 +91,16 @@ def inicia_transacao(
     Inicia transação SiTef (cartão ou PIX) em background.
     O frontend deve consultar GET /vendas/transacao/{id} para QR Code e status.
     """
+    # LOG DIAGNÓSTICO — visível mesmo sem debug habilitado
+    logger.warning(
+        "[Transacao] >>> PAYLOAD RAW total_cliente=%r  itens=%r",
+        req.total_cliente,
+        [(i.produto_id, float(i.quantidade), float(i.preco_unitario)) for i in req.itens],
+    )
+
     # 1. Re-calcular total
     total_recalculado = round(
-        sum(i.quantidade * i.preco_unitario for i in req.itens), 2
+        sum(float(i.quantidade) * float(i.preco_unitario) for i in req.itens), 2
     )
 
     logger.info(
@@ -124,11 +134,31 @@ def inicia_transacao(
     # 5. Mapear método de pagamento para código SiTef
     # Busca a descrição no banco para fazer o mapeamento correto
     tipo_pag = db.query(TipoPagamento).filter(
-        TipoPagamento.id == int(req.metodo_pagamento_id)
-    ).first() if req.metodo_pagamento_id.isdigit() else None
+        TipoPagamento.id == req.metodo_pagamento_id.strip()
+    ).first()
     descricao_pag = (tipo_pag.desctipopagrec or "") if tipo_pag else req.metodo_pagamento_id
     funcao_sitef = _metodo_para_funcao(descricao_pag)
-    logger.info("[Transacao] funcao_sitef=%d desc=%s cupom=%s", funcao_sitef, descricao_pag, cupom)
+    logger.info(
+        "[Transacao] valor_centavos=%d total_final=%.2f valor_sitef=%s funcao_sitef=%d desc=%s cupom=%s",
+        valor_centavos,
+        total_final,
+        _formatar_valor_sitef(valor_centavos),
+        funcao_sitef,
+        descricao_pag,
+        cupom,
+    )
+
+    id_terminal = req.id_terminal
+    if not id_terminal:
+        terminal = resolver_terminal_atual(db, request.client.host if request.client else None)
+        id_terminal = terminal["id"] if terminal else None
+
+    contexto_venda = {
+        "itens": [i.model_dump() for i in req.itens],
+        "total": total_final,
+        "metodo_pagamento_id": req.metodo_pagamento_id,
+        "id_terminal": id_terminal,
+    }
 
     try:
         transacao_id = sitef_service.iniciar_transacao_async(
@@ -137,6 +167,7 @@ def inicia_transacao(
             cupom=cupom,
             cnpj_estabelecimento=cnpj_estabelecimento,
             total_cobrado=total_final,
+            contexto_venda=contexto_venda,
         )
     except FileNotFoundError as exc:
         raise HTTPException(
@@ -155,29 +186,39 @@ def inicia_transacao(
 @router.get("/transacao/{transacao_id}", response_model=TransacaoStatusResponse)
 def status_transacao(
     transacao_id: str,
+    db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
     """Status em tempo real — mensagens CliSiTef, QR Code PIX e resultado final."""
-    data = sitef_service.obter_status_transacao(transacao_id)
+    data = sitef_service.obter_status_transacao(transacao_id, db)
     if not data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transação não encontrada")
     return TransacaoStatusResponse(**data)
 
 
-def _metodo_para_funcao(metodo_id: str) -> int:
+def _normalize_ascii_lower(texto: str) -> str:
+    texto = unicodedata.normalize("NFKD", texto or "")
+    return texto.encode("ascii", "ignore").decode().lower()
+
+
+def _formatar_valor_sitef(valor_centavos: int) -> str:
+    """Formata centavos para o padrão CliSiTef: '34,90'."""
+    return f"{valor_centavos // 100},{valor_centavos % 100:02d}"
+
+
+def _metodo_para_funcao(descricao: str) -> int:
     """
-    Mapeia o id de tfin_tipopagrec para o código de função SiTef.
+    Mapeia a descrição de tfin_tipopagrec para o código de função SiTef.
     Por padrão usa 0 (menu geral) — o cliente escolhe no pinpad.
-    Ajuste conforme os IDs do seu banco de dados.
     """
-    m = (metodo_id or "").lower()
+    m = _normalize_ascii_lower(descricao)
     if "cred" in m:
         return 2  # Crédito
     if "deb" in m:
         return 3  # Débito
     if "voucher" in m or "beneficio" in m or "bene" in m:
         return 4
-    if "pix" in m or "carteira" in m or "digital" in m or "qr" in m:
+    if "pix" in m or "carteira" in m or "digital" in m or "qr" in m or "instantaneo" in m:
         return 122  # Carteira Digital — Venda (PIX)
     return 0  # Menu geral
 

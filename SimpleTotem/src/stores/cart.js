@@ -25,8 +25,8 @@ export const useCartStore = defineStore('cart', () => {
       items.value[existingIndex].quantity += quantity
       items.value[existingIndex].totalPrice = items.value[existingIndex].quantity * items.value[existingIndex].unitPrice
     } else {
-      const modifiersPrice = modifiers.reduce((sum, m) => sum + (m.price || 0), 0)
-      const unitPrice = product.price + modifiersPrice
+      const modifiersPrice = modifiers.reduce((sum, m) => sum + Number(m.price || 0), 0)
+      const unitPrice = Number(product.price || 0) + modifiersPrice
       items.value.push({
         productId: product.id,
         name: product.name,
@@ -67,8 +67,8 @@ export const useCartStore = defineStore('cart', () => {
       const itens = items.value.map(item => ({
         produto_id: item.productId,
         descricao: item.name,
-        quantidade: item.quantity,
-        preco_unitario: item.unitPrice,
+        quantidade: Number(item.quantity),
+        preco_unitario: Number(item.unitPrice),
       }))
       vendaCalculada.value = await iniciarVenda(itens)
     } catch (err) {

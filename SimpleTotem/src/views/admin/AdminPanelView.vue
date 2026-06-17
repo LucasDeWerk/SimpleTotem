@@ -90,6 +90,46 @@
         </div>
       </section>
 
+      <!-- Seção: Configurações -->
+      <section v-show="activeSection === 'config'" class="content-section">
+        <div class="section-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Configurações do Totem</h3>
+              <p class="card-description">URL do backend e identificação do terminal</p>
+            </div>
+          </div>
+
+          <div class="config-form">
+            <label class="config-field">
+              <span>URL do backend</span>
+              <input v-model.trim="apiBaseUrl" type="url" placeholder="http://localhost:8000" />
+            </label>
+            <div class="config-actions">
+              <button class="btn-secondary" type="button" @click="testarConexao" :disabled="testandoConexao">
+                {{ testandoConexao ? 'Testando...' : 'Testar conexão' }}
+              </button>
+              <button class="btn-primary" type="button" @click="salvarApiUrl">
+                Salvar URL
+              </button>
+            </div>
+            <p v-if="configMessage" class="config-message" :class="configMessageType">{{ configMessage }}</p>
+          </div>
+
+          <div class="terminal-info">
+            <h4>Terminal</h4>
+            <p><strong>ID:</strong> {{ device.terminalId ?? '—' }}</p>
+            <p><strong>Descrição:</strong> {{ device.terminalLabel }}</p>
+            <p v-if="device.terminalInfo?.ip_dispositivo">
+              <strong>IP:</strong> {{ device.terminalInfo.ip_dispositivo }}
+            </p>
+            <button class="btn-secondary" type="button" @click="recarregarTerminal">
+              Atualizar terminal
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- Seção: Token -->
       <section v-show="activeSection === 'token'" class="content-section">
         <div class="section-card">
@@ -197,7 +237,7 @@ const admin = useAdminStore()
 const company = useCompanyStore()
 const simplesfique = useSimpleSfiqueStore()
 
-const ADMIN_SECTIONS = new Set(['peripherals', 'sync', 'token'])
+const ADMIN_SECTIONS = new Set(['peripherals', 'sync', 'token', 'config'])
 
 // UI State
 const sidebarOpen = ref(false)
@@ -214,6 +254,7 @@ function applySectionFromRoute() {
 const navItems = [
   { id: 'peripherals', icon: 'devices', label: 'Periféricos' },
   { id: 'sync', icon: 'sync', label: 'Sincronização' },
+  { id: 'config', icon: 'settings', label: 'Configurações' },
   { id: 'token', icon: 'security', label: 'Autenticação' }
 ]
 
@@ -241,6 +282,11 @@ const tokenStatus = computed(() => admin.tokenStatus || 'idle')
 const tokenSyncing = ref(false)
 const tokenLastUpdate = computed(() => localStorage.getItem('token_last_update'))
 const tokenError = ref('')
+
+const apiBaseUrl = ref(api.getApiBaseUrl())
+const testandoConexao = ref(false)
+const configMessage = ref('')
+const configMessageType = ref('success')
 
 const tokenStatusIcon = computed(() => {
    const icons = { idle: 'security', syncing: 'hourglass_empty', success: 'verified', error: 'error' }
@@ -357,10 +403,7 @@ async function carregarEmpresaLocal() {
     await company.check()
 
     try {
-      const sessaoApi = await api.obterSessaoSimpleSfique()
-      if (sessaoApi?.token_ativo) {
-        simplesfique.setSessao(sessaoApi)
-      }
+      await simplesfique.hydrate()
     } catch {
       // Sessão opcional neste ponto
     }
@@ -400,6 +443,31 @@ async function onSyncDone() {
   if (company.hasCompanyData && !empresaLocal.value) {
     empresaLocal.value = await api.obterEmpresaSinc()
   }
+}
+
+async function salvarApiUrl() {
+  api.setApiBaseUrl(apiBaseUrl.value)
+  configMessage.value = 'URL salva com sucesso'
+  configMessageType.value = 'success'
+}
+
+async function testarConexao() {
+  testandoConexao.value = true
+  configMessage.value = ''
+  try {
+    await api.testarConexaoApi(apiBaseUrl.value)
+    configMessage.value = 'Conexão OK'
+    configMessageType.value = 'success'
+  } catch (err) {
+    configMessage.value = err.message || 'Falha na conexão'
+    configMessageType.value = 'error'
+  } finally {
+    testandoConexao.value = false
+  }
+}
+
+async function recarregarTerminal() {
+  await device.loadTerminal(true)
 }
 
 async function autoSyncToken() {
@@ -454,6 +522,55 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.config-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.config-field input {
+  padding: 0.75rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.config-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.config-message {
+  margin: 0;
+  font-weight: 600;
+}
+
+.config-message.error {
+  color: #c62828;
+}
+
+.config-message.success {
+  color: #2e7d32;
+}
+
+.terminal-info {
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+}
+
+.terminal-info h4 {
+  margin: 0 0 0.75rem;
+}
+
 /* Material Icons */
 .material-icons {
   display: inline-flex;

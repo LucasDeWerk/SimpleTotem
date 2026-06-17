@@ -4,7 +4,7 @@ import * as api from '@/services/api'
 import { useCompanyStore } from '@/stores/company'
 
 export const useAdminStore = defineStore('admin', () => {
-  const isAuthenticated = ref(localStorage.getItem('admin_authenticated') === 'true')
+  const isAuthenticated = ref(sessionStorage.getItem('admin_authenticated') === 'true')
   const adminUser = ref(localStorage.getItem('admin_user') || '')
   /** Senha OS em memória — usada ao salvar empresa, nunca no localStorage. */
   const osSenha = ref('')
@@ -27,7 +27,7 @@ export const useAdminStore = defineStore('admin', () => {
     isAuthenticated.value = true
     adminUser.value = usuario
     osSenha.value = senha
-    localStorage.setItem('admin_authenticated', 'true')
+    sessionStorage.setItem('admin_authenticated', 'true')
     localStorage.setItem('admin_user', usuario)
     return true
   }
@@ -35,7 +35,7 @@ export const useAdminStore = defineStore('admin', () => {
   function markAuthenticated(usuario) {
     isAuthenticated.value = true
     adminUser.value = usuario || adminUser.value
-    localStorage.setItem('admin_authenticated', 'true')
+    sessionStorage.setItem('admin_authenticated', 'true')
     if (usuario) localStorage.setItem('admin_user', usuario)
   }
 
@@ -43,7 +43,8 @@ export const useAdminStore = defineStore('admin', () => {
     isAuthenticated.value = false
     adminUser.value = ''
     osSenha.value = ''
-    localStorage.removeItem('admin_authenticated')
+    sessionStorage.removeItem('admin_authenticated')
+    sessionStorage.removeItem('admin_token')
     localStorage.removeItem('admin_user')
   }
 

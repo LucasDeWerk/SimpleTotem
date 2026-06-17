@@ -5,6 +5,7 @@ import {
   iniciarTransacao as apiIniciarTransacao,
   obterStatusTransacao,
 } from '@/services/api'
+import { useDeviceStore } from '@/stores/device'
 
 const STATUS_FINAL = ['aprovada', 'negada', 'erro']
 
@@ -97,14 +98,16 @@ export const usePaymentStore = defineStore('payment', () => {
       const itens = cartStore.items.map(item => ({
         produto_id: item.productId,
         descricao: item.name,
-        quantidade: item.quantity,
-        preco_unitario: item.unitPrice,
+        quantidade: Number(item.quantity),
+        preco_unitario: Number(item.unitPrice),
       }))
 
+      const device = useDeviceStore()
       const payload = {
         itens,
-        total_cliente: vendaCalculada?.total ?? cartStore.total,
+        total_cliente: Number(vendaCalculada?.total ?? cartStore.total),
         metodo_pagamento_id: selectedMethod.value.type,
+        id_terminal: device.terminalId || undefined,
       }
 
       const inicio = await apiIniciarTransacao(payload)
@@ -114,6 +117,7 @@ export const usePaymentStore = defineStore('payment', () => {
         transactionResult.value = {
           status: 'aprovada',
           transacao_id: inicio.transacao_id,
+          id_venda: resultado.id_venda || null,
           nsu_sitef: resultado.nsu_sitef || '',
           nsu_host: resultado.nsu_host || '',
           autorizacao: resultado.autorizacao || '',

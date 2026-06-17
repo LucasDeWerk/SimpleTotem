@@ -38,12 +38,13 @@ def main() -> int:
             return 0
 
         funcao = int(payload["funcao"])
-        valor_reais = str(payload["valor_reais"])
+        # Centavos como string inteira: "3490" para R$ 34,90 — é o que a lib C espera
+        valor_centavos = int(payload["valor_centavos"])
         cupom = str(payload.get("cupom") or gerar_cupom_fiscal())
 
         executar_transacao(
             funcao=funcao,
-            valor_reais=valor_reais,
+            valor_centavos=valor_centavos,
             cupom=cupom,
             cnpj_estabelecimento=cnpj,
         )

@@ -58,7 +58,7 @@ const lang = useLanguageStore()
 
 useIdleTimer()
 
-const SESSION_PAUSE_ROUTES = ['payment', 'processing']
+const SESSION_PAUSE_ROUTES = ['payment', 'processing', 'success']
 
 const showHeader = computed(() => {
   const noHeader = ['home', 'catalog', 'processing', 'success', 'timeout']
@@ -102,7 +102,9 @@ watch(
 watch(
   () => session.isActive,
   (active, wasActive) => {
-    if (wasActive && !active && route.name !== 'home' && route.name !== 'timeout') {
+    // 'success' gerencia o próprio encerramento via countdown
+    const rotasProtegidas = ['home', 'timeout', 'success']
+    if (wasActive && !active && !rotasProtegidas.includes(route.name)) {
       router.replace({ name: 'timeout' })
     }
   }

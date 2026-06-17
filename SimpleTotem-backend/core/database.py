@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 from core.config import DATABASE_URL
+from core.schema_migrations import run_schema_migrations
 
 engine = create_engine(
     DATABASE_URL,
@@ -13,11 +14,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def ensure_schema() -> None:
     """Migrações leves para SQLite (colunas novas sem Alembic)."""
-    from models.orm import ApiSessao, Hardware, SyncCheckpoint
+    from models.orm import ApiSessao, Hardware, SaidaPagamento, SyncCheckpoint
 
     Base.metadata.create_all(
         bind=engine,
-        tables=[ApiSessao.__table__, SyncCheckpoint.__table__],
+        tables=[ApiSessao.__table__, SyncCheckpoint.__table__, SaidaPagamento.__table__],
     )
     with engine.begin() as conn:
         cols = {
@@ -42,6 +43,8 @@ def ensure_schema() -> None:
         for col in ("email_simples", "senha_simples", "usuario_os", "senha_os"):
             if empresa_cols and col not in empresa_cols:
                 conn.execute(text(f"ALTER TABLE vstb_empresa ADD COLUMN {col} TEXT"))
+
+        run_schema_migrations(conn)
 
 
 class Base(DeclarativeBase):

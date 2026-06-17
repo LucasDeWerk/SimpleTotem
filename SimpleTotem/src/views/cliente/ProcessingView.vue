@@ -55,10 +55,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { usePaymentStore } from '@/stores/payment'
+import { useSessionStore } from '@/stores/session'
 import { useLanguageStore } from '@/stores/language'
 import PrimaryActionButton from '@/components/shared/PrimaryActionButton.vue'
 import PixQrCode from '@/components/shared/PixQrCode.vue'
@@ -66,6 +67,7 @@ import PixQrCode from '@/components/shared/PixQrCode.vue'
 const router = useRouter()
 const cart = useCartStore()
 const payment = usePaymentStore()
+const session = useSessionStore()
 const lang = useLanguageStore()
 
 const erro = ref('')
@@ -91,8 +93,8 @@ const iniciou = ref(false)
 onMounted(async () => {
   if (iniciou.value) return
   iniciou.value = true
+  session.pauseSession()
 
-  // Snapshot do pedido antes da transação SiTef (pode demorar no pinpad)
   payment.setCompletedOrder(cart)
   const ok = await payment.iniciarTransacao(cart)
   if (ok) {

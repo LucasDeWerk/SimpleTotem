@@ -52,7 +52,8 @@ def _executar_worker(payload: dict, transacao_id: Optional[str] = None) -> dict:
     worker_cmd = comando_worker_sitef()
     body = json.dumps(payload)
 
-    logger.info("[SiTef] Worker: %s modo=%s", " ".join(worker_cmd), payload.get("modo", "transacao"))
+    # LOG DIAGNÓSTICO — payload exato enviado ao worker via stdin
+    logger.warning("[SiTef] Worker stdin payload: %s", body)
 
     proc = subprocess.Popen(
         worker_cmd,
@@ -69,12 +70,15 @@ def _executar_worker(payload: dict, transacao_id: Optional[str] = None) -> dict:
         assert proc.stderr is not None
         for line in proc.stderr:
             line = line.rstrip("\n")
-            if line.startswith("[sitef_worker]"):
-                logger.debug(line)
-            else:
+            if not line:
+                continue
+            if line.startswith("{"):
                 _parse_stderr_event(line, transacao_id)
-                if transacao_id and line.startswith("{"):
+                if transacao_id:
                     logger.info("[SiTef][%s] %s", transacao_id[:8], line)
+            else:
+                # Captura TODOS os prints do worker/core (debug, diagnóstico, etc.)
+                logger.warning("[SiTef worker] %s", line)
 
     stderr_thread = threading.Thread(target=_drain_stderr, daemon=True)
     stderr_thread.start()
@@ -109,6 +113,11 @@ def _executar_worker(payload: dict, transacao_id: Optional[str] = None) -> dict:
     raise RuntimeError(f"SiTef: resposta inesperada: {stdout!r}")
 
 
+def _formatar_valor_sitef(valor_centavos: int) -> str:
+    """Formata centavos para exibição humana (ex.: 3490 → '34,90'). NÃO passar para a lib."""
+    return f"{valor_centavos // 100},{valor_centavos % 100:02d}"
+
+
 def executar_transacao(
     funcao: int,
     valor_centavos: int,
@@ -116,11 +125,16 @@ def executar_transacao(
     cnpj_estabelecimento: str = "",
     transacao_id: Optional[str] = None,
 ) -> dict:
-    valor_reais = f"{valor_centavos / 100:.2f}".replace(".", ",")
+    valor_display = _formatar_valor_sitef(valor_centavos)
+    logger.warning(
+        "[SiTef] >>> VALOR PARA PINPAD  funcao=%d  valor_centavos=%d  (display R$%s)  cupom=%s",
+        funcao, valor_centavos, valor_display, cupom,
+    )
+    # A lib CliSiTef espera centavos como string inteira: "3490", não "34,90"
     payload = {
         "modo": "transacao",
         "funcao": funcao,
-        "valor_reais": valor_reais,
+        "valor_centavos": valor_centavos,
         "cupom": cupom,
         "cnpj_estabelecimento": cnpj_estabelecimento,
     }
@@ -136,12 +150,15 @@ def iniciar_transacao_async(
     cupom: str,
     cnpj_estabelecimento: str = "",
     total_cobrado: float = 0.0,
+    contexto_venda: Optional[dict] = None,
 ) -> str:
     if store.transacao_em_andamento():
         raise RuntimeError("Já existe uma transação SiTef em andamento. Aguarde a conclusão.")
 
     session = store.criar()
     tid = session.transacao_id
+    if contexto_venda:
+        store.anexar_contexto_venda(tid, contexto_venda)
 
     def _run() -> None:
         with _sitef_lock:
@@ -163,9 +180,36 @@ def iniciar_transacao_async(
     return tid
 
 
-def obter_status_transacao(transacao_id: str) -> Optional[dict]:
+def obter_status_transacao(transacao_id: str, db=None) -> Optional[dict]:
     session = store.obter(transacao_id)
-    return session.to_dict() if session else None
+    if not session:
+        return None
+
+    if (
+        db is not None
+        and session.status == "aprovada"
+        and not session.persistida
+        and session.contexto_venda
+        and session.resultado
+    ):
+        from services.venda_service import gravar_venda_aprovada
+
+        try:
+            ctx = session.contexto_venda
+            id_saida = gravar_venda_aprovada(
+                db,
+                itens=ctx.get("itens") or [],
+                total=ctx.get("total") or session.resultado.get("total_cobrado") or 0,
+                metodo_pagamento_id=ctx.get("metodo_pagamento_id") or "",
+                resultado_sitef=session.resultado,
+                id_terminal=ctx.get("id_terminal"),
+            )
+            store.marcar_persistida(transacao_id, id_saida)
+        except Exception as exc:
+            logger.exception("[SiTef] Falha ao gravar venda local | transacao=%s", transacao_id)
+            session.erro = f"Venda aprovada, mas falha ao gravar: {exc}"
+
+    return session.to_dict()
 
 
 def resolver_pendencias(cnpj_estabelecimento: str = "") -> None:

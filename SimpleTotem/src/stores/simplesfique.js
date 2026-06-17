@@ -1,19 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-
-const STORAGE_KEY = 'simplesfique_sessao'
-
-function loadStored() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-}
+import * as api from '@/services/api'
 
 export const useSimpleSfiqueStore = defineStore('simplesfique', () => {
-  const sessao = ref(loadStored())
+  const sessao = ref(null)
+  const sessaoCarregada = ref(false)
 
   const isConnected = computed(() => Boolean(sessao.value?.token_ativo))
   const idSaas = computed(() => sessao.value?.id_saas ?? null)
@@ -21,23 +12,35 @@ export const useSimpleSfiqueStore = defineStore('simplesfique', () => {
 
   function setSessao(data) {
     sessao.value = data
-    if (data) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-    } else {
-      localStorage.removeItem(STORAGE_KEY)
+  }
+
+  async function hydrate() {
+    if (sessaoCarregada.value) return sessao.value
+    try {
+      const data = await api.obterSessaoSimpleSfique()
+      sessao.value = data
+    } catch (err) {
+      console.warn('[SimpleSfique] Sessão indisponível:', err.message)
+      sessao.value = null
+    } finally {
+      sessaoCarregada.value = true
     }
+    return sessao.value
   }
 
   function clearSessao() {
-    setSessao(null)
+    sessao.value = null
+    sessaoCarregada.value = false
   }
 
   return {
     sessao,
+    sessaoCarregada,
     isConnected,
     idSaas,
     idEmpresa,
     setSessao,
+    hydrate,
     clearSessao
   }
 })

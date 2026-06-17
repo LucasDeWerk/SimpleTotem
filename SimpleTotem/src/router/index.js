@@ -1,5 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useCompanyStore } from '@/stores/company'
+import { useSessionStore } from '@/stores/session'
+import * as api from '@/services/api'
 
 // Layout Cliente
 import TotemClienteLayout from '@/layouts/TotemClienteLayout.vue'
@@ -110,6 +112,13 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const company = useCompanyStore()
+  const session = useSessionStore()
+
+  if (to.meta.blockInteraction) {
+    session.pauseSession()
+  } else if (from.meta.blockInteraction && to.name !== 'processing') {
+    session.resumeSession()
+  }
 
   if (company.hasCompanyData === null) {
     await company.check()
@@ -126,8 +135,16 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.meta.requiresAdmin) {
-    const isAuthenticated = localStorage.getItem('admin_authenticated') === 'true'
-    if (!isAuthenticated) {
+    const hasFlag = sessionStorage.getItem('admin_authenticated') === 'true'
+    if (!hasFlag) {
+      next({ name: 'admin-login' })
+      return
+    }
+    try {
+      await api.validarAdmin()
+    } catch {
+      sessionStorage.removeItem('admin_authenticated')
+      sessionStorage.removeItem('admin_token')
       next({ name: 'admin-login' })
       return
     }

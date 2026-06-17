@@ -54,6 +54,31 @@ def _filter_fields(model, data: Dict[str, Any]) -> Dict[str, Any]:
     return {k: v for k, v in data.items() if k in allowed}
 
 
+def _num(value: Any, default: float = 0) -> float:
+    if value is None or value == "":
+        return default
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _int(value: Any, default: int = 0) -> int:
+    if value is None or value == "":
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _text(value: Any, default: str = "") -> str:
+    if value is None:
+        return default
+    s = str(value).strip()
+    return s if s else default
+
+
 def _session_ids(request: Request) -> tuple[int, int]:
     id_saas = getattr(request.app.state, "id_saas", None)
     id_empresa = getattr(request.app.state, "id_empresa", None)
@@ -92,12 +117,18 @@ def list_etapas(db: Session) -> List[Dict[str, Any]]:
     for step in SYNC_STEPS:
         etapa_id = step["id"]
         ck = db.query(SyncCheckpoint).filter(SyncCheckpoint.etapa == etapa_id).first()
+        ultimo_records = ck.ultimo_records if ck else 0
+        dh_sync = ck.dh_sync if ck else None
+        if etapa_id == "tipos-pag-rec" and ultimo_records == 0:
+            count = db.query(TipoPagamento).count()
+            if count > 0:
+                ultimo_records = count
         resultado.append({
             "id": etapa_id,
             "label": step["label"],
             "dhsinc": ck.dhsinc if ck and ck.dhsinc else DHSINC_INICIAL,
-            "ultimo_records": ck.ultimo_records if ck else 0,
-            "dh_sync": ck.dh_sync if ck else None,
+            "ultimo_records": ultimo_records,
+            "dh_sync": dh_sync,
         })
     return resultado
 
@@ -247,8 +278,8 @@ def attach_session_creds_to_empresa(db: Session, id_saas: int, sessao) -> Option
 def map_grupo(item: Dict[str, Any]) -> Dict[str, Any]:
     return _filter_fields(Grupo, {
         "id_grupo": item.get("id_grupo") or item.get("id"),
-        "descgrupo": item.get("descgrupo"),
-        "foto": item.get("foto"),
+        "descgrupo": _text(item.get("descgrupo"), "Grupo"),
+        "foto": item.get("foto") or b"",
     })
 
 
@@ -256,48 +287,68 @@ def map_subgrupo(item: Dict[str, Any]) -> Dict[str, Any]:
     mapped = dict(item)
     if "id" in mapped and "id_subgrupo" not in mapped:
         mapped["id_subgrupo"] = mapped.pop("id")
+    mapped["descsubgrupo"] = _text(mapped.get("descsubgrupo"), "Subgrupo")
     return _filter_fields(Subgrupo, mapped)
 
 
 def map_marca(item: Dict[str, Any]) -> Dict[str, Any]:
     return _filter_fields(Marca, {
         "id_marca": item.get("id_marca") or item.get("id"),
-        "descmarca": item.get("descmarca"),
+        "descmarca": _text(item.get("descmarca"), "Marca"),
     })
 
 
 def map_medida(item: Dict[str, Any]) -> Dict[str, Any]:
+    abrev = _text(item.get("abreviatura"), "UN")
     return _filter_fields(Medida, {
         "id_medida": item.get("id_medida") or item.get("id"),
-        "descmedida": item.get("descmedida"),
-        "abreviatura": item.get("abreviatura"),
+        "descmedida": _text(item.get("descmedida"), "Unidade"),
+        "abreviatura": abrev[:3] if abrev else "UN",
     })
 
 
 def map_produto(item: Dict[str, Any]) -> Dict[str, Any]:
+    custo_compra = _num(item.get("custo_compra"))
+    custo_medio = _num(item.get("custo_medio"), custo_compra)
+    custo_aquisicao = _num(
+        item.get("custo_aquisicao"),
+        custo_compra if custo_compra else custo_medio,
+    )
     return _filter_fields(Produto, {
         "id_produto": item.get("id_produto") or item.get("id"),
-        "descproduto": item.get("descproduto"),
+        "descproduto": _text(item.get("descproduto"), "Produto"),
         "gtin": item.get("codigo_gtin") or item.get("gtin"),
         "cod_referencia": item.get("codigo_ref") or item.get("codigo_sku"),
         "cod_fabricacao": item.get("codigo_fab"),
-        "id_grupo": item.get("id_grupo"),
-        "id_subgrupo": item.get("id_subgrupo"),
-        "id_marca": item.get("id_marca"),
-        "id_medida": item.get("id_medida"),
+        "id_grupo": _int(item.get("id_grupo")),
+        "id_subgrupo": _int(item.get("id_subgrupo")),
+        "id_marca": _int(item.get("id_marca")),
+        "id_medida": _int(item.get("id_medida")),
         "id_ncm": item.get("id_ncm"),
-        "peso": item.get("peso"),
-        "custo_compra": item.get("custo_compra"),
-        "custo_medio": item.get("custo_medio"),
-        "custo_aquisicao": item.get("custo_aquisicao"),
-        "preco_venda": item.get("preco_venda"),
+        "peso": _num(item.get("peso")),
+        "custo_compra": custo_compra,
+        "custo_medio": custo_medio,
+        "custo_aquisicao": custo_aquisicao,
+        "preco_venda": _num(item.get("preco_venda")),
+        "foto": item.get("foto") or b"",
+        "estoque": _num(item.get("estoque")),
+        "dhinc": _normalize_dhinc(item.get("dhinc")),
     })
 
 
 def map_tipo_pag(item: Dict[str, Any]) -> Dict[str, Any]:
+    tipo_id = item.get("id") or item.get("id_tipo_pagamento") or item.get("codigo")
+    descricao = (
+        item.get("desctipopagrec")
+        or item.get("descricao")
+        or item.get("desc")
+        or item.get("nome")
+        or (f"Pagamento {tipo_id}" if tipo_id is not None else "Pagamento")
+    )
+    id_str = str(tipo_id).strip() if tipo_id is not None else ""
     return _filter_fields(TipoPagamento, {
-        "id": str(item.get("id")),
-        "desctipopagrec": item.get("desctipopagrec"),
+        "id": id_str,
+        "desctipopagrec": _text(descricao, "Pagamento"),
     })
 
 
@@ -338,20 +389,25 @@ def _persist_by_key(db: Session, model, items: List[Dict[str, Any]], key: str) -
         try:
             filtered = _filter_fields(model, item)
             pk = filtered.get(key)
-            if pk is None:
+            if pk is None or pk == "":
                 results["errors"].append(f"Registro sem {key}")
                 continue
             existing = db.query(model).filter(getattr(model, key) == pk).first()
             if existing:
                 for k, v in filtered.items():
-                    setattr(existing, k, v)
+                    if v is not None:
+                        setattr(existing, k, v)
                 results["updated"] += 1
             else:
                 db.add(model(**filtered))
                 results["created"] += 1
-        except Exception as exc:
+            db.commit()
+        except IntegrityError as exc:
+            db.rollback()
             results["errors"].append(str(exc))
-    db.commit()
+        except Exception as exc:
+            db.rollback()
+            results["errors"].append(str(exc))
     return results
 
 
@@ -365,15 +421,20 @@ def persist_subgrupos(db: Session, items: List[Dict[str, Any]]) -> Dict[str, Any
                 Subgrupo.id_subgrupo == filtered.get("id_subgrupo"),
             ).first()
             if existing:
-                for key, value in filtered.items():
-                    setattr(existing, key, value)
+                for fld, value in filtered.items():
+                    if value is not None:
+                        setattr(existing, fld, value)
                 results["updated"] += 1
             else:
                 db.add(Subgrupo(**filtered))
                 results["created"] += 1
-        except Exception as exc:
+            db.commit()
+        except IntegrityError as exc:
+            db.rollback()
             results["errors"].append(str(exc))
-    db.commit()
+        except Exception as exc:
+            db.rollback()
+            results["errors"].append(str(exc))
     return results
 
 
@@ -435,8 +496,12 @@ async def pull_etapa(db: Session, request: Request, etapa_id: str) -> Dict[str, 
                 db, Produto, [map_produto(i) for i in items], "id_produto"
             )
 
-    if step.get("dhsinc"):
-        save_checkpoint(db, etapa_id, records)
+    synced_records = records
+    if persist_result:
+        persisted = (persist_result.get("created") or 0) + (persist_result.get("updated") or 0)
+        if persisted > 0:
+            synced_records = persisted
+    save_checkpoint(db, etapa_id, synced_records)
 
     return {
         "etapa": etapa_id,

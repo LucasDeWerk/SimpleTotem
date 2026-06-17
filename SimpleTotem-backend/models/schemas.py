@@ -144,9 +144,27 @@ class SaidaOut(BaseModel):
     dtemissao: Optional[str] = None
     situacao: Optional[str] = None
     vlr_venda: Optional[float] = None
+    id_terminal: Optional[int] = None
 
     class Config:
         from_attributes = True
+
+
+class TerminalOut(BaseModel):
+    id: int
+    descterminal: Optional[str] = None
+    nome_dispositivo: Optional[str] = None
+    ip_dispositivo: Optional[str] = None
+    totem_autoatendimento: Optional[str] = None
+    imprime_pedido: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class AdminProfileOut(BaseModel):
+    usuario: str
+    role: str
 
 
 class TipoPagamentoOut(BaseModel):
@@ -244,9 +262,10 @@ class IniciaVendaResponse(BaseModel):
 
 class IniciaTransacaoRequest(BaseModel):
     itens: List[ItemVendaIn]
-    total_cliente: float          # total retornado por /iniciavenda
-    metodo_pagamento_id: str      # id de tfin_tipopagrec
-    cupom: Optional[str] = None   # gerado automaticamente se None
+    total_cliente: float
+    metodo_pagamento_id: str
+    cupom: Optional[str] = None
+    id_terminal: Optional[int] = None
 
 
 class IniciaTransacaoStartResponse(BaseModel):
@@ -272,6 +291,7 @@ class TransacaoStatusResponse(BaseModel):
     cupom_bruto: Optional[str] = None
     pix: bool = False
     resultado_codigo: Optional[int] = None
+    id_venda: Optional[int] = None
 
 
 class IniciaTransacaoResponse(BaseModel):

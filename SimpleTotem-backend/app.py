@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from routers import auth, hardware, empresa, catalogo, vendas, sinc
+from routers import auth, hardware, empresa, catalogo, vendas, sinc, terminal
 from core.database import ensure_schema
 from services.device_service import bootstrap_hardware
 from services.sitef_service import resolver_pendencias
@@ -56,6 +56,7 @@ app.include_router(empresa.router)
 app.include_router(catalogo.router)
 app.include_router(vendas.router)
 app.include_router(sinc.router)
+app.include_router(terminal.router)
 
 
 @app.get("/", tags=["health"])

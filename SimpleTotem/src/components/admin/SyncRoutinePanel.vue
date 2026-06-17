@@ -175,6 +175,11 @@ onMounted(carregarEtapas)
   background: white;
 }
 
+.etapa-item.done {
+  border-color: rgba(76, 175, 80, 0.45);
+  background: rgba(76, 175, 80, 0.06);
+}
+
 .etapa-item.running {
   border-color: #f57c00;
   background: rgba(245, 124, 0, 0.05);

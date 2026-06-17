@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.database import get_db
-from core.security import create_access_token
+from core.security import create_access_token, get_current_admin
 from core.system_auth import authenticate_system_user
-from models.schemas import TokenResponse, TotemLoginRequest
+from models.schemas import AdminProfileOut, TokenResponse, TotemLoginRequest
 from services.empresa_credentials import update_os_credentials
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -57,6 +57,12 @@ def _login_sistema(body: TotemLoginRequest, db: Session) -> TokenResponse:
     except Exception as exc:
         logger.warning("Não foi possível salvar credenciais OS na empresa: %s", exc)
     return TokenResponse(access_token=token)
+
+
+@router.get("/me", response_model=AdminProfileOut)
+def auth_me(profile: dict = Depends(get_current_admin)) -> AdminProfileOut:
+    """Valida token admin e retorna perfil."""
+    return AdminProfileOut(**profile)
 
 
 @router.post("/system-login", response_model=TokenResponse)

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { obterTerminalAtual } from '@/services/api'
 
 export const useDeviceStore = defineStore('device', () => {
   const deviceUuid = ref(localStorage.getItem('device_uuid') || generateUuid())
@@ -10,6 +11,9 @@ export const useDeviceStore = defineStore('device', () => {
   const lastSeenAt = ref(null)
   const theme = ref(localStorage.getItem('theme') || 'light')
   const isOnline = ref(navigator.onLine)
+  const terminalId = ref(null)
+  const terminalInfo = ref(null)
+  const terminalLoaded = ref(false)
 
   function generateUuid() {
     const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -19,6 +23,22 @@ export const useDeviceStore = defineStore('device', () => {
     })
     localStorage.setItem('device_uuid', uuid)
     return uuid
+  }
+
+  async function loadTerminal(force = false) {
+    if (terminalLoaded.value && !force) return terminalInfo.value
+    try {
+      const terminal = await obterTerminalAtual()
+      terminalInfo.value = terminal
+      terminalId.value = terminal?.id ?? null
+    } catch (err) {
+      console.warn('[Device] Terminal não identificado:', err.message)
+      terminalInfo.value = null
+      terminalId.value = null
+    } finally {
+      terminalLoaded.value = true
+    }
+    return terminalInfo.value
   }
 
   function toggleTheme() {
@@ -40,13 +60,17 @@ export const useDeviceStore = defineStore('device', () => {
     localStorage.setItem('environment', env)
   }
 
-  // Inicializar listeners
   function init() {
     applyTheme()
     window.addEventListener('online', updateOnlineStatus)
     window.addEventListener('offline', updateOnlineStatus)
     lastSeenAt.value = new Date().toISOString()
+    loadTerminal()
   }
+
+  const terminalLabel = computed(() =>
+    terminalInfo.value?.descterminal || (terminalId.value ? `Terminal #${terminalId.value}` : 'Não configurado')
+  )
 
   return {
     deviceUuid,
@@ -57,6 +81,11 @@ export const useDeviceStore = defineStore('device', () => {
     lastSeenAt,
     theme,
     isOnline,
+    terminalId,
+    terminalInfo,
+    terminalLabel,
+    terminalLoaded,
+    loadTerminal,
     toggleTheme,
     applyTheme,
     setEnvironment,
