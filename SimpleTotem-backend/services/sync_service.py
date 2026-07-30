@@ -112,26 +112,6 @@ def save_checkpoint(db: Session, etapa: str, records: int) -> str:
     return dhsinc
 
 
-def list_etapas(db: Session) -> List[Dict[str, Any]]:
-    resultado = []
-    for step in SYNC_STEPS:
-        etapa_id = step["id"]
-        ck = db.query(SyncCheckpoint).filter(SyncCheckpoint.etapa == etapa_id).first()
-        ultimo_records = ck.ultimo_records if ck else 0
-        dh_sync = ck.dh_sync if ck else None
-        if etapa_id == "tipos-pag-rec" and ultimo_records == 0:
-            count = db.query(TipoPagamento).count()
-            if count > 0:
-                ultimo_records = count
-        resultado.append({
-            "id": etapa_id,
-            "label": step["label"],
-            "dhsinc": ck.dhsinc if ck and ck.dhsinc else DHSINC_INICIAL,
-            "ultimo_records": ultimo_records,
-            "dh_sync": dh_sync,
-        })
-    return resultado
-
 
 def extract_data(payload: Any) -> List[Dict[str, Any]]:
     if payload is None:

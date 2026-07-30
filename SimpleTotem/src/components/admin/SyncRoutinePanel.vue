@@ -25,14 +25,10 @@
         v-for="etapa in etapas"
         :key="etapa.id"
         class="etapa-item"
-        :class="{ running: runningId === etapa.id, done: etapa.ultimo_records > 0 }"
+        :class="{ running: runningId === etapa.id }"
       >
         <div class="etapa-info">
           <span class="etapa-label">{{ etapa.label }}</span>
-          <span class="etapa-meta">
-            {{ etapa.ultimo_records || 0 }} registro(s)
-            <template v-if="etapa.dh_sync"> · {{ formatDate(etapa.dh_sync) }}</template>
-          </span>
         </div>
         <button
           class="btn-etapa"
@@ -47,7 +43,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { ref } from 'vue'
 import * as api from '@/services/api'
 import { useSimpleSfiqueStore } from '@/stores/simplesfique'
 import { storeToRefs } from 'pinia'
@@ -61,30 +57,29 @@ const emit = defineEmits(['synced'])
 const simplesfique = useSimpleSfiqueStore()
 const { sessao } = storeToRefs(simplesfique)
 
-const etapas = ref([])
+const ETAPAS_ESTATICAS = [
+  { id: 'empresas',      label: 'Empresas' },
+  { id: 'grupos',        label: 'Grupos' },
+  { id: 'subgrupos',     label: 'Subgrupos' },
+  { id: 'marcas',        label: 'Marcas' },
+  { id: 'medidas',       label: 'Medidas' },
+  { id: 'tipos-pag-rec', label: 'Tipos de pagamento' },
+  { id: 'produtos',      label: 'Produtos' },
+  { id: 'terminais',     label: 'Terminais' },
+  { id: 'paineis',       label: 'Painéis' },
+  { id: 'ambientes',     label: 'Ambientes' },
+]
+
+const etapas = ref(ETAPAS_ESTATICAS)
 const runningId = ref(null)
 const syncingAll = ref(false)
 const globalError = ref('')
-
-function formatDate(value) {
-  try {
-    return new Date(value.replace(' ', 'T')).toLocaleString('pt-BR')
-  } catch {
-    return value
-  }
-}
-
-async function carregarEtapas() {
-  const data = await api.listarEtapasSync()
-  etapas.value = data.etapas || []
-}
 
 async function sincronizarEtapa(etapaId) {
   runningId.value = etapaId
   globalError.value = ''
   try {
     await api.sincronizarEtapa(etapaId)
-    await carregarEtapas()
     emit('synced')
   } catch (err) {
     globalError.value = err.message
@@ -98,7 +93,6 @@ async function sincronizarTudo() {
   globalError.value = ''
   try {
     await api.sincronizarCompleto()
-    await carregarEtapas()
     emit('synced')
   } catch (err) {
     globalError.value = err.message
@@ -106,8 +100,6 @@ async function sincronizarTudo() {
     syncingAll.value = false
   }
 }
-
-onMounted(carregarEtapas)
 </script>
 
 <style scoped>

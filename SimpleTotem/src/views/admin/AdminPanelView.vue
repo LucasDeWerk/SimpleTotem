@@ -127,6 +127,20 @@
               Atualizar terminal
             </button>
           </div>
+
+          <div class="printing-info">
+            <h4>Impressão</h4>
+            <label class="toggle-row">
+              <span class="toggle-switch">
+                <input type="checkbox" v-model="settings.imprimirTicketsIndividuais" />
+                <span class="toggle-slider"></span>
+              </span>
+              <span class="toggle-label">
+                Imprimir ticket individual por produto
+                <small>Ao concluir a venda, imprime um ticket separado para cada unidade de cada produto do pedido (ex.: 2x Coxinha = 2 tickets), além do comprovante principal.</small>
+              </span>
+            </label>
+          </div>
         </div>
       </section>
 
@@ -225,6 +239,7 @@ import { useDeviceStore } from '@/stores/device'
 import { useAdminStore } from '@/stores/admin'
 import { useCompanyStore } from '@/stores/company'
 import { useSimpleSfiqueStore } from '@/stores/simplesfique'
+import { useSettingsStore } from '@/stores/settings'
 import PeripheralsConfigPanel from '@/components/admin/PeripheralsConfigPanel.vue'
 import SimpleSfiqueLoginForm from '@/components/admin/SimpleSfiqueLoginForm.vue'
 import SyncRoutinePanel from '@/components/admin/SyncRoutinePanel.vue'
@@ -236,6 +251,7 @@ const device = useDeviceStore()
 const admin = useAdminStore()
 const company = useCompanyStore()
 const simplesfique = useSimpleSfiqueStore()
+const settings = useSettingsStore()
 
 const ADMIN_SECTIONS = new Set(['peripherals', 'sync', 'token', 'config'])
 
@@ -280,7 +296,7 @@ const selectedEmpresaData = computed(() => {
 // Token status
 const tokenStatus = computed(() => admin.tokenStatus || 'idle')
 const tokenSyncing = ref(false)
-const tokenLastUpdate = computed(() => localStorage.getItem('token_last_update'))
+const tokenLastUpdate = ref(null)
 const tokenError = ref('')
 
 const apiBaseUrl = ref(api.getApiBaseUrl())
@@ -387,7 +403,6 @@ async function confirmEmpresaSelection() {
     empresaLocal.value = salva
     await company.check()
     company.markConfigured()
-    localStorage.setItem('selected_empresa_id', String(salva.id_saas))
   } catch (err) {
     console.error('[Admin] Erro ao salvar empresa:', err)
     fullSyncErrors.value = [{ etapa: 'Empresa', erro: err.message }]
@@ -425,9 +440,6 @@ async function onSimpleSfiqueConnected(empresa) {
   empresaLocal.value = empresa
   await company.check()
   company.markConfigured()
-  if (empresa?.id_saas) {
-    localStorage.setItem('selected_empresa_id', String(empresa.id_saas))
-  }
   const sessaoApi = await api.obterSessaoSimpleSfique()
   if (sessaoApi) simplesfique.setSessao(sessaoApi)
 }
@@ -477,7 +489,7 @@ async function autoSyncToken() {
     const sessao = await api.obterSessaoSimpleSfique()
     if (sessao?.token_ativo) {
       tokenStatus.value = 'success'
-      localStorage.setItem('token_last_update', new Date().toISOString())
+      tokenLastUpdate.value = new Date().toISOString()
     } else {
       tokenStatus.value = 'idle'
       tokenError.value = 'Faça login no SimpleSfique na aba Sincronização'
@@ -569,6 +581,78 @@ onMounted(async () => {
 
 .terminal-info h4 {
   margin: 0 0 0.75rem;
+}
+
+.printing-info {
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+
+.printing-info h4 {
+  margin: 0 0 0.75rem;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: #ccc;
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: #2e7d32;
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.toggle-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-weight: 600;
+}
+
+.toggle-label small {
+  font-weight: 400;
+  color: #777;
 }
 
 /* Material Icons */

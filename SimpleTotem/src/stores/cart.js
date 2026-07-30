@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { iniciarVenda } from '@/services/api'
+
 export const useCartStore = defineStore('cart', () => {
   const items = ref([])
   const itemCount = computed(() => {
@@ -13,10 +13,10 @@ export const useCartStore = defineStore('cart', () => {
   const total = computed(() => {
     return Math.max(0, subtotal.value - discount.value)
   })
-  // Dados calculados pelo servidor (/iniciavenda)
   const vendaCalculada = ref(null)
   const calculandoVenda = ref(false)
   const erroCalculo = ref(null)
+
   function addItem(product, quantity = 1, notes = '', modifiers = []) {
     const existingIndex = items.value.findIndex(
       item => item.productId === product.id && JSON.stringify(item.modifiers) === JSON.stringify(modifiers)
@@ -35,15 +35,20 @@ export const useCartStore = defineStore('cart', () => {
         unitPrice,
         totalPrice: unitPrice * quantity,
         notes,
-        modifiers
+        modifiers,
+        menu_id: product.menu_id ?? null,
+        ambiente_preparo_id: product.ambiente_preparo_id ?? null,
+        emite_ticket: product.emite_ticket ?? true,
       })
     }
     vendaCalculada.value = null
   }
+
   function removeItem(index) {
     items.value.splice(index, 1)
     vendaCalculada.value = null
   }
+
   function updateQuantity(index, quantity) {
     if (quantity <= 0) {
       removeItem(index)
@@ -53,31 +58,33 @@ export const useCartStore = defineStore('cart', () => {
     items.value[index].totalPrice = items.value[index].unitPrice * quantity
     vendaCalculada.value = null
   }
+
   function clearCart() {
     items.value = []
     discount.value = 0
     vendaCalculada.value = null
     erroCalculo.value = null
   }
+
+  /** Calcula totais localmente — preços vêm do catálogo SimplesFique */
   async function calcularVenda() {
     if (items.value.length === 0) return
     calculandoVenda.value = true
     erroCalculo.value = null
     try {
-      const itens = items.value.map(item => ({
-        produto_id: item.productId,
-        descricao: item.name,
-        quantidade: Number(item.quantity),
-        preco_unitario: Number(item.unitPrice),
-      }))
-      vendaCalculada.value = await iniciarVenda(itens)
+      const sub = items.value.reduce((sum, item) => sum + item.totalPrice, 0)
+      vendaCalculada.value = {
+        subtotal: sub,
+        desconto: discount.value,
+        total: Math.max(0, sub - discount.value),
+      }
     } catch (err) {
       erroCalculo.value = err.message || 'Erro ao calcular venda'
-      console.error('[Cart] Erro em calcularVenda:', err)
     } finally {
       calculandoVenda.value = false
     }
   }
+
   return {
     items,
     itemCount,

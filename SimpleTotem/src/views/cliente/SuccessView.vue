@@ -20,6 +20,41 @@
           <span class="detail-label">{{ lang.t.nsuLabel }}</span>
           <span class="detail-value">{{ nsuDisplay }}</span>
         </div>
+        <div v-if="codigoSenha" class="detail-row senha-row">
+          <span class="detail-label">Retire seu pedido</span>
+          <span class="detail-value senha-codigo">{{ codigoSenha }}</span>
+        </div>
+      </div>
+
+      <!-- Cupom fiscal -->
+      <div v-if="mostrarCupomFiscal" class="cupom-fiscal-section">
+        <button
+          v-if="!cupomEmitido"
+          class="btn-cupom"
+          type="button"
+          :disabled="emitindoCupom"
+          @click="emitirCupomFiscal"
+        >
+          <span v-if="emitindoCupom" class="spinner-small"></span>
+          {{ emitindoCupom ? 'Emitindo...' : 'Emitir Cupom Fiscal' }}
+        </button>
+        <p v-if="cupomEmitido" class="cupom-success">✓ Cupom emitido com sucesso</p>
+        <p v-if="cupomErro" class="cupom-error">⚠️ {{ cupomErro }}</p>
+      </div>
+
+      <!-- Escolha de comprovante TEF (Fiserv req. 2) -->
+      <div v-if="showReceiptChoice && !receiptChosen" class="receipt-choice">
+        <p class="receipt-choice-title">Deseja imprimir o comprovante?</p>
+        <div class="receipt-choice-buttons">
+          <PrimaryActionButton
+            label="Imprimir comprovante"
+            :fullWidth="true"
+            @click="chooseReceipt('imprimir')"
+          />
+          <button class="receipt-skip-btn" type="button" @click="chooseReceipt('nao')">
+            Não quero comprovante
+          </button>
+        </div>
       </div>
 
       <div v-if="printing" class="print-status">
@@ -56,22 +91,41 @@ import { useCartStore } from '@/stores/cart'
 import { usePaymentStore } from '@/stores/payment'
 import { useSessionStore } from '@/stores/session'
 import { useLanguageStore } from '@/stores/language'
+import { useSimpleSfiqueStore } from '@/stores/simplesfique'
+import { useSettingsStore } from '@/stores/settings'
 import { useThermalPrinter } from '@/composables/useThermalPrinter'
 import PrimaryActionButton from '@/components/shared/PrimaryActionButton.vue'
+import { confirmarPagamento, obterEmpresaSinc } from '@/services/api'
 
 const router = useRouter()
 const cart = useCartStore()
 const payment = usePaymentStore()
 const session = useSessionStore()
 const lang = useLanguageStore()
-const { printing, printComplete, printLines } = useThermalPrinter()
+const sfique = useSimpleSfiqueStore()
+const settings = useSettingsStore()
+const { printing, printComplete, printLines, printProductTickets } = useThermalPrinter()
 
 const countdown = ref(10)
 const printError = ref(null)
 const printSuccess = ref(false)
+const emitindoCupom = ref(false)
+const cupomEmitido = ref(false)
+const cupomErro = ref('')
+const receiptChosen = ref(false)
+const empresaInfo = ref(null)
 
 const order = computed(() => payment.completedOrder)
 const tx = computed(() => payment.transactionResult)
+
+// Fiserv req. 2 — só exibe escolha se há impressora e dados de comprovante
+const showReceiptChoice = computed(() =>
+  Boolean(window.electronAPI?.printer) && Boolean(
+    tx.value?.cupom_bruto ||
+    tx.value?.linhas_cupom?.some(b => String(b).length > 0) ||
+    tx.value?.nsu_sitef
+  )
+)
 
 const orderNumber = computed(() => {
   const id = tx.value?.id_venda
@@ -88,11 +142,41 @@ const nsuDisplay = computed(() => {
   return nsu
 })
 
+const codigoSenha = computed(() => tx.value?.codigo_senha || '')
+const mostrarCupomFiscal = computed(() => Boolean(tx.value?.emite_cupom_fiscal))
+
 let timer = null
 
 onMounted(async () => {
   session.pauseSession()
-  await printReceipt()
+
+  // Dados reais da empresa para o cabeçalho do cupom (evita placeholder tipo "SIMPLETOTEM")
+  try {
+    empresaInfo.value = await obterEmpresaSinc()
+  } catch (err) {
+    console.warn('[SuccessView] Não foi possível obter dados da empresa para o cupom:', err.message)
+  }
+
+  // venda-completa já emitiu o cupom internamente — não precisa emitir de novo
+  if (tx.value?.cupom_fiscal) {
+    cupomEmitido.value = true
+  }
+
+  // Se não há impressora ou não há dados de comprovante, confirma imediatamente (sem impressão)
+  if (!showReceiptChoice.value) {
+    receiptChosen.value = true
+    await _confirmarSiTef(true)
+  }
+
+  // Caso haja impressora, a confirmação ocorre em chooseReceipt() após impressão
+
+  // Tickets de produção por produto (ex.: cozinha) — independem da escolha do comprovante do cliente
+  if (settings.imprimirTicketsIndividuais && window.electronAPI?.printer) {
+    const resultado = await printProductTickets(order.value?.items, orderNumber.value)
+    if (resultado.failed.length) {
+      console.warn('[SuccessView] Falha ao imprimir alguns tickets de produção:', resultado.failed)
+    }
+  }
 
   timer = setInterval(() => {
     countdown.value--
@@ -121,11 +205,40 @@ function buildMinimalTxLines() {
   return lines
 }
 
+async function chooseReceipt(choice) {
+  receiptChosen.value = true
+  if (choice === 'imprimir') {
+    const impressaoOk = await printReceipt()
+    await _confirmarSiTef(impressaoOk)
+  } else {
+    // Usuário optou por não imprimir — não é falha, confirma normalmente
+    await _confirmarSiTef(true)
+  }
+}
+
+async function _confirmarSiTef(impressaoOk) {
+  const tid = tx.value?.transacao_id
+  if (!tid) return  // não é transação SiTef local, não precisa confirmar
+  try {
+    await confirmarPagamento({
+      transacao_id: tid,
+      confirma: impressaoOk ? 1 : 0,
+      impressao_ok: impressaoOk,
+      xml_emitido: true,  // sem integração NF-e: sempre true
+    })
+    if (!impressaoOk) {
+      printError.value = (printError.value || '') + ' — pagamento desfeito automaticamente'
+    }
+  } catch (err) {
+    console.error('[SuccessView] Erro ao confirmar SiTef:', err)
+  }
+}
+
 async function printReceipt() {
   try {
     if (!window.electronAPI?.printer) {
       printError.value = 'Impressora indisponível (abra pelo Electron, não pelo navegador)'
-      return
+      return false
     }
 
     // 1) Cupom TEF bruto — exatamente como a Fiserv/SiTef enviou (TC 122)
@@ -136,15 +249,18 @@ async function printReceipt() {
       const payload = cupomBruto ? [cupomBruto] : blocosTef
       console.log('[SuccessView] Imprimindo cupom bruto TEF:', payload.join('').length, 'chars')
       const result = await printLines(payload, { cut: true, cupomFiserv: true })
-      if (result.success) printSuccess.value = true
-      else printError.value = result.message || lang.t.printError
-      return
+      if (result.success) { printSuccess.value = true; return true }
+      printError.value = result.message || lang.t.printError
+      return false
     }
 
     // 2) Recibo do pedido (itens + total)
     if (order.value?.items?.length) {
       const orderData = {
-        company: { name: 'SIMPLETOTEM', cnpj: '00.000.000/0000-00' },
+        company: {
+          name: empresaInfo.value?.nome_fantasia || empresaInfo.value?.razao_social || 'SIMPLETOTEM',
+          cnpj: empresaInfo.value?.cpf_cnpj || '',
+        },
         orderNumber: orderNumber.value,
         date: new Date().toLocaleString('pt-BR'),
         items: order.value.items.map(item => ({
@@ -156,13 +272,13 @@ async function printReceipt() {
         discount: order.value.discount,
         total: order.value.total,
         paymentMethod: order.value.paymentMethod || '—',
-        pickupCode: authCode.value,
+        pickupCode: codigoSenha.value || authCode.value,
       }
       console.log('[SuccessView] Imprimindo recibo do pedido')
       const result = await printComplete(orderData)
-      if (result.success) printSuccess.value = true
-      else printError.value = result.message || lang.t.printError
-      return
+      if (result.success) { printSuccess.value = true; return true }
+      printError.value = result.message || lang.t.printError
+      return false
     }
 
     // 3) Comprovante mínimo com dados da transação
@@ -170,16 +286,38 @@ async function printReceipt() {
     if (minimal.length > 3) {
       console.log('[SuccessView] Imprimindo comprovante mínimo TEF')
       const result = await printLines(minimal, { cut: true })
-      if (result.success) printSuccess.value = true
-      else printError.value = result.message || lang.t.printError
-      return
+      if (result.success) { printSuccess.value = true; return true }
+      printError.value = result.message || lang.t.printError
+      return false
     }
 
     printError.value = 'Sem dados para impressão'
     console.warn('[SuccessView] Nada para imprimir — tx:', tx.value, 'order:', order.value)
+    return false
   } catch (error) {
     printError.value = error.message || lang.t.printError
     console.error('[SuccessView] Erro ao imprimir:', error)
+    return false
+  }
+}
+
+async function emitirCupomFiscal() {
+  // venda-completa já emitiu internamente — apenas marca como feito
+  if (tx.value?.cupom_fiscal) {
+    cupomEmitido.value = true
+    return
+  }
+  // Fallback: fluxo separado (seção 5 da doc) com emissão manual
+  if (!tx.value?.cupom_fiscal_id) return
+  emitindoCupom.value = true
+  cupomErro.value = ''
+  try {
+    await sfique.emitirCupom(tx.value.cupom_fiscal_id)
+    cupomEmitido.value = true
+  } catch (err) {
+    cupomErro.value = err.message || 'Erro ao emitir cupom fiscal'
+  } finally {
+    emitindoCupom.value = false
   }
 }
 
@@ -345,5 +483,108 @@ function newOrder() {
   font-size: var(--font-size-md);
   color: #64748b;
   font-weight: 600;
+}
+
+.senha-row {
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid rgba(76, 175, 80, 0.15);
+}
+
+.senha-codigo {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--color-primary, #f57c00);
+  line-height: 1;
+}
+
+.cupom-fiscal-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.btn-cupom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: var(--btn-min-height, 52px);
+  padding: var(--space-md) var(--space-2xl);
+  background: var(--color-primary, #f57c00);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-cupom:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cupom-success {
+  color: #4caf50;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.cupom-error {
+  color: #ef4444;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+/* Mesmo padrão de success-details — card verde */
+.receipt-choice {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(76, 175, 80, 0.04));
+  border: 1px solid rgba(76, 175, 80, 0.15);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.receipt-choice-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: #0f172a;
+  text-align: center;
+}
+
+.receipt-choice-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: 100%;
+}
+
+/* Botão secundário segue o padrão payment-secondary-btn da PaymentView */
+.receipt-skip-btn {
+  width: 100%;
+  min-height: var(--btn-min-height);
+  padding: var(--space-md) var(--space-xl);
+  background: transparent;
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.receipt-skip-btn:active {
+  background: var(--color-primary-light);
 }
 </style>

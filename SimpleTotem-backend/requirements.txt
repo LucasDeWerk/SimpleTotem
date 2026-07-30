@@ -5,7 +5,7 @@ passlib[bcrypt]
 pydantic
 psutil
 sqlalchemy
-dotenv
+python-dotenv
 httpx
 python-pam
 cryptography

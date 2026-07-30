@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
@@ -76,6 +76,37 @@ class SessaoSimpleSfiqueOut(BaseModel):
     expira_em: Optional[int] = None
     dh_login: Optional[str] = None
     token_ativo: bool = True
+
+
+class SessaoCompletaOut(BaseModel):
+    """Sessão completa retornada ao frontend do totem (inclui tokens)."""
+    id_saas: Optional[int] = None
+    id_empresa: Optional[int] = None
+    email: Optional[str] = None
+    os_usuario: Optional[str] = None
+    jwt_token: Optional[str] = None
+    terminal_id: Optional[int] = None
+    terminal_token: Optional[str] = None
+    expira_em: Optional[int] = None
+    dh_login: Optional[str] = None
+    configurado: bool = False
+
+
+class SessaoTotemRequest(BaseModel):
+    """Payload enviado após o login de 3 passos no totem."""
+    email: str
+    senha_simples: str
+    terminal_id: int
+    terminal_token: str
+    senha_terminal: str
+    jwt_token: str
+    id_saas: Optional[int] = None
+    id_empresa: Optional[int] = None
+
+
+class ReloginOut(BaseModel):
+    jwt_token: str
+    terminal_token: str
 
 
 class SimpleSfiqueLoginResponse(BaseModel):
@@ -266,6 +297,8 @@ class IniciaTransacaoRequest(BaseModel):
     metodo_pagamento_id: str
     cupom: Optional[str] = None
     id_terminal: Optional[int] = None
+    num_parcelas: int = Field(default=1, ge=1, le=99, description="Número de parcelas (1 = à vista)")
+    tipo_parcelamento: str = Field(default="a_vista", description="a_vista | parcelado_estabelecimento | parcelado_administradora")
 
 
 class IniciaTransacaoStartResponse(BaseModel):
@@ -292,6 +325,13 @@ class TransacaoStatusResponse(BaseModel):
     pix: bool = False
     resultado_codigo: Optional[int] = None
     id_venda: Optional[int] = None
+
+
+class ConfirmarPagamentoRequest(BaseModel):
+    transacao_id: str
+    confirma: int = Field(ge=0, le=1, description="1=confirma, 0=desfaz")
+    impressao_ok: bool = True
+    xml_emitido: bool = True
 
 
 class IniciaTransacaoResponse(BaseModel):

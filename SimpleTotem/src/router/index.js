@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useCompanyStore } from '@/stores/company'
 import { useSessionStore } from '@/stores/session'
+import { useSimpleSfiqueStore } from '@/stores/simplesfique'
 import * as api from '@/services/api'
 
 // Layout Cliente
@@ -113,6 +114,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const company = useCompanyStore()
   const session = useSessionStore()
+  const sfique = useSimpleSfiqueStore()
 
   if (to.meta.blockInteraction) {
     session.pauseSession()
@@ -124,12 +126,19 @@ router.beforeEach(async (to, from, next) => {
     await company.check()
   }
 
-  if (to.meta.requiresCompany && !company.hasCompanyData) {
+  // Restaura tokens do backend DB uma única vez por startup (guarda via hydrateAttempted)
+  if (!sfique.hydrateAttempted) {
+    await sfique.hydrateFromBackend()
+  }
+
+  const totemPronto = sfique.isConfigured
+
+  if (to.meta.requiresCompany && !totemPronto) {
     next({ name: 'totem-login' })
     return
   }
 
-  if (to.name === 'totem-login' && company.hasCompanyData) {
+  if (to.name === 'totem-login' && totemPronto) {
     next({ name: 'home' })
     return
   }

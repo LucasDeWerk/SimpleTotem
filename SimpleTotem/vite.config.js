@@ -48,6 +48,9 @@ export default defineConfig({
     electron([
       {
         entry: 'electron/main.js',
+        onstart(args) {
+          args.startup()
+        },
         vite: {
           build: {
             outDir: 'dist-electron',

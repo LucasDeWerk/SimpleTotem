@@ -1,7 +1,9 @@
+import glob
+import os
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from core.database import get_db
@@ -230,3 +232,29 @@ def delete_dispositivo(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dispositivo não encontrado")
     db.delete(hw)
     db.commit()
+
+
+# ── Pinpad / CliSiTef — porta serial ─────────────────────────────────────────
+
+@router.get("/sitef/portas-serial")
+def listar_portas_serial(_: str = Depends(get_current_user)):
+    """Lista portas seriais USB disponíveis no sistema (ttyUSB* e ttyACM*)."""
+    candidatas: list[str] = []
+    for pattern in ("/dev/ttyUSB*", "/dev/ttyACM*"):
+        candidatas.extend(sorted(glob.glob(pattern)))
+    # Filtra apenas as que existem no sysfs (confirma presença do dispositivo)
+    disponiveis = [p for p in candidatas if os.path.exists(p)]
+    return {"portas": disponiveis}
+
+
+@router.post("/sitef/porta")
+def salvar_porta_sitef(
+    porta: str = Body(..., embed=True),
+    _: str = Depends(get_current_user),
+):
+    """Atualiza a porta do pinpad em CliSiTef.ini. Efeito imediato na próxima transação."""
+    from services.sitef_core import atualizar_porta_pinpad
+    if not porta.strip():
+        raise HTTPException(status_code=422, detail="porta não pode ser vazia")
+    atualizar_porta_pinpad(porta.strip())
+    return {"ok": True, "porta": porta.strip()}

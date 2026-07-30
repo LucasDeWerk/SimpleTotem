@@ -20,38 +20,17 @@ def _local_ip() -> str:
 
 def resolver_terminal_atual(db: Session, client_ip: Optional[str] = None) -> Optional[Dict[str, Any]]:
     ip = (client_ip or _local_ip()).strip()
-    row = db.execute(
-        text("""
-            SELECT id, descterminal, nome_dispositivo, ip_dispositivo,
-                   totem_autoatendimento, imprime_pedido
-            FROM tven_terminal
-            WHERE ip_dispositivo = :ip
-            LIMIT 1
-        """),
-        {"ip": ip},
-    ).mappings().first()
-
-    if not row:
-        row = db.execute(
-            text("""
-                SELECT id, descterminal, nome_dispositivo, ip_dispositivo,
-                       totem_autoatendimento, imprime_pedido
-                FROM tven_terminal
-                WHERE totem_autoatendimento = 'S'
-                ORDER BY id
-                LIMIT 1
-            """)
-        ).mappings().first()
-
-    if not row:
-        row = db.execute(
-            text("""
-                SELECT id, descterminal, nome_dispositivo, ip_dispositivo,
-                       totem_autoatendimento, imprime_pedido
-                FROM tven_terminal
-                ORDER BY id
-                LIMIT 1
-            """)
-        ).mappings().first()
-
-    return dict(row) if row else None
+    _SELECT = """
+        SELECT id, descterminal, nome_dispositivo, ip_dispositivo,
+               totem_autoatendimento, imprime_pedido
+        FROM tven_terminal
+    """
+    try:
+        row = db.execute(text(_SELECT + " WHERE ip_dispositivo = :ip LIMIT 1"), {"ip": ip}).mappings().first()
+        if not row:
+            row = db.execute(text(_SELECT + " WHERE totem_autoatendimento = 'S' ORDER BY id LIMIT 1")).mappings().first()
+        if not row:
+            row = db.execute(text(_SELECT + " ORDER BY id LIMIT 1")).mappings().first()
+        return dict(row) if row else None
+    except Exception:
+        return None

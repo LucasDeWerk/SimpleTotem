@@ -5,12 +5,11 @@ import { useCompanyStore } from '@/stores/company'
 
 export const useAdminStore = defineStore('admin', () => {
   const isAuthenticated = ref(sessionStorage.getItem('admin_authenticated') === 'true')
-  const adminUser = ref(localStorage.getItem('admin_user') || '')
-  /** Senha OS em memória — usada ao salvar empresa, nunca no localStorage. */
+  const adminUser = ref('')
   const osSenha = ref('')
 
   const tokenStatus = ref('idle')
-  const lastFullSync = ref(localStorage.getItem('last_full_sync') || null)
+  const lastFullSync = ref(null)
   const syncStatus = ref('idle')
   const syncMessage = ref('')
   const syncProgress = ref({
@@ -19,7 +18,7 @@ export const useAdminStore = defineStore('admin', () => {
     subgrupos: false,
     marcas: false,
     medidas: false,
-    produtos: false
+    produtos: false,
   })
 
   async function login(usuario, senha) {
@@ -28,15 +27,13 @@ export const useAdminStore = defineStore('admin', () => {
     adminUser.value = usuario
     osSenha.value = senha
     sessionStorage.setItem('admin_authenticated', 'true')
-    localStorage.setItem('admin_user', usuario)
     return true
   }
 
   function markAuthenticated(usuario) {
     isAuthenticated.value = true
-    adminUser.value = usuario || adminUser.value
+    if (usuario) adminUser.value = usuario
     sessionStorage.setItem('admin_authenticated', 'true')
-    if (usuario) localStorage.setItem('admin_user', usuario)
   }
 
   function logout() {
@@ -45,7 +42,6 @@ export const useAdminStore = defineStore('admin', () => {
     osSenha.value = ''
     sessionStorage.removeItem('admin_authenticated')
     sessionStorage.removeItem('admin_token')
-    localStorage.removeItem('admin_user')
   }
 
   async function syncAll() {
@@ -65,7 +61,6 @@ export const useAdminStore = defineStore('admin', () => {
       syncProgress.value.produtos = Boolean(etapas.produtos)
 
       lastFullSync.value = new Date().toISOString()
-      localStorage.setItem('last_full_sync', lastFullSync.value)
 
       syncStatus.value = 'success'
       syncMessage.value = '✅ Sincronização completa realizada com sucesso!'
@@ -86,7 +81,7 @@ export const useAdminStore = defineStore('admin', () => {
       subgrupos: false,
       marcas: false,
       medidas: false,
-      produtos: false
+      produtos: false,
     }
   }
 
@@ -109,6 +104,6 @@ export const useAdminStore = defineStore('admin', () => {
     markAuthenticated,
     logout,
     syncAll,
-    resetSync
+    resetSync,
   }
 })

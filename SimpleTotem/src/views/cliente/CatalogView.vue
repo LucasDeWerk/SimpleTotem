@@ -34,20 +34,21 @@
         <button class="home-btn" @click="goHome" type="button">
           ← {{ lang.t.backToHome }}
         </button>
-        <div class="topbar-info">
-          <h2 class="topbar-title">{{ currentCategoryName }}</h2>
+        <h2 class="topbar-title">{{ currentCategoryName }}</h2>
+        <div class="topbar-right">
           <span class="topbar-count">
             {{ catalog.productsByCategory.length }}
             {{ catalog.productsByCategory.length === 1 ? lang.t.product : lang.t.products }}
           </span>
-        </div>
-        <div
-          v-if="!device.isOnline"
-          class="catalog-offline-badge"
-          :title="lang.t.offline"
-        >
-          <span class="offline-dot" aria-hidden="true"></span>
-          <span>{{ lang.t.offline }}</span>
+          <LanguageSwitcher compact />
+          <div
+            v-if="!device.isOnline"
+            class="catalog-offline-badge"
+            :title="lang.t.offline"
+          >
+            <span class="offline-dot" aria-hidden="true"></span>
+            <span>{{ lang.t.offline }}</span>
+          </div>
         </div>
       </div>
 
@@ -56,6 +57,12 @@
         <div v-if="catalog.loading" class="loading-message">
           <div class="loading-spinner-ring"></div>
           <p>{{ lang.t.loadingProducts }}</p>
+        </div>
+
+        <div v-else-if="catalog.loadError" class="empty-message">
+          <span class="empty-icon">⚠️</span>
+          <p>{{ catalog.loadError }}</p>
+          <button class="retry-btn" type="button" @click="reloadCatalog">Tentar novamente</button>
         </div>
 
         <div v-else-if="catalog.productsByCategory.length === 0" class="empty-message">
@@ -70,10 +77,10 @@
             :key="product.id_produto"
             :id="product.id_produto"
             :name="product.descproduto"
-            :price="product.preco_venda"
+            :price="Number(product.preco_venda)"
             :image="product.foto"
             :badge="null"
-            :shortDescription="`${product.descsubgrupo} - ${product.descmarca || ''}`"
+            :shortDescription="product.descsubgrupo || product.descmarca || ''"
             :hasCustomization="false"
             :actionHint="lang.t.chooseQuantity"
             @click="handleProductClick(product)"
@@ -141,8 +148,10 @@
 
           <div class="modal-body">
             <h3 class="modal-product-name">{{ selectedProduct.descproduto }}</h3>
-            <p class="modal-product-desc">{{ selectedProduct.descsubgrupo }} - {{ selectedProduct.descmarca }}</p>
-            <span class="modal-product-price">R$ {{ selectedProduct.preco_venda.toFixed(2) }}</span>
+            <p v-if="selectedProduct.descsubgrupo || selectedProduct.descmarca" class="modal-product-desc">
+              {{ [selectedProduct.descsubgrupo, selectedProduct.descmarca].filter(Boolean).join(' - ') }}
+            </p>
+            <span class="modal-product-price">R$ {{ Number(selectedProduct.preco_venda).toFixed(2) }}</span>
 
             <div class="modal-quantity">
               <span class="modal-qty-label">{{ lang.t.quantity }}</span>
@@ -161,7 +170,7 @@
 
             <div class="modal-total">
               <span>{{ lang.t.total }}:</span>
-              <strong>R$ {{ (selectedProduct.preco_venda * detailQuantity).toFixed(2) }}</strong>
+              <strong>R$ {{ (Number(selectedProduct.preco_venda) * detailQuantity).toFixed(2) }}</strong>
             </div>
 
             <button class="modal-add-btn" @click="addDetailToCart">
@@ -182,8 +191,10 @@ import { useCartStore } from '@/stores/cart'
 import { useSessionStore } from '@/stores/session'
 import { useLanguageStore } from '@/stores/language'
 import { useDeviceStore } from '@/stores/device'
+import { useSimpleSfiqueStore } from '@/stores/simplesfique'
 import ProductCard from '@/components/shared/ProductCard.vue'
 import QuantityStepper from '@/components/shared/QuantityStepper.vue'
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher.vue'
 
 const router = useRouter()
 const catalog = useCatalogStore()
@@ -191,6 +202,7 @@ const cart = useCartStore()
 const session = useSessionStore()
 const lang = useLanguageStore()
 const device = useDeviceStore()
+const sfique = useSimpleSfiqueStore()
 
 const isWideLayout = ref(typeof window !== 'undefined' ? window.innerWidth >= 1080 : true)
 
@@ -201,6 +213,12 @@ function updateLayout() {
 
 onMounted(async () => {
   window.addEventListener('resize', updateLayout)
+
+  if (!sfique.isConfigured) {
+    router.replace({ name: 'totem-login' })
+    return
+  }
+
   try {
     if (catalog.categories.length === 0) {
       await catalog.fetchCatalog()
@@ -212,6 +230,13 @@ onMounted(async () => {
     console.error('[CatalogView] Erro ao carregar catálogo:', error)
   }
 })
+
+async function reloadCatalog() {
+  await catalog.fetchCatalog(true)
+  if (!catalog.selectedCategoryId && catalog.categories.length > 0) {
+    catalog.selectCategory(catalog.categories[0].id)
+  }
+}
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateLayout)
@@ -255,7 +280,10 @@ function addDetailToCart() {
     id: selectedProduct.value.id_produto,
     name: selectedProduct.value.descproduto,
     price: selectedProduct.value.preco_venda,
-    image: selectedProduct.value.foto
+    image: selectedProduct.value.foto,
+    menu_id: selectedProduct.value.menu_id,
+    ambiente_preparo_id: selectedProduct.value.ambiente_preparo_id,
+    emite_ticket: selectedProduct.value.emite_ticket,
   }
 
   cart.addItem(produtoParaCarrinho, detailQuantity.value, detailNotes.value)
@@ -435,13 +463,13 @@ function closeSidebarExpand() {
 .catalog-topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-lg);
+  gap: var(--space-md);
   padding: var(--space-lg) var(--space-xl);
   border-bottom: 1px solid rgba(245, 124, 0, 0.08);
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
+  min-width: 0;
 }
 
 .home-btn {
@@ -456,25 +484,30 @@ function closeSidebarExpand() {
   font-weight: var(--font-weight-bold);
   cursor: pointer;
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .home-btn:active {
   background: rgba(245, 124, 0, 0.15);
 }
 
-.topbar-info {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-width: 0;
-}
-
 .topbar-title {
+  flex: 1;
+  min-width: 0;
   font-size: var(--font-size-3xl);
   font-weight: 900;
   color: #0f172a;
   letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-shrink: 0;
 }
 
 .topbar-count {
@@ -482,6 +515,7 @@ function closeSidebarExpand() {
   color: #64748b;
   opacity: 0.8;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .catalog-offline-badge {
@@ -547,6 +581,17 @@ function closeSidebarExpand() {
   font-size: var(--font-size-md);
   color: #94a3b8;
   margin: 0;
+}
+
+.retry-btn {
+  margin-top: var(--space-md);
+  padding: var(--space-md) var(--space-xl);
+  border: none;
+  border-radius: var(--radius-md);
+  background: #f57c00;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 @keyframes spin {
@@ -987,17 +1032,15 @@ function closeSidebarExpand() {
 
   .catalog-topbar {
     padding: var(--space-md) var(--space-lg);
-    flex-wrap: wrap;
     gap: var(--space-sm);
-  }
-
-  .catalog-offline-badge {
-    width: 100%;
-    justify-content: center;
   }
 
   .topbar-title {
     font-size: var(--font-size-xl);
+  }
+
+  .topbar-count {
+    display: none;
   }
 
   .products-grid {

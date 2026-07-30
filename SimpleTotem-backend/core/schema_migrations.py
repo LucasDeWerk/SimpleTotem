@@ -27,25 +27,6 @@ def run_schema_migrations(conn: Connection) -> None:
 
 
 def _migrate_vendas(conn: Connection) -> None:
-    # DB-002: tven_saidapagamento
-    if not _table_exists(conn, "tven_saidapagamento"):
-        conn.execute(text("""
-            CREATE TABLE tven_saidapagamento (
-                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                id_saida INTEGER NOT NULL REFERENCES tven_saida(id),
-                id_tipo_pagamento TEXT(2) REFERENCES tfin_tipopagrec(id),
-                vlr_pagamento NUMERIC(17, 2) NOT NULL,
-                nsu_sitef TEXT(20),
-                nsu_host TEXT(20),
-                autorizacao TEXT(20),
-                bandeira TEXT(30),
-                modalidade TEXT(30),
-                pix INTEGER NOT NULL DEFAULT 0,
-                cupom_bruto TEXT,
-                dh_pagamento TEXT(19) NOT NULL
-            )
-        """))
-
     # DB-003: id_terminal em tven_saida
     saida_cols = _columns(conn, "tven_saida")
     if saida_cols and "id_terminal" not in saida_cols:

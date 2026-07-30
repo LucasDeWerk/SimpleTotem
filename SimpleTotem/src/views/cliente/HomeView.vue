@@ -36,15 +36,21 @@ import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
 import { useLanguageStore } from '@/stores/language'
+import { useSimpleSfiqueStore } from '@/stores/simplesfique'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher.vue'
 
 const router = useRouter()
 const session = useSessionStore()
 const lang = useLanguageStore()
+const sfique = useSimpleSfiqueStore()
 
 const adminTapCount = ref(0)
 
 function startOrder() {
+  if (!sfique.isConfigured) {
+    router.push({ name: 'totem-login' })
+    return
+  }
   session.startSession()
   router.push({ name: 'catalog' })
 }

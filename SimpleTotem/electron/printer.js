@@ -169,14 +169,20 @@ function createUsbAdapter(printerConfig) {
 /** Cupom TEF: 48 colunas, fonte A normal (size 0,0 = 1x — size 1,1 seria 2x). */
 const RECEIPT_WIDTH = 48
 
+/**
+ * Normaliza linhas para impressão. Cada item pode ser uma string simples
+ * (imprime normal) ou um objeto { text, bold } para destacar títulos/totais.
+ * Linhas vazias são preservadas para dar espaçamento real no papel.
+ */
 function normalizePrintLines(lines) {
   const out = []
   for (const item of lines) {
-    const text = String(item ?? '')
-    if (!text) continue
+    if (item === null || item === undefined) continue
+    const isObj = typeof item === 'object' && 'text' in item
+    const raw = isObj ? item.text : item
+    const text = String(raw ?? '')
     for (const line of text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')) {
-      const trimmed = line.trim()
-      if (trimmed) out.push(trimmed.substring(0, RECEIPT_WIDTH))
+      out.push({ text: line.trim().substring(0, RECEIPT_WIDTH), bold: isObj && Boolean(item.bold) })
     }
   }
   return out
@@ -278,8 +284,18 @@ async function printLines(lines, options = {}) {
         try {
           configureReceiptPrinter(escposPrinter)
 
-          for (const line of textLines) {
-            escposPrinter.text(line)
+          if (isCupomFiserv) {
+            for (const line of textLines) {
+              escposPrinter.text(line)
+            }
+          } else {
+            for (const line of textLines) {
+              if (line.bold) {
+                escposPrinter.style('b').text(line.text).style('normal')
+              } else {
+                escposPrinter.text(line.text)
+              }
+            }
           }
 
           if (options.cut !== false) {

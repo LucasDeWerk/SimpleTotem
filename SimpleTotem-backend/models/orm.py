@@ -184,6 +184,9 @@ class ApiSessao(Base):
     senha_os_enc = Column(Text)
     expira_em = Column(Integer)
     dh_login = Column(Text)
+    terminal_id = Column(Integer)
+    terminal_token = Column(Text)
+    senha_terminal_enc = Column(Text)
 
 
 class SyncCheckpoint(Base):

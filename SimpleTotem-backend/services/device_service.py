@@ -10,12 +10,11 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from core.config import SCRIPT_DIR as _SCRIPT_DIR
 from core.database import SessionLocal
 from models.orm import Hardware
 
 logger = logging.getLogger(__name__)
-
-_SCRIPT_DIR = Path(__file__).resolve().parent.parent.parent / "script"
 _CATEGORIAS_IDS = ("impressora", "terminal_pagamento", "leitor_barcode")
 
 

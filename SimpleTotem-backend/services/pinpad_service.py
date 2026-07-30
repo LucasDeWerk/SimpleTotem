@@ -1,5 +1,6 @@
 """Pinpad — genérico via device_service."""
 
+from core.config import SCRIPT_DIR
 from services import device_service
 
 
@@ -17,10 +18,8 @@ def configurar_pinpad(**_) -> dict:
 
 def garantir_pinpad_configurado() -> str:
     import sys
-    from pathlib import Path
 
-    script_dir = Path(__file__).resolve().parent.parent.parent / "script"
-    sys.path.insert(0, str(script_dir))
+    sys.path.insert(0, str(SCRIPT_DIR))
     from pinpad_config import garantir_configurado
     return garantir_configurado()
 
@@ -33,7 +32,14 @@ def comando_worker_sitef() -> list[str]:
     import sys
     from pathlib import Path
 
-    worker_sh = Path(__file__).resolve().parent.parent.parent / "script" / "run_sitef_worker.sh"
+    worker_sh = SCRIPT_DIR / "run_sitef_worker.sh"
     if sudo_sem_senha_disponivel() and worker_sh.exists():
         return ["sudo", "-n", str(worker_sh)]
-    return [sys.executable, str(Path(__file__).resolve().parent / "sitef_worker.py")]
+
+    # Frozen binary: roda o mesmo executável em modo worker
+    if getattr(sys, "frozen", False):
+        return [sys.executable, "--sitef-worker"]
+
+    # Dev: executa sitef_worker.py com o Python atual
+    worker_py = Path(__file__).resolve().parent / "sitef_worker.py"
+    return [sys.executable, str(worker_py)]

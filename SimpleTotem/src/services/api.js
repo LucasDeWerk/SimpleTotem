@@ -1,12 +1,13 @@
 // ─── Configuração ─────────────────────────────────────────────────────────────
 
+let _apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '')
+
 export function getApiBaseUrl() {
-  return localStorage.getItem('api_base_url') || 'http://localhost:8000'
+  return _apiBaseUrl
 }
 
 export function setApiBaseUrl(url) {
-  const normalized = (url || '').trim().replace(/\/$/, '')
-  localStorage.setItem('api_base_url', normalized || 'http://localhost:8000')
+  _apiBaseUrl = (url || '').trim().replace(/\/$/, '') || 'http://localhost:8000'
   invalidateToken()
   _adminToken = null
 }
@@ -58,39 +59,6 @@ async function apiFetch(path, options = {}) {
 
   if (!res.ok) throw new Error(`Erro ${res.status}: ${await res.text()}`)
   return res.status === 204 ? null : res.json()
-}
-
-// ─── Catálogo ─────────────────────────────────────────────────────────────────
-
-export async function obterGrupos() {
-  return apiFetch('/catalogo/grupos')
-}
-
-export async function obterSubgrupos(idGrupo) {
-  const qs = idGrupo != null ? `?id_grupo=${idGrupo}` : ''
-  return apiFetch(`/catalogo/subgrupos${qs}`)
-}
-
-export async function obterMarcas() {
-  // Endpoint não existe ainda no backend — retorna lista vazia sem quebrar
-  return []
-}
-
-export async function obterMedidas() {
-  // Endpoint não existe ainda no backend — retorna lista vazia sem quebrar
-  return []
-}
-
-export async function obterProdutos(filtros = {}) {
-  const params = new URLSearchParams()
-  if (filtros.id_grupo != null)    params.set('id_grupo',    filtros.id_grupo)
-  if (filtros.id_subgrupo != null) params.set('id_subgrupo', filtros.id_subgrupo)
-  const qs = params.toString() ? `?${params}` : ''
-  return apiFetch(`/catalogo/produtos${qs}`)
-}
-
-export async function obterProduto(idProduto) {
-  return apiFetch(`/catalogo/produtos/${idProduto}`)
 }
 
 // ─── Empresa / SaaS ───────────────────────────────────────────────────────────
@@ -149,26 +117,6 @@ export async function testarConexaoApi(url) {
 
 export async function obterTerminalAtual() {
   return apiFetch('/terminal/atual')
-}
-
-/** @deprecated use loginSistema() */
-export async function loginTotem(usuario, senha) {
-  return loginSistema(usuario, senha)
-}
-
-export async function obterEmpresa() {
-  return apiFetch('/empresa')
-}
-
-/** @deprecated use obterEmpresa() */
-export async function obterEmpresas() {
-  const empresa = await obterEmpresa()
-  return empresa ? [empresa] : []
-}
-
-export async function obterSaas() {
-  // Sem endpoint dedicado no backend — retorna null
-  return null
 }
 
 // ─── Hardware (dispositivos) ──────────────────────────────────────────────────
@@ -241,11 +189,6 @@ export async function removerAtribuicaoHardware(categoria) {
   return apiFetch(`/hardware/atribuir/${categoria}`, { method: 'DELETE' })
 }
 
-/** @deprecated use atribuirDispositivoHardware */
-export async function configurarCategoriaHardware(categoria) {
-  return apiFetch(`/hardware/configurar-categoria/${categoria}`, { method: 'POST' })
-}
-
 /**
  * Remove a configuração de um tipo de dispositivo.
  */
@@ -274,6 +217,19 @@ export async function obterStatusPinpad() {
 /** Detecta o pinpad USB e atualiza script/CliSiTef.ini. */
 export async function configurarPinpad() {
   return apiFetch('/hardware/pinpad/configurar', { method: 'POST' })
+}
+
+/** Lista portas seriais USB disponíveis no sistema (ttyUSB*, ttyACM*). */
+export async function listarPortasSerial() {
+  return apiFetch('/hardware/sitef/portas-serial')
+}
+
+/** Atualiza a porta do pinpad em CliSiTef.ini. */
+export async function salvarPortaSitef(porta) {
+  return apiFetch('/hardware/sitef/porta', {
+    method: 'POST',
+    body: JSON.stringify({ porta }),
+  })
 }
 
 // ─── Sincronização (Admin) ────────────────────────────────────────────────────
@@ -325,10 +281,6 @@ export async function salvarEmpresaSimpleSfique(empresa) {
   })
 }
 
-export async function listarEtapasSync() {
-  return apiFetch('/sinc/etapas')
-}
-
 export async function sincronizarEtapa(etapa) {
   return apiFetch(`/sinc/pull/${etapa}`, { method: 'POST' })
 }
@@ -337,35 +289,7 @@ export async function sincronizarCompleto() {
   return apiFetch('/sinc/pull/completa', { method: 'POST' })
 }
 
-export async function sincronizarEmpresas() {
-  return obterEmpresaSinc()
-}
-
-export async function sincronizarGrupos() {
-  return obterGrupos()
-}
-
-export async function sincronizarSubgrupos() {
-  return obterSubgrupos()
-}
-
-export async function sincronizarMarcas() {
-  return obterMarcas()
-}
-
-export async function sincronizarMedidas() {
-  return obterMedidas()
-}
-
-export async function sincronizarProdutos() {
-  return obterProdutos()
-}
-
 // ─── Vendas ───────────────────────────────────────────────────────────────────
-
-export async function listarVendas() {
-  return apiFetch('/vendas')
-}
 
 export async function obterMetodosPagamento() {
   return apiFetch('/vendas/metodos-pagamento')
@@ -431,7 +355,136 @@ export async function obterStatusTransacao(transacaoId) {
   return apiFetch(`/vendas/transacao/${transacaoId}`)
 }
 
+/**
+ * Confirma ou desfaz a transação SiTef após impressão do cupom TEF e XML fiscal.
+ * Deve ser chamado APÓS printReceipt() (Item 8.1.1 CliSiTef Autoatendimento).
+ * @param {{ transacao_id: string, confirma: number, impressao_ok: boolean, xml_emitido: boolean }} payload
+ */
+export async function confirmarPagamento(payload) {
+  return apiFetch('/vendas/confirmar', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
 
-// ─── Warm-up: obtém o token assim que o módulo é importado ────────────────────
-getToken().catch(err => console.warn('[API] Falha ao pré-carregar token:', err.message))
+// ─── SimplesFique API ──────────────────────────────────────────────────────────
+
+export function getSfiqueBaseUrl() {
+  return (import.meta.env.VITE_SFIQUE_URL || 'http://192.168.10.51:8000').replace(/\/$/, '')
+}
+
+// Callback registrado pelo simplesfique store para renovar tokens em 401
+let _sfiqueTokenRefresher = null
+export function setSfiqueTokenRefresher(fn) {
+  _sfiqueTokenRefresher = fn
+}
+
+// tokenType: 'jwt' | 'terminal' — determina qual token usar no retry
+async function sfFetch(path, options = {}, token = null, tokenType = 'terminal') {
+  const makeHeaders = (t) => ({
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...(t ? { Authorization: `Bearer ${t}` } : {}),
+    ...(options.headers || {}),
+  })
+
+  const res = await fetch(`${getSfiqueBaseUrl()}/api/v1${path}`, {
+    ...options,
+    headers: makeHeaders(token),
+  })
+
+  if (res.status === 401 && _sfiqueTokenRefresher) {
+    const novosTokens = await _sfiqueTokenRefresher()
+    if (novosTokens) {
+      const novoToken = tokenType === 'jwt' ? novosTokens.jwt_token : novosTokens.terminal_token
+      const retry = await fetch(`${getSfiqueBaseUrl()}/api/v1${path}`, {
+        ...options,
+        headers: makeHeaders(novoToken),
+      })
+      if (!retry.ok) {
+        let detail = `Erro ${retry.status}`
+        try { const d = await retry.json(); detail = d.detail || d.erro || detail } catch {}
+        throw new Error(detail)
+      }
+      return retry.status === 204 ? null : retry.json()
+    }
+  }
+
+  if (!res.ok) {
+    let detail = `Erro ${res.status}`
+    try { const d = await res.json(); detail = d.detail || d.erro || detail } catch {}
+    throw new Error(detail)
+  }
+  return res.status === 204 ? null : res.json()
+}
+
+export function sfLogin(email, senha) {
+  return sfFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email, senha }) })
+}
+
+export function sfListarTerminais(jwtToken) {
+  return sfFetch('/operacional/terminais', {}, jwtToken, 'jwt')
+}
+
+export function sfListarTiposPagamento(jwtToken) {
+  return sfFetch('/financeiro/tipo-pagamento-recebimentos', {}, jwtToken, 'jwt')
+}
+
+export function sfValidarSenha(terminalId, senha, jwtToken) {
+  return sfFetch(`/operacional/terminais/${terminalId}/validar-senha`, {
+    method: 'POST',
+    body: JSON.stringify({ senha, app: 'totem' }),
+  }, jwtToken, 'jwt')
+}
+
+export function sfObterConfig(terminalId, configVersion, produtosVersion, terminalToken) {
+  return sfFetch(
+    `/totem/terminais/${terminalId}/config?config_version=${configVersion}&produtos_version=${produtosVersion}`,
+    {},
+    terminalToken,
+    'terminal',
+  )
+}
+
+export function sfEmitirCupom(cupomId, jwtToken) {
+  return sfFetch('/vendas/cupom-fiscal/emitir', {
+    method: 'POST',
+    body: JSON.stringify({ cupom_id: cupomId }),
+  }, jwtToken, 'jwt')
+}
+
+export function sfVendaCompleta(payload, terminalToken) {
+  return sfFetch('/totem/venda-completa', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }, terminalToken, 'terminal')
+}
+
+// ─── Sessão do totem (local backend) ─────────────────────────────────────────
+
+export async function obterSessaoTotem() {
+  const res = await fetch(`${getApiBaseUrl()}/sinc/sessao`)
+  if (!res.ok) return null
+  const text = await res.text()
+  if (!text) return null
+  try { return JSON.parse(text) } catch { return null }
+}
+
+export async function salvarSessaoTotem(payload) {
+  return apiFetch('/sinc/simplesfique/sessao-totem', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function reloginSfique() {
+  const res = await fetch(`${getApiBaseUrl()}/sinc/simplesfique/relogin`, { method: 'POST' })
+  if (!res.ok) {
+    let detail = `${res.status}`
+    try { const d = await res.json(); detail = d.detail || detail } catch {}
+    console.warn('[Sfique] Relogin automático falhou:', detail)
+    return null
+  }
+  return res.json()
+}
 

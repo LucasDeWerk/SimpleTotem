@@ -9,11 +9,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
   quit: () => ipcRenderer.invoke("quit-app"),
   platform: process.platform,
   printer: {
-    // Clona args para evitar DataCloneError com proxies Vue no IPC
+    // Clona args via JSON para evitar DataCloneError com proxies Vue no IPC,
+    // preservando linhas como string OU { text, bold } (String(obj) virava "[object Object]")
     printLines: (lines, options) => ipcRenderer.invoke(
       "printer:print-lines",
-      Array.isArray(lines) ? lines.map((l) => String(l)) : [],
-      options && typeof options === "object" ? { ...options } : {}
+      Array.isArray(lines) ? JSON.parse(JSON.stringify(lines)) : [],
+      options && typeof options === "object" ? JSON.parse(JSON.stringify(options)) : {}
     ),
     printRaw: (bufferData) => ipcRenderer.invoke(
       "printer:print-raw",

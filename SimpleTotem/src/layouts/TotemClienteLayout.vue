@@ -22,6 +22,16 @@
       </router-view>
     </main>
 
+    <!-- Barra de navegação obrigatória (Fiserv req. 1.3) -->
+    <nav v-if="showNavBar" class="totem-nav-bar">
+      <button class="nav-btn nav-btn--ghost" type="button" @click="goMenuInicial">
+        ← Menu Inicial
+      </button>
+      <button class="nav-btn nav-btn--encerrar" type="button" @click="encerrar">
+        Encerrar
+      </button>
+    </nav>
+
     <TimeoutOverlay
       v-if="showTimeoutWarning"
       :secondsLeft="session.secondsLeft"
@@ -29,9 +39,6 @@
       @continue="continueSession"
     />
 
-    <div v-if="showFloatingLanguage" class="layout-lang-switcher">
-      <LanguageSwitcher />
-    </div>
   </div>
 </template>
 
@@ -43,10 +50,10 @@ import { useSessionStore } from '@/stores/session'
 import { useDeviceStore } from '@/stores/device'
 import { useCatalogStore } from '@/stores/catalog'
 import { useLanguageStore } from '@/stores/language'
+import { usePaymentStore } from '@/stores/payment'
 import { useIdleTimer } from '@/composables/useIdleTimer'
 import TotemHeader from '@/components/shared/TotemHeader.vue'
 import TimeoutOverlay from '@/components/shared/TimeoutOverlay.vue'
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -55,10 +62,15 @@ const session = useSessionStore()
 const device = useDeviceStore()
 const catalog = useCatalogStore()
 const lang = useLanguageStore()
+const payment = usePaymentStore()
 
 useIdleTimer()
 
 const SESSION_PAUSE_ROUTES = ['payment', 'processing', 'success']
+
+// NavBar obrigatória em todas as telas exceto: home, processing (pagamento em andamento), success, timeout
+const NAV_BAR_HIDDEN = ['home', 'processing', 'success', 'timeout']
+const showNavBar = computed(() => !NAV_BAR_HIDDEN.includes(route.name))
 
 const showHeader = computed(() => {
   const noHeader = ['home', 'catalog', 'processing', 'success', 'timeout']
@@ -66,8 +78,6 @@ const showHeader = computed(() => {
 })
 
 const showBack = computed(() => route.meta.showBack === true)
-
-const showFloatingLanguage = computed(() => route.name === 'catalog')
 
 const currentStep = computed(() => {
   const steps = {
@@ -127,6 +137,17 @@ function continueSession() {
   session.resetTimer()
 }
 
+function goMenuInicial() {
+  router.push({ name: 'catalog' })
+}
+
+function encerrar() {
+  cart.clearCart()
+  payment.resetPayment()
+  session.endSession()
+  router.replace({ name: 'home' })
+}
+
 onMounted(() => {
   device.init()
   catalog.fetchCatalog()
@@ -149,17 +170,51 @@ onMounted(() => {
   flex-direction: column;
 }
 
-.layout-lang-switcher {
-  position: fixed;
-  top: 24px;
-  right: 24px;
-  z-index: 200;
+/* Mesma linguagem visual do TotemHeader */
+.totem-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-navbar);
+  flex-shrink: 0;
+  height: 72px;
 }
 
-@media (max-width: 768px) {
-  .layout-lang-switcher {
-    top: 16px;
-    right: 16px;
-  }
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: var(--space-sm) var(--space-xl);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  transition: background var(--transition-fast);
+}
+
+/* Mesmo padrão do header-back-btn e header-cart-btn */
+.nav-btn--ghost {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-color-secondary);
+}
+
+.nav-btn--ghost:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ENCERRAR: branco com texto vermelho — destaque sem sair do sistema */
+.nav-btn--encerrar {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-error);
+}
+
+.nav-btn--encerrar:active {
+  background: rgba(255, 255, 255, 1);
 }
 </style>

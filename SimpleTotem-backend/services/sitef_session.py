@@ -22,6 +22,7 @@ class TransacaoSession:
     contexto_venda: Optional[Dict[str, Any]] = None
     id_saida: Optional[int] = None
     persistida: bool = False
+    confirmada: bool = False
     criada_em: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     atualizada_em: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -117,6 +118,13 @@ class TransacaoSessionStore:
         with self._lock:
             session.id_saida = id_saida
             session.persistida = True
+
+    def marcar_confirmada(self, transacao_id: str) -> None:
+        session = self.obter(transacao_id)
+        if not session:
+            return
+        with self._lock:
+            session.confirmada = True
 
     def finalizar(self, transacao_id: str, resultado: Optional[dict] = None, erro: Optional[str] = None) -> None:
         session = self.obter(transacao_id)

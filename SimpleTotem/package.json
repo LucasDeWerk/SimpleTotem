@@ -38,13 +38,29 @@
   "build": {
     "appId": "com.simpletotem.app",
     "productName": "SimpleTotem",
+    "icon": "build/icon.png",
     "linux": {
       "target": "AppImage",
-      "category": "Utility"
+      "category": "Utility",
+      "icon": "build/icon.png"
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*"
+      "dist-electron/**/*",
+      "node_modules/usb/**/*",
+      "node_modules/koffi/build/koffi/linux_x64/**/*",
+      "node_modules/koffi/package.json",
+      "node_modules/koffi/index.js",
+      "node_modules/sharp/**/*",
+      "node_modules/@img/**/*",
+      "node_modules/escpos/**/*",
+      "node_modules/escpos-usb/**/*",
+      "node_modules/jimp/**/*",
+      "node_modules/@jimp/**/*",
+      "node_modules/qrcode/**/*"
+    ],
+    "asarUnpack": [
+      "**/*.node"
     ]
   }
 }

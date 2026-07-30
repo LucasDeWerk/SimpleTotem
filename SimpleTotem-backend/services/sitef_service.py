@@ -6,9 +6,7 @@ import json
 import logging
 import os
 import subprocess
-import sys
 import threading
-from pathlib import Path
 from typing import Optional
 
 from core import config as app_config
@@ -16,8 +14,6 @@ from services.pinpad_service import comando_worker_sitef
 from services.sitef_session import store
 
 logger = logging.getLogger(__name__)
-
-_WORKER_PATH = Path(__file__).resolve().parent / "sitef_worker.py"
 
 SITEF_IP = app_config.SITEF_IP
 SITEF_ID_LOJA = app_config.SITEF_ID_LOJA
@@ -124,19 +120,22 @@ def executar_transacao(
     cupom: str,
     cnpj_estabelecimento: str = "",
     transacao_id: Optional[str] = None,
+    restricao: str = "",
+    num_parcelas: int = 1,
 ) -> dict:
     valor_display = _formatar_valor_sitef(valor_centavos)
     logger.warning(
-        "[SiTef] >>> VALOR PARA PINPAD  funcao=%d  valor_centavos=%d  (display R$%s)  cupom=%s",
-        funcao, valor_centavos, valor_display, cupom,
+        "[SiTef] >>> VALOR PARA PINPAD  funcao=%d  valor_centavos=%d  (display R$%s)  cupom=%s  restricao=%r  parcelas=%d",
+        funcao, valor_centavos, valor_display, cupom, restricao, num_parcelas,
     )
-    # A lib CliSiTef espera centavos como string inteira: "3490", não "34,90"
     payload = {
         "modo": "transacao",
         "funcao": funcao,
         "valor_centavos": valor_centavos,
         "cupom": cupom,
         "cnpj_estabelecimento": cnpj_estabelecimento,
+        "restricao": restricao,
+        "num_parcelas": num_parcelas,
     }
     return _executar_worker(payload, transacao_id=transacao_id)
 
@@ -151,6 +150,8 @@ def iniciar_transacao_async(
     cnpj_estabelecimento: str = "",
     total_cobrado: float = 0.0,
     contexto_venda: Optional[dict] = None,
+    restricao: str = "",
+    num_parcelas: int = 1,
 ) -> str:
     if store.transacao_em_andamento():
         raise RuntimeError("Já existe uma transação SiTef em andamento. Aguarde a conclusão.")
@@ -169,9 +170,13 @@ def iniciar_transacao_async(
                     cupom=cupom,
                     cnpj_estabelecimento=cnpj_estabelecimento,
                     transacao_id=tid,
+                    restricao=restricao,
+                    num_parcelas=num_parcelas,
                 )
                 resultado["total_cobrado"] = total_cobrado
                 store.finalizar(tid, resultado=resultado)
+                if resultado.get("aprovada"):
+                    _timeout_confirmacao(tid)
             except Exception as exc:
                 logger.exception("[SiTef] Erro na transação %s", tid)
                 store.finalizar(tid, erro=str(exc))
@@ -210,6 +215,51 @@ def obter_status_transacao(transacao_id: str, db=None) -> Optional[dict]:
             session.erro = f"Venda aprovada, mas falha ao gravar: {exc}"
 
     return session.to_dict()
+
+
+def cancelar_transacao_sitef(
+    valor_centavos: int,
+    cupom_original: str,
+    data_original: str,
+    nsu_host: str,
+    cnpj_estabelecimento: str = "",
+) -> dict:
+    return _executar_worker({
+        "modo": "cancelamento",
+        "valor_centavos": valor_centavos,
+        "cupom_original": cupom_original,
+        "data_original": data_original,
+        "nsu_host": nsu_host,
+        "cnpj_estabelecimento": cnpj_estabelecimento,
+    })
+
+
+def confirmar_pagamento_sitef(confirma: int) -> dict:
+    """
+    Chama FinalizaFuncaoSiTefInterativoA via worker.
+    Deve ser chamado APÓS impressão do cupom TEF e emissão do XML fiscal (Item 8.1.1).
+    confirma=1 → confirma pagamento
+    confirma=0 → desfaz pagamento
+    """
+    return _executar_worker({"modo": "confirmar", "confirma": confirma})
+
+
+def _timeout_confirmacao(transacao_id: str, delay: int = 30) -> None:
+    """Fallback: se /vendas/confirmar não chegar em 'delay' segundos, confirma automaticamente."""
+    def _check() -> None:
+        import time
+        time.sleep(delay)
+        session = store.obter(transacao_id)
+        if session and session.status == "aprovada" and not session.confirmada:
+            logger.warning(
+                "[SiTef] Timeout confirmação — confirmando automaticamente transacao=%s", transacao_id
+            )
+            try:
+                confirmar_pagamento_sitef(1)
+                store.marcar_confirmada(transacao_id)
+            except Exception as exc:
+                logger.error("[SiTef] Falha no timeout de confirmação: %s", exc)
+    threading.Thread(target=_check, daemon=True).start()
 
 
 def resolver_pendencias(cnpj_estabelecimento: str = "") -> None:

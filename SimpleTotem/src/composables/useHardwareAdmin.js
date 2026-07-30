@@ -4,6 +4,8 @@ import {
   obterStatusHardware,
   atribuirDispositivoHardware,
   removerAtribuicaoHardware,
+  listarPortasSerial,
+  salvarPortaSitef,
 } from '@/services/api'
 
 export const CATEGORIAS = [
@@ -39,6 +41,11 @@ export function useHardwareAdmin() {
   const dispositivosUSB = ref([])
   const statusGeral = ref(null)
   const erroGlobal = ref(null)
+
+  const portasSerial = ref([])
+  const portaSelecionada = ref('')
+  const salvandoPorta = ref(false)
+  const mensagemPorta = ref(null)
 
   const categoriasComStatus = computed(() => {
     const cats = statusGeral.value?.categorias || {}
@@ -85,11 +92,42 @@ export function useHardwareAdmin() {
     erroGlobal.value = null
     try {
       statusGeral.value = await obterStatusHardware()
+      const portaAtual = statusGeral.value?.categorias?.terminal_pagamento?.detalhes?.porta_configurada
+      if (portaAtual && !portaSelecionada.value) {
+        portaSelecionada.value = portaAtual
+      }
     } catch (e) {
       console.error('[Hardware]', e)
       erroGlobal.value = mensagemErroApi(e)
     } finally {
       carregando.value = false
+    }
+  }
+
+  async function carregarPortas() {
+    try {
+      const data = await listarPortasSerial()
+      portasSerial.value = data.portas || []
+      if (!portaSelecionada.value && portasSerial.value.length === 1) {
+        portaSelecionada.value = portasSerial.value[0]
+      }
+    } catch {
+      portasSerial.value = []
+    }
+  }
+
+  async function salvarPorta() {
+    if (!portaSelecionada.value) return
+    salvandoPorta.value = true
+    mensagemPorta.value = null
+    try {
+      await salvarPortaSitef(portaSelecionada.value)
+      mensagemPorta.value = { tipo: 'ok', texto: `Porta ${portaSelecionada.value} salva com sucesso.` }
+      await carregarTudo()
+    } catch (e) {
+      mensagemPorta.value = { tipo: 'erro', texto: e.message }
+    } finally {
+      salvandoPorta.value = false
     }
   }
 
@@ -181,13 +219,19 @@ export function useHardwareAdmin() {
     statusGeral,
     erroGlobal,
     categoriasComStatus,
+    portasSerial,
+    portaSelecionada,
+    salvandoPorta,
+    mensagemPorta,
     labelBadge,
     labelCategoria,
     jaAtribuido,
     carregarTudo,
+    carregarPortas,
     buscarUSB,
     atribuir,
     remover,
     testarImpressao,
+    salvarPorta,
   }
 }

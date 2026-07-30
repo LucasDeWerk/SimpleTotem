@@ -9,7 +9,7 @@
       <h3 class="product-name">{{ name }}</h3>
       <p v-if="shortDescription" class="product-desc">{{ shortDescription }}</p>
       <div class="product-footer">
-        <span class="product-price">R$ {{ price.toFixed(2) }}</span>
+        <span class="product-price">R$ {{ displayPrice.toFixed(2) }}</span>
         <span v-if="hasCustomization" class="product-customize-hint">{{ customizeHint }}</span>
         <span v-else class="product-add-hint">{{ actionHint }}</span>
       </div>
@@ -33,6 +33,8 @@ const props = defineProps({
 })
 
 defineEmits(['click'])
+
+const displayPrice = computed(() => Number(props.price) || 0)
 
 const badgeClass = computed(() => {
   const b = props.badge.toLowerCase()

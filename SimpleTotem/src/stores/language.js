@@ -247,7 +247,7 @@ const translations = {
 const localeOrder = ['pt-BR', 'en-US', 'es-ES']
 
 export const useLanguageStore = defineStore('language', () => {
-  const currentLocale = ref(localStorage.getItem('totem_locale') || 'pt-BR')
+  const currentLocale = ref('pt-BR')
 
   const t = computed(() => translations[currentLocale.value] || translations['pt-BR'])
 
@@ -258,13 +258,11 @@ export const useLanguageStore = defineStore('language', () => {
     const idx = localeOrder.indexOf(currentLocale.value)
     const next = localeOrder[(idx + 1) % localeOrder.length]
     currentLocale.value = next
-    localStorage.setItem('totem_locale', next)
   }
 
   function setLocale(locale) {
     if (translations[locale]) {
       currentLocale.value = locale
-      localStorage.setItem('totem_locale', locale)
     }
   }
 

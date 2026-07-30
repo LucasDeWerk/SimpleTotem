@@ -20,6 +20,8 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 from services.sitef_core import (  # noqa: E402
     executar_transacao,
+    cancelar_transacao,
+    confirmar_transacao,
     gerar_cupom_fiscal,
     resolver_pendencias,
 )
@@ -31,22 +33,44 @@ def main() -> int:
         modo = payload.get("modo", "transacao")
         cnpj = str(payload.get("cnpj_estabelecimento", ""))
 
+        if modo == "confirmar":
+            confirma = int(payload.get("confirma", 0))
+            confirmar_transacao(confirma)
+            sys.stdout.write(json.dumps({"confirmado": True, "confirma": confirma}) + "\n")
+            sys.stdout.flush()
+            return 0
+
         if modo == "pendencias":
             resolver_pendencias(cnpj_estabelecimento=cnpj)
             sys.stdout.write(json.dumps({"pendencias_resolvidas": True}) + "\n")
             sys.stdout.flush()
             return 0
 
+        if modo == "cancelamento":
+            resultado = cancelar_transacao(
+                valor_centavos=int(payload["valor_centavos"]),
+                cupom_original=str(payload["cupom_original"]),
+                data_original=str(payload["data_original"]),
+                nsu_host=str(payload.get("nsu_host") or ""),
+                cnpj_estabelecimento=cnpj,
+            )
+            sys.stdout.write(json.dumps(resultado) + "\n")
+            sys.stdout.flush()
+            return 0
+
         funcao = int(payload["funcao"])
-        # Centavos como string inteira: "3490" para R$ 34,90 — é o que a lib C espera
         valor_centavos = int(payload["valor_centavos"])
         cupom = str(payload.get("cupom") or gerar_cupom_fiscal())
+        restricao = str(payload.get("restricao") or "")
+        num_parcelas = int(payload.get("num_parcelas") or 1)
 
         executar_transacao(
             funcao=funcao,
             valor_centavos=valor_centavos,
             cupom=cupom,
             cnpj_estabelecimento=cnpj,
+            restricao=restricao,
+            num_parcelas=num_parcelas,
         )
         return 0
     except Exception as exc:

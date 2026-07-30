@@ -6,16 +6,17 @@ import httpx
 from datetime import datetime
 
 from core.database import get_db
-from core.config import URL_API
+from core.config import URL_API, api_v1_url
 from models.orm import (
-
-    Empresa, Grupo, Subgrupo, Marca, Medida, Produto, 
+    Empresa, Grupo, Subgrupo, Marca, Medida, Produto,
     TipoPagamento, Saida
-    
 )
 from models.schemas import (
     EmpresaOut,
     SessaoSimpleSfiqueOut,
+    SessaoCompletaOut,
+    SessaoTotemRequest,
+    ReloginOut,
     SimpleSfiqueLoginRequest,
     SimpleSfiqueLoginResponse,
 )
@@ -127,14 +128,103 @@ async def simplesfique_login(
     return SimpleSfiqueLoginResponse(**result)
 
 
-@router.get("/sessao", response_model=Optional[SessaoSimpleSfiqueOut])
+@router.get("/sessao", response_model=Optional[SessaoCompletaOut])
 def obter_sessao(db: Session = Depends(get_db)):
-    return api_session.sessao_to_dict(api_session.get_session(db))
+    return api_session.sessao_to_dict_completa(api_session.get_session(db))
 
 
-@router.get("/etapas")
-def listar_etapas_sync(db: Session = Depends(get_db)):
-    return {"etapas": sync_service.list_etapas(db)}
+@router.post("/simplesfique/sessao-totem", response_model=SessaoCompletaOut)
+def salvar_sessao_totem(
+    body: SessaoTotemRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Persiste tokens e credenciais após o login de 3 passos no totem."""
+    sessao = api_session.save_terminal_session(
+        db,
+        jwt_token=body.jwt_token,
+        terminal_id=body.terminal_id,
+        terminal_token=body.terminal_token,
+        senha_terminal=body.senha_terminal,
+        email=body.email,
+        senha_simples=body.senha_simples,
+        id_saas=body.id_saas,
+        id_empresa=body.id_empresa,
+    )
+    request.app.state.external_api_token = sessao.token
+    return api_session.sessao_to_dict_completa(sessao)
+
+
+@router.post("/simplesfique/relogin", response_model=ReloginOut)
+async def relogin_simplesfique(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Re-autentica no SimplesFique usando credenciais salvas. Chamado automaticamente em 401."""
+    from core.credential_crypto import decrypt_secret
+
+    sessao = api_session.get_session(db)
+    if not sessao:
+        raise HTTPException(status_code=422, detail="Nenhuma sessão configurada")
+
+    if not sessao.email or not sessao.senha_simples_enc:
+        raise HTTPException(status_code=422, detail="Credenciais SimplesFique não salvas — refaça o login")
+
+    if not sessao.terminal_id or not sessao.senha_terminal_enc:
+        raise HTTPException(status_code=422, detail="Credenciais do terminal não salvas — refaça o login")
+
+    try:
+        senha = decrypt_secret(sessao.senha_simples_enc)
+        senha_terminal = decrypt_secret(sessao.senha_terminal_enc)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=f"Erro ao descriptografar credenciais: {exc}") from exc
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp_login = await client.post(
+                api_v1_url("auth/login"),
+                json={"email": sessao.email, "senha": senha},
+                headers={"Accept": "application/json", "Content-Type": "application/json"},
+            )
+            if resp_login.status_code != 200:
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Falha ao renovar sessão no SimplesFique (HTTP {resp_login.status_code})"
+                )
+
+            jwt_token = resp_login.json().get("token", "")
+
+            resp_terminal = await client.post(
+                api_v1_url(f"operacional/terminais/{sessao.terminal_id}/validar-senha"),
+                json={"senha": senha_terminal, "app": "totem"},
+                headers={
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {jwt_token}",
+                },
+            )
+            if resp_terminal.status_code != 200:
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Falha ao renovar token do terminal (HTTP {resp_terminal.status_code})"
+                )
+
+            terminal_token = resp_terminal.json().get("access_token", "")
+
+    except HTTPException:
+        raise
+    except (httpx.ConnectError, httpx.TimeoutException) as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Servidor SimpleSfique inacessível ({URL_API}): verifique a rede e URL_API"
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Erro de comunicação com SimpleSfique: {exc}") from exc
+
+    api_session.update_tokens(db, jwt_token=jwt_token, terminal_token=terminal_token)
+    request.app.state.external_api_token = jwt_token
+
+    return ReloginOut(jwt_token=jwt_token, terminal_token=terminal_token)
 
 
 @router.post("/pull/{etapa}")

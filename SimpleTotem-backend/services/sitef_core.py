@@ -13,17 +13,65 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
 
+from core.config import (
+    SCRIPT_DIR,
+    SITEF_IP,
+    SITEF_ID_LOJA,
+    SITEF_ID_TERMINAL,
+    SITEF_OPERADOR,
+    SITEF_CNPJ_AUTOMACAO,
+    SITEF_PORTA_PINPAD,
+    SITEF_TLS_TOKEN,
+    SITEF_SUPERVISOR_SENHA,
+)
+
 logger = logging.getLogger(__name__)
 
-SCRIPT_DIR = Path(__file__).resolve().parent.parent.parent / "script"
 LIB_PATH = SCRIPT_DIR / "libclisitef.so"
+_INI_PATH = SCRIPT_DIR / "CliSiTef.ini"
 BUFFER_SIZE = 32768
 
-SITEF_IP = os.getenv("SITEF_IP", "192.168.10.12")
-SITEF_ID_LOJA = os.getenv("SITEF_ID_LOJA", "00000000")
-SITEF_ID_TERMINAL = os.getenv("SITEF_ID_TERMINAL", "ST000001")
-SITEF_OPERADOR = os.getenv("SITEF_OPERADOR", "01")
-SITEF_CNPJ_AUTOMACAO = os.getenv("SITEF_CNPJ_AUTOMACAO", "12523654185985")
+
+def atualizar_porta_pinpad(porta: str) -> None:
+    """Atualiza a porta do pinpad em CliSiTef.ini preservando todo o restante do arquivo."""
+    porta = porta.strip()
+    if not porta:
+        return
+
+    if not _INI_PATH.exists():
+        _INI_PATH.write_text(f"[PinPadCompartilhado]\nPorta={porta}\n", encoding="latin-1")
+        logger.info("CliSiTef.ini criado com Porta=%s", porta)
+        return
+
+    linhas = _INI_PATH.read_text(encoding="latin-1").splitlines(keepends=True)
+    em_secao = False
+    porta_escrita = False
+    resultado: list[str] = []
+
+    for linha in linhas:
+        stripped = linha.strip()
+        if stripped.startswith("["):
+            if em_secao and not porta_escrita:
+                resultado.append(f"Porta={porta}\n")
+                porta_escrita = True
+            em_secao = stripped == "[PinPadCompartilhado]"
+
+        if em_secao and stripped.lower().startswith("porta="):
+            resultado.append(f"Porta={porta}\n")
+            porta_escrita = True
+            continue
+
+        resultado.append(linha)
+
+    if em_secao and not porta_escrita:
+        resultado.append(f"Porta={porta}\n")
+        porta_escrita = True
+
+    if not porta_escrita:
+        resultado.append(f"\n[PinPadCompartilhado]\nPorta={porta}\n")
+
+    _INI_PATH.write_text("".join(resultado), encoding="latin-1")
+    logger.info("CliSiTef.ini atualizado: Porta=%s", porta)
 
 EventCallback = Optional[Callable[[dict], None]]
 
@@ -83,13 +131,16 @@ def _normalizar_cnpj(valor: str) -> str:
 
 
 def _montar_parametros_adicionais(cnpj_estabelecimento: str, cnpj_automacao: str) -> str:
-    """Formato VRS-248: [ParmsClient=1=...;2=...;][TransacoesAdicionaisHabilitadas=7;]"""
+    """Formato VRS-248: [ParmsClient=1=...;2=...;][TransacoesAdicionaisHabilitadas=7;][TipoComunicacaoExterna=...]"""
     cnpj1 = _normalizar_cnpj(cnpj_estabelecimento)
     cnpj2 = _normalizar_cnpj(cnpj_automacao or SITEF_CNPJ_AUTOMACAO)
-    return (
+    parms = (
         f"[ParmsClient=1={cnpj1};2={cnpj2};]"
         f"[TransacoesAdicionaisHabilitadas=7;]"
     )
+    if SITEF_TLS_TOKEN:
+        parms += f"[TipoComunicacaoExterna=TLSGWP;TokenRegistro={SITEF_TLS_TOKEN}]"
+    return parms
 
 
 def _norm(texto: str) -> str:
@@ -138,6 +189,10 @@ def _selecionar_menu(msg: str, funcao: int) -> str:
 def carregar_lib() -> ctypes.CDLL:
     if not LIB_PATH.exists():
         raise FileNotFoundError(f"libclisitef.so não encontrada em: {LIB_PATH}")
+
+    # Se o INI não tiver [PinPadCompartilhado], usa o valor do .env como padrão inicial
+    if not _INI_PATH.exists() or "[PinPadCompartilhado]" not in _INI_PATH.read_text(encoding="latin-1"):
+        atualizar_porta_pinpad(SITEF_PORTA_PINPAD)
 
     sys.path.insert(0, str(SCRIPT_DIR))
     try:
@@ -306,6 +361,7 @@ def _executar_loop(
     funcao: int,
     on_event: EventCallback,
     valor_str: str = "0",
+    num_parcelas: int = 1,
 ) -> tuple[int, dict, list]:
     buf_resultado = _mk_buf(8)
     buf_cmd = _mk_buf(14)
@@ -360,7 +416,12 @@ def _executar_loop(
                 _emit_event(on_event, "qrcode", payload=msg, tipo_campo=584)
             continue
 
-        if c in (1, 2, 3):
+        if c in (1, 2, 3) and tc == 500:
+            # SiTef solicitando senha do supervisor (funções administrativas)
+            _responder(buffer, SITEF_SUPERVISOR_SENHA)
+            _emit_event(on_event, "mensagem", texto="[Autenticação de supervisor]", destino="operador", tipo_campo=500)
+
+        elif c in (1, 2, 3):
             if msg:
                 destino = {1: "operador", 2: "cliente", 3: "ambos"}.get(c, "info")
                 _emit_event(on_event, "mensagem", texto=msg, destino=destino, tipo_campo=tc)
@@ -397,7 +458,12 @@ def _executar_loop(
             _responder(buffer, "")
 
         elif c == 23:
-            _zerar(buffer)
+            # Se o SiTef pedir número de parcelas e já tivermos o valor, responde automaticamente
+            if num_parcelas > 1 and tc in (7, 8, 9, 14, 800):
+                _responder(buffer, str(num_parcelas))
+                _emit_event(on_event, "mensagem", texto=f"Parcelas: {num_parcelas}", destino="operador", tipo_campo=tc)
+            else:
+                _zerar(buffer)
 
         elif c == 29:
             _responder(buffer, "1")
@@ -422,6 +488,8 @@ def executar_transacao(
     cupom: str,
     cnpj_estabelecimento: str = "",
     on_event: EventCallback = None,
+    restricao: str = "",
+    num_parcelas: int = 1,
 ) -> dict:
     lib = carregar_lib()
     configurar(lib, cnpj_estabelecimento, on_event)
@@ -453,16 +521,16 @@ def executar_transacao(
         _b(data),
         _b(hora),
         _b(SITEF_OPERADOR),
-        _b(""),
+        _b(restricao),
     )
     ret_inicia = _ascii_resultado(resultado2)
-    logger.info("IniciaFuncao → %d", ret_inicia)
+    logger.info("IniciaFuncao → %d (restricao=%r, parcelas=%d)", ret_inicia, restricao, num_parcelas)
     _emit_event(on_event, "iniciada", funcao=funcao, valor=valor_display, cupom=cupom)
 
     if ret_inicia != 10000:
         raise RuntimeError(f"IniciaFuncaoSiTef falhou: {ret_inicia}")
 
-    ret_loop, dados, linhas_cupom = _executar_loop(lib, funcao, on_event, valor_str)  # valor_str = "{34,90}"
+    ret_loop, dados, linhas_cupom = _executar_loop(lib, funcao, on_event, valor_str, num_parcelas)
     if not linhas_cupom:
         linhas_cupom = _resolver_cupom_bruto([], [], dados, valor_display)
     cupom_bruto = _cupom_bruto_texto(linhas_cupom)
@@ -489,10 +557,15 @@ def executar_transacao(
     sys.stdout.write(json.dumps(resultado, ensure_ascii=False) + "\n")
     sys.stdout.flush()
 
-    confirma = 1 if ret_loop == 0 else 0
-    resultado_fin = _mk_buf(8)
-    confirma_buf = ctypes.create_string_buffer(_b(str(confirma).rjust(6, "0")), 8)
-    lib.FinalizaFuncaoSiTefInterativoA(resultado_fin, confirma_buf)
+    # Se negada: finaliza imediatamente com confirma=0 (nada a confirmar)
+    # Se aprovada: deixa pendente — o backend chamará FinalizaFuncaoSiTefInterativoA
+    # somente APÓS impressão do cupom TEF e emissão do XML fiscal (Item 8.1.1 CliSiTef AA)
+    resultado["pendente_confirmacao"] = ret_loop == 0
+    if ret_loop != 0:
+        resultado_fin = _mk_buf(8)
+        confirma_buf = ctypes.create_string_buffer(_b("000000"), 8)
+        lib.FinalizaFuncaoSiTefInterativoA(resultado_fin, confirma_buf)
+        resultado["pendente_confirmacao"] = False
 
     _emit_event(
         on_event,
@@ -502,6 +575,203 @@ def executar_transacao(
         mensagem=dados.get(-1, "") or dados.get(0, ""),
     )
     return resultado
+
+
+def confirmar_transacao(confirma: int, on_event: EventCallback = None) -> None:
+    """
+    Finaliza a transação SiTef após impressão do cupom TEF e emissão do XML fiscal.
+    Deve ser chamada pelo backend somente após esses dois passos (Item 8.1.1).
+    confirma=1 → confirma (pagamento OK, comprovante impresso)
+    confirma=0 → desfaz (falha na impressão ou no XML)
+    """
+    lib = carregar_lib()
+    resultado_fin = _mk_buf(8)
+    confirma_buf = ctypes.create_string_buffer(_b(str(confirma).rjust(6, "0")), 8)
+    lib.FinalizaFuncaoSiTefInterativoA(resultado_fin, confirma_buf)
+    _emit_event(on_event, "confirmacao_enviada", confirma=confirma)
+
+
+def cancelar_transacao(
+    valor_centavos: int,
+    cupom_original: str,
+    data_original: str,
+    nsu_host: str,
+    cnpj_estabelecimento: str = "",
+    on_event: EventCallback = None,
+) -> dict:
+    """
+    Cancelamento via função SiTef 123 (cancelamento direto).
+    data_original: AAAAMMDD da transação original.
+    nsu_host: NSU do host retornado na transação original.
+    """
+    lib = carregar_lib()
+    configurar(lib, cnpj_estabelecimento, on_event)
+
+    data = datetime.now().strftime("%Y%m%d")
+    hora = datetime.now().strftime("%H%M%S")
+    cupom_cancelamento = gerar_cupom_fiscal()
+
+    valor_display = f"{valor_centavos // 100},{valor_centavos % 100:02d}"
+    valor_str = f"{{{valor_display}}}"
+
+    logger.info(
+        "cancelar_transacao: funcao=123 valor=%s cupom_orig=%s data_orig=%s nsu_host=%s",
+        valor_str, cupom_original, data_original, nsu_host,
+    )
+
+    resultado2 = _mk_buf(8)
+    lib.IniciaFuncaoSiTefInterativoA(
+        resultado2,
+        _b("000123"),
+        _b(valor_str),
+        _b(cupom_cancelamento),
+        _b(data),
+        _b(hora),
+        _b(SITEF_OPERADOR),
+        _b(""),
+    )
+    ret_inicia = _ascii_resultado(resultado2)
+    logger.info("IniciaFuncao cancelamento → %d", ret_inicia)
+
+    if ret_inicia != 10000:
+        raise RuntimeError(f"IniciaFuncao cancelamento falhou: {ret_inicia}")
+
+    _emit_event(on_event, "iniciada", funcao=123, valor=valor_display, cupom=cupom_cancelamento)
+
+    # Loop que responde automaticamente aos campos de cancelamento
+    ret_loop, dados, linhas_cupom = _executar_loop_cancelamento(
+        lib, on_event,
+        valor_str=valor_str,
+        nsu_host=nsu_host,
+        data_original=data_original,
+    )
+
+    if not linhas_cupom:
+        linhas_cupom = _resolver_cupom_bruto([], [], dados, valor_display)
+    cupom_bruto = _cupom_bruto_texto(linhas_cupom)
+
+    resultado = {
+        "aprovada": ret_loop == 0,
+        "resultado": ret_loop,
+        "nsu_sitef": dados.get(133, ""),
+        "nsu_host": dados.get(134, ""),
+        "cupom_bruto": cupom_bruto,
+        "linhas_cupom": linhas_cupom,
+    }
+
+    confirma = 1 if ret_loop == 0 else 0
+    resultado_fin = _mk_buf(8)
+    confirma_buf = ctypes.create_string_buffer(_b(str(confirma).rjust(6, "0")), 8)
+    lib.FinalizaFuncaoSiTefInterativoA(resultado_fin, confirma_buf)
+
+    _emit_event(on_event, "finalizada", aprovada=resultado["aprovada"], resultado=ret_loop)
+
+    sys.stdout.write(json.dumps(resultado, ensure_ascii=False) + "\n")
+    sys.stdout.flush()
+
+    return resultado
+
+
+def _executar_loop_cancelamento(
+    lib,
+    on_event: EventCallback,
+    valor_str: str,
+    nsu_host: str,
+    data_original: str,
+) -> tuple[int, dict, list]:
+    """
+    Loop igual ao principal, mas responde automaticamente a:
+    - c==34 (valor monetário) → valor_str
+    - c==23 com tc de documento/NSU → nsu_host
+    - c==23 com tc de data → data_original
+    """
+    buf_resultado = _mk_buf(8)
+    buf_cmd = _mk_buf(14)
+    buf_tc = _mk_buf(14)
+    buf_min = _mk_buf(8)
+    buf_max = _mk_buf(8)
+    continua = ctypes.create_string_buffer(b"000000", 8)
+    buffer = ctypes.create_string_buffer(BUFFER_SIZE)
+    buf_tam = ctypes.create_string_buffer(_b(str(BUFFER_SIZE).rjust(6, "0")), 8)
+
+    # TCs conhecidos para documento/NSU no cancelamento
+    _TC_DOCUMENTO = frozenset({13, 14, 15, 23, 133, 134})
+    # TCs conhecidos para data no cancelamento
+    _TC_DATA = frozenset({12, 17, 19, 45})
+
+    dados: dict = {}
+    cupom_cliente: list = []
+    cupom_loja: list = []
+
+    while True:
+        continua.value = b"000000"
+        buf_tam.value = _b(str(BUFFER_SIZE).rjust(6, "0"))
+
+        lib.ContinuaFuncaoSiTefInterativoA(
+            buf_resultado, buf_cmd, buf_tc, buf_min, buf_max,
+            buffer, buf_tam, continua,
+        )
+
+        ret = _ascii_resultado(buf_resultado)
+        if ret != 10000:
+            linhas_cupom = _resolver_cupom_bruto(cupom_loja, cupom_cliente, dados)
+            return ret, dados, linhas_cupom
+
+        c = _ascii_resultado(buf_cmd)
+        tc = _ascii_resultado(buf_tc)
+        msg = _dec(buffer.raw)
+
+        logger.debug("cancelamento cmd=%d tc=%d msg=%r", c, tc, msg[:80] if msg else "")
+
+        if c == 0:
+            if msg:
+                _registrar_dado(dados, tc, msg)
+            if tc in _TC_CUPOM_CLIENTE:
+                _append_cupom_bruto(cupom_cliente, msg)
+            elif tc in _TC_CUPOM_LOJA:
+                _append_cupom_bruto(cupom_loja, msg)
+            continue
+
+        if c in (1, 2, 3) and tc == 500:
+            _responder(buffer, SITEF_SUPERVISOR_SENHA)
+            _emit_event(on_event, "mensagem", texto="[Autenticação de supervisor]", destino="operador", tipo_campo=500)
+
+        elif c in (1, 2, 3):
+            if msg:
+                destino = {1: "operador", 2: "cliente", 3: "ambos"}.get(c, "info")
+                _emit_event(on_event, "mensagem", texto=msg, destino=destino, tipo_campo=tc)
+            buffer.value = b""
+
+        elif c == 34:
+            _responder(buffer, valor_str)
+
+        elif c == 23:
+            if tc in _TC_DOCUMENTO and nsu_host:
+                _responder(buffer, nsu_host)
+            elif tc in _TC_DATA and data_original:
+                _responder(buffer, data_original)
+            else:
+                _zerar(buffer)
+
+        elif c == 21:
+            escolha = _selecionar_menu(msg, 123)
+            _emit_event(on_event, "menu", opcoes=msg, selecionado=escolha)
+            _responder(buffer, escolha)
+
+        elif c == 20:
+            _responder(buffer, "0")
+
+        elif c == 22:
+            _responder(buffer, "")
+
+        elif c == 29:
+            _responder(buffer, "1")
+
+        elif c in (4, 11, 12, 13, 14, 15, 16, 50, 51, 52):
+            buffer.value = b""
+
+        else:
+            _responder(buffer, "")
 
 
 def resolver_pendencias(cnpj_estabelecimento: str = "", on_event: EventCallback = None) -> int:

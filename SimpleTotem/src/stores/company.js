@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import * as api from '@/services/api'
+import { useSimpleSfiqueStore } from './simplesfique'
 
 export const useCompanyStore = defineStore('company', () => {
   const hasCompanyData = ref(null)
@@ -19,10 +19,10 @@ export const useCompanyStore = defineStore('company', () => {
       error.value = null
 
       try {
-        const status = await api.obterStatusEmpresa()
-        hasCompanyData.value = Boolean(status?.configurada)
+        const sfique = useSimpleSfiqueStore()
+        hasCompanyData.value = sfique.isConfigured
       } catch (err) {
-        error.value = err.message || 'Não foi possível verificar a empresa'
+        error.value = err.message || 'Não foi possível verificar o terminal'
         hasCompanyData.value = false
       } finally {
         isChecking.value = false
@@ -55,6 +55,6 @@ export const useCompanyStore = defineStore('company', () => {
     needsSetup,
     check,
     markConfigured,
-    reset
+    reset,
   }
 })

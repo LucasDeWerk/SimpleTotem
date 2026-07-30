@@ -37,11 +37,41 @@
           <p class="periph-role__nome">{{ cat.configurado.nome }}</p>
           <code class="periph-vid">{{ cat.configurado.vendor_id }}:{{ cat.configurado.product_id }}</code>
           <p v-if="cat.detalhes?.caminho_usb" class="periph-detail">{{ cat.detalhes.caminho_usb }}</p>
-          <p v-if="cat.detalhes?.porta_configurada" class="periph-detail">
-            Porta {{ cat.detalhes.porta_configurada }}
-          </p>
         </template>
         <p v-else class="periph-role__empty">Nenhum dispositivo atribuído</p>
+
+        <!-- Porta serial — só pinpad -->
+        <template v-if="cat.id === 'terminal_pagamento'">
+          <div class="porta-block">
+            <label class="porta-label">Porta serial (CliSiTef)</label>
+            <div class="porta-row">
+              <select
+                v-model="portaSelecionada"
+                class="porta-select"
+                :disabled="!portasSerial.length || salvandoPorta"
+              >
+                <option value="" disabled>
+                  {{ portasSerial.length ? 'Selecione...' : 'Nenhuma porta detectada' }}
+                </option>
+                <option v-for="p in portasSerial" :key="p" :value="p">{{ p }}</option>
+              </select>
+              <button
+                class="periph-btn periph-btn--primary porta-btn"
+                :disabled="!portaSelecionada || salvandoPorta"
+                @click="salvarPorta"
+              >
+                {{ salvandoPorta ? '...' : 'Salvar' }}
+              </button>
+            </div>
+            <p
+              v-if="mensagemPorta"
+              class="periph-msg"
+              :class="mensagemPorta.tipo === 'ok' ? 'periph-msg--ok' : 'periph-msg--erro'"
+            >
+              {{ mensagemPorta.texto }}
+            </p>
+          </div>
+        </template>
 
         <div class="periph-role__actions">
           <button
@@ -164,13 +194,19 @@ const {
   dispositivosUSB,
   erroGlobal,
   categoriasComStatus,
+  portasSerial,
+  portaSelecionada,
+  salvandoPorta,
+  mensagemPorta,
   labelBadge,
   jaAtribuido,
   carregarTudo,
+  carregarPortas,
   buscarUSB,
   atribuir,
   remover,
   testarImpressao,
+  salvarPorta,
 } = useHardwareAdmin()
 
 const electronDisponivel = computed(() => Boolean(window.hardwareAPI?.listarUSB))
@@ -188,7 +224,7 @@ function irConfigurar() {
 }
 
 onMounted(async () => {
-  await carregarTudo()
+  await Promise.all([carregarTudo(), carregarPortas()])
   if (props.showUsbScan && electronDisponivel.value) {
     await buscarUSB()
   }
@@ -503,6 +539,53 @@ defineExpose({ carregarTudo, buscarUSB })
 
 .periph-msg--ok { color: #15803d; }
 .periph-msg--erro { color: #b91c1c; }
+
+.porta-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(245, 124, 0, 0.12);
+}
+
+.porta-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.porta-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.porta-select {
+  flex: 1;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid rgba(245, 124, 0, 0.25);
+  border-radius: 7px;
+  font-size: 0.82rem;
+  color: #0f172a;
+  background: #fff;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.porta-select:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.porta-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.82rem;
+}
 
 @media (max-width: 640px) {
   .periph-usb__item {

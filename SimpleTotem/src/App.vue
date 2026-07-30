@@ -2,7 +2,7 @@
   <router-view v-slot="{ Component, route }">
     <div v-if="showBootstrapLoading" class="loading-container">
       <div class="spinner" />
-      <p>Verificando configuração do totem...</p>
+      <p>Verificando terminal...</p>
       <p v-if="company.error" class="loading-error">{{ company.error }}</p>
     </div>
 
@@ -16,7 +16,6 @@
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCompanyStore } from '@/stores/company'
-import { useSimpleSfiqueStore } from '@/stores/simplesfique'
 import { useDeviceStore } from '@/stores/device'
 
 const route = useRoute()
@@ -33,7 +32,6 @@ onMounted(() => {
   if (company.hasCompanyData === null) {
     company.check()
   }
-  useSimpleSfiqueStore().hydrate()
   useDeviceStore().init()
 })
 </script>
