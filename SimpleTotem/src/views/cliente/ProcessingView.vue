@@ -23,11 +23,9 @@
         <p v-if="mensagemRodape" class="processing-footer-msg">{{ mensagemRodape }}</p>
 
         <p class="processing-help">{{ lang.t.processingHelp }}</p>
+        <p class="processing-cancel-hint">{{ lang.t.cancelViaPinpad }}</p>
 
         <div class="processing-actions">
-          <button class="processing-cancel-btn" type="button" @click="cancelOrder">
-            {{ lang.t.endTransaction }}
-          </button>
           <button class="processing-secondary-btn" type="button" @click="voltar">
             {{ lang.t.backToMenu }}
           </button>
@@ -44,8 +42,8 @@
             :fullWidth="true"
             @click="voltar"
           />
-          <button class="processing-cancel-btn" type="button" @click="cancelOrder">
-            {{ lang.t.endTransaction }}
+          <button class="processing-cancel-btn" type="button" @click="encerrarPedido">
+            {{ lang.t.cancelOrder }}
           </button>
         </div>
       </template>
@@ -110,7 +108,10 @@ function voltar() {
   router.push({ name: 'payment' })
 }
 
-function cancelOrder() {
+/** Só disponível após o pagamento já ter finalizado (negado/erro) — nesse
+ * ponto não há mais transação ativa no pinpad para cancelar, então só
+ * encerra o pedido e volta ao catálogo. */
+function encerrarPedido() {
   payment.resetPayment()
   router.push({ name: 'catalog' })
 }
@@ -187,6 +188,14 @@ function cancelOrder() {
   font-size: var(--font-size-md);
   color: #94a3b8;
   font-weight: 500;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.processing-cancel-hint {
+  font-size: var(--font-size-md);
+  color: var(--color-primary);
+  font-weight: 600;
   max-width: 400px;
   line-height: 1.5;
 }

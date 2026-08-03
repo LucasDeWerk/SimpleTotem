@@ -30,9 +30,6 @@ export const useSimpleSfiqueStore = defineStore('simplesfique', () => {
   // Controle de hidratação — garante que tentamos restaurar sessão apenas 1x por startup
   const hydrateAttempted = ref(false)
 
-  // Legado — painel admin (sync local), não usado no fluxo do totem
-  const sessao = ref(null)
-
   const isAuthenticated = computed(() => Boolean(jwtToken.value))
   const isConfigured = computed(() => Boolean(terminalToken.value && terminalId.value))
 
@@ -169,16 +166,6 @@ export const useSimpleSfiqueStore = defineStore('simplesfique', () => {
   // Registra o callback de refresh — ativo para toda a vida do app
   setSfiqueTokenRefresher(reloginAutomatico)
 
-  // ── Legado ───────────────────────────────────────────────────────────────────
-
-  function setSessao(data) {
-    sessao.value = data
-  }
-
-  async function hydrate() {
-    return sessao.value
-  }
-
   function logout() {
     jwtToken.value = ''
     terminalToken.value = ''
@@ -190,12 +177,10 @@ export const useSimpleSfiqueStore = defineStore('simplesfique', () => {
     ambientes.value = []
     menus.value = []
     menuProdutos.value = []
-    sessao.value = null
     hydrateAttempted.value = false
   }
 
   return {
-    sessao,
     jwtToken,
     terminalToken,
     terminalId,
@@ -217,8 +202,6 @@ export const useSimpleSfiqueStore = defineStore('simplesfique', () => {
     hydrateFromBackend,
     persistirSessao,
     reloginAutomatico,
-    setSessao,
-    hydrate,
     logout,
   }
 })

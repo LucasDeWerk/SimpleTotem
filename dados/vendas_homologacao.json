@@ -1,0 +1,428 @@
+[
+  {
+    "transacao_id": "c93ede70-cfbc-410f-bd89-ad98278ffda2",
+    "data_hora": "2026-07-31T10:28:37.430907",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260731102829",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -43
+    }
+  },
+  {
+    "transacao_id": "b0d277d0-9510-4c74-bd4e-033a2972686e",
+    "data_hora": "2026-07-31T10:30:41.921566",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260731103039",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -43
+    }
+  },
+  {
+    "transacao_id": "5c4a51b7-3370-403c-b0b6-1afcfc1d2888",
+    "data_hora": "2026-07-31T10:33:05.952728",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260731103302",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -43
+    }
+  },
+  {
+    "transacao_id": "5c6e70e9-0a41-46cb-a371-2c0fb9392d45",
+    "data_hora": "2026-07-31T10:39:43.097569",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260731103939",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -43
+    }
+  },
+  {
+    "transacao_id": "0f9b0fa6-ef30-42e1-8c6d-eabd88442d8e",
+    "data_hora": "2026-07-31T10:41:28.735056",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260731104125",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -43
+    }
+  },
+  {
+    "transacao_id": "fda8f806-b9a7-4b7e-9584-62635b283003",
+    "data_hora": "2026-07-31T10:51:05.696489",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260731104757",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "310002",
+      "nsu_host": "999310002",
+      "autorizacao": "310002",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 310002\\MU                      31/07/26 10:51\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999310002\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 310002\\MU                      31/07/26 10:51\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999310002\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "estornado": true,
+    "motivo_estorno": "teste",
+    "data_estorno": "2026-07-31T14:30:39.414861",
+    "cancelamento_sitef": {
+      "aprovada": true,
+      "resultado": 0,
+      "nsu_sitef": "310003",
+      "nsu_host": "999310003",
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 310003\\MU                      31/07/26 14:30\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999310003\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 310003\\MU                      31/07/26 14:30\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999310003\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ]
+    }
+  },
+  {
+    "transacao_id": "5f8feb7d-90de-4cad-9f64-ded6e53520df",
+    "data_hora": "2026-07-31T16:32:10.460166",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260731163127",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "310006",
+      "nsu_host": "999310006",
+      "autorizacao": "310006",
+      "modalidade": "Cartao de Credito a Vista",
+      "bandeira": "MASTERCARD      ",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 310006\\MU                      31/07/26 16:32\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999310006\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 310006\\MU                      31/07/26 16:32\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999310006\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "e98216ee-6490-472f-becb-084b97fa1eb4",
+    "data_hora": "2026-07-31T16:34:36.708505",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260731163228",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -43
+    }
+  },
+  {
+    "transacao_id": "40951073-9a5c-4726-abe4-df2485bfc558",
+    "data_hora": "2026-08-03T08:58:16.881409",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260803085749",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "030002",
+      "nsu_host": "999030002",
+      "autorizacao": "030002",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30002\\MU                      03/08/26 08:58\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030002\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30002\\MU                      03/08/26 08:58\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030002\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "estornado": true,
+    "motivo_estorno": "teste",
+    "data_estorno": "2026-08-03T10:48:46.510215",
+    "cancelamento_sitef": {
+      "aprovada": true,
+      "resultado": 0,
+      "nsu_sitef": "030008",
+      "nsu_host": "999030008",
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30008\\MU                      03/08/26 10:49\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030008\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30008\\MU                      03/08/26 10:49\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030008\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ]
+    }
+  },
+  {
+    "transacao_id": "f3ada16f-881a-40b9-b461-c3d02fb8119f",
+    "data_hora": "2026-08-03T09:39:49.135141",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260803093911",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "030004",
+      "nsu_host": "999030004",
+      "autorizacao": "030004",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30004\\MU                      03/08/26 09:40\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030004\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30004\\MU                      03/08/26 09:40\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030004\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "estornado": true,
+    "motivo_estorno": "teste",
+    "data_estorno": "2026-08-03T10:48:15.581086",
+    "cancelamento_sitef": {
+      "aprovada": true,
+      "resultado": 0,
+      "nsu_sitef": "030007",
+      "nsu_host": "999030007",
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30007\\MU                      03/08/26 10:48\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030007\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30007\\MU                      03/08/26 10:48\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030007\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ]
+    }
+  },
+  {
+    "transacao_id": "1093a62b-0d2e-4a26-8bd5-f0943e32694a",
+    "data_hora": "2026-08-03T10:19:03.473655",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260803101850",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "030005",
+      "nsu_host": "999030005",
+      "autorizacao": "030005",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30005\\MU                      03/08/26 10:19\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030005\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30005\\MU                      03/08/26 10:19\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030005\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "estornado": true,
+    "motivo_estorno": "Teste E2E senha supervisor ao vivo v2",
+    "data_estorno": "2026-08-03T10:45:56.186437",
+    "cancelamento_sitef": {
+      "aprovada": true,
+      "resultado": 0,
+      "nsu_sitef": "030006",
+      "nsu_host": "999030006",
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30006\\MU                      03/08/26 10:46\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030006\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30006\\MU                      03/08/26 10:46\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030006\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ]
+    }
+  }
+]

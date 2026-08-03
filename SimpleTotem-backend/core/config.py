@@ -58,37 +58,26 @@ SECRET_KEY: str = _load_or_create_secret()
 ALGORITHM: str = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 dia
 
-# ── API SimpleSfique ──────────────────────────────────────────────────────────
-# Base SEM /api/v1 — ex.: http://192.168.10.100:9005
-
-
-def _env_url(*keys: str, default: str) -> str:
-    for key in keys:
-        raw = os.getenv(key)
-        if raw and raw.strip():
-            return raw.strip().rstrip("/")
-    return default.rstrip("/")
-
-
-URL_API: str = _env_url("URL_API", "URL_API_TOKEN", "URL_API_SINC", default="http://192.168.10.100:9005")
-
-
-def api_v1_url(path: str) -> str:
-    """Monta URL /api/v1/... sem duplicar o prefixo se URL_API já o incluir."""
-    segment = path.strip("/")
-    base = URL_API
-    if base.endswith("/api/v1"):
-        return f"{base}/{segment}"
-    return f"{base}/api/v1/{segment}"
-
-
 # ── CliSiTef / PIX ────────────────────────────────────────────────────────────
 SITEF_IP: str = os.getenv("SITEF_IP", "192.168.10.12")
 SITEF_ID_LOJA: str = os.getenv("SITEF_ID_LOJA", "00000000")
+
+
+def _validar_id_terminal(valor: str) -> None:
+    """Roteiro de pré-homologação Fiserv: a faixa SE000900-SE000999 é
+    reservada e não pode ser usada como SITEF_ID_TERMINAL em produção."""
+    if valor.strip().upper().startswith("SE0009"):
+        raise RuntimeError(
+            f"SITEF_ID_TERMINAL não pode estar na faixa reservada SE000900-SE000999 "
+            f"(valor atual: {valor}). Configure um ID de terminal válido no .env."
+        )
+
+
 SITEF_ID_TERMINAL: str = os.getenv("SITEF_ID_TERMINAL", "ST000001")
+_validar_id_terminal(SITEF_ID_TERMINAL)
 SITEF_OPERADOR: str = os.getenv("SITEF_OPERADOR", "01")
 SITEF_CNPJ_AUTOMACAO: str = os.getenv("SITEF_CNPJ_AUTOMACAO", "12523654185985")
-SITEF_PORTA_PINPAD: str = os.getenv("SITEF_PORTA_PINPAD", "/dev/ttyACM0")
+SITEF_PORTA_PINPAD: str = os.getenv("SITEF_PORTA_PINPAD", "AUTO_USB")
 # Token TLS Fiserv — fornecido durante o processo de homologação; vazio = sem TLS
 SITEF_TLS_TOKEN: str = os.getenv("SITEF_TLS_TOKEN", "")
 # Senha do supervisor para funções administrativas (110, 123, etc.)

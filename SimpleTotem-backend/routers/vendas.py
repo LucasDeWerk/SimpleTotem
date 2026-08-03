@@ -1,48 +1,26 @@
 import logging
 import unicodedata
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from core.database import get_db
 from core.security import get_current_user
-from models.orm import Saida, SaidaItem, SaidaPagamento, TipoPagamento, Empresa
+from models.orm import Empresa
 from models.schemas import (
-    SaidaOut, SaidaItemOut, TipoPagamentoOut, MetodoPagamentoOut,
     IniciaVendaRequest, IniciaVendaResponse, ItemVendaCalculado,
     IniciaTransacaoRequest, IniciaTransacaoStartResponse, TransacaoStatusResponse,
-    ConfirmarPagamentoRequest,
+    ConfirmarPagamentoRequest, EstornarPedidoRequest,
 )
-from services import sitef_service
+from services import sitef_service, vendas_store
 from services.sitef_session import store
 from services.terminal_service import resolver_terminal_atual
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/vendas", tags=["vendas"])
-
-# ─── Métodos de pagamento ────────────────────────────────────────────────────
-
-@router.get("/metodos-pagamento", response_model=List[MetodoPagamentoOut])
-def list_metodos_pagamento(
-    db: Session = Depends(get_db),
-    _: str = Depends(get_current_user),
-):
-    """Retorna os métodos de pagamento cadastrados em tfin_tipopagrec."""
-    tipos = db.query(TipoPagamento).order_by(TipoPagamento.desctipopagrec).all()
-    return [
-        MetodoPagamentoOut(
-            type=str(t.id),
-            label=t.desctipopagrec or str(t.id),
-            icon="",
-            available=True,
-        )
-        for t in tipos
-    ]
-
 
 # ─── Inicia Venda — cálculo do total ─────────────────────────────────────────
 
@@ -136,17 +114,16 @@ def inicia_transacao(
 
     # 5. Mapear método de pagamento para código SiTef
     # Tenta mapeamento direto pelo ID numérico (SimplesFique: 3=crédito, 4=débito, 17/20=PIX)
-    # Só consulta o banco se o ID não for reconhecido diretamente
-    _SFIQUE_ID_MAP = {"3": 2, "4": 3, "17": 122, "20": 122}
+    # Confirmado no pinpad real: função SiTef 3=crédito, 2=débito (invertido do que a
+    # documentação da CliSiTef sugere à primeira vista — vale reconferir se a Fiserv
+    # atualizar a doc).
+    _SFIQUE_ID_MAP = {"3": 3, "4": 2, "17": 122, "20": 122}
     mid = req.metodo_pagamento_id.strip().lstrip("0") or "0"
     if mid in _SFIQUE_ID_MAP:
         funcao_sitef = _SFIQUE_ID_MAP[mid]
         descricao_pag = mid
     else:
-        tipo_pag = db.query(TipoPagamento).filter(
-            TipoPagamento.id == mid
-        ).first()
-        descricao_pag = (tipo_pag.desctipopagrec or "") if tipo_pag else mid
+        descricao_pag = mid
         funcao_sitef = _metodo_para_funcao(descricao_pag)
     logger.info(
         "[Transacao] valor_centavos=%d total_final=%.2f valor_sitef=%s funcao_sitef=%d desc=%s cupom=%s",
@@ -165,7 +142,7 @@ def inicia_transacao(
 
     restricao = ""
     num_parcelas = req.num_parcelas
-    if funcao_sitef == 2:  # crédito
+    if funcao_sitef == 3:  # crédito
         restricao = _montar_restricao_parcelamento(req.tipo_parcelamento, num_parcelas)
 
     contexto_venda = {
@@ -203,11 +180,10 @@ def inicia_transacao(
 @router.get("/transacao/{transacao_id}", response_model=TransacaoStatusResponse)
 def status_transacao(
     transacao_id: str,
-    db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
     """Status em tempo real — mensagens CliSiTef, QR Code PIX e resultado final."""
-    data = sitef_service.obter_status_transacao(transacao_id, db)
+    data = sitef_service.obter_status_transacao(transacao_id)
     if not data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transação não encontrada")
     return TransacaoStatusResponse(**data)
@@ -241,15 +217,16 @@ def _metodo_para_funcao(descricao: str) -> int:
     Fallback por descrição para compatibilidade com banco local.
     """
     # Mapeamento direto por ID numérico (SimplesFique)
-    _ID_MAP = {"3": 2, "4": 3, "17": 122, "20": 122}
+    # Função SiTef 3=crédito, 2=débito — confirmado no pinpad real.
+    _ID_MAP = {"3": 3, "4": 2, "17": 122, "20": 122}
     if str(descricao).strip() in _ID_MAP:
         return _ID_MAP[str(descricao).strip()]
 
     m = _normalize_ascii_lower(descricao)
     if "cred" in m:
-        return 2  # Crédito
+        return 3  # Crédito
     if "deb" in m:
-        return 3  # Débito
+        return 2  # Débito
     if "voucher" in m or "beneficio" in m or "bene" in m:
         return 4
     if "pix" in m or "carteira" in m or "digital" in m or "qr" in m or "instantaneo" in m:
@@ -262,7 +239,6 @@ def _metodo_para_funcao(descricao: str) -> int:
 @router.post("/confirmar")
 def confirmar_pagamento(
     body: ConfirmarPagamentoRequest,
-    db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
     """
@@ -278,97 +254,98 @@ def confirmar_pagamento(
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc))
 
     store.marcar_confirmada(body.transacao_id)
-
-    if confirma == 0:
-        session_obj = store.obter(body.transacao_id)
-        if session_obj and session_obj.id_saida:
-            db.execute(
-                text("UPDATE tven_saida SET situacao='C' WHERE id=:id"),
-                {"id": session_obj.id_saida},
-            )
-            db.commit()
+    vendas_store.registrar_venda(body.transacao_id, {
+        "confirmado": bool(confirma),
+        "impressao_ok": body.impressao_ok,
+        "xml_emitido": body.xml_emitido,
+        "codigo_senha": body.codigo_senha,
+        "cupom_fiscal": body.cupom_fiscal,
+    })
 
     return {"confirmado": bool(confirma), "confirma": confirma}
 
 
-# ─── Listagem de vendas ───────────────────────────────────────────────────────
+# ─── Base de vendas para evidência de homologação (NSU, cupom, etc.) ─────────
 
-@router.post("/{id_venda}/cancelar")
-def cancelar_venda(
-    id_venda: int,
-    db: Session = Depends(get_db),
+@router.get("/homologacao")
+def listar_vendas_homologacao(_: str = Depends(get_current_user)):
+    """Todas as vendas registradas (aprovadas, negadas e com erro), com dados
+    completos de pagamento SiTef/Fiserv — usado como base local para a
+    homologação (sem depender de nenhum backend externo)."""
+    return {"vendas": vendas_store.listar_vendas()}
+
+
+# ─── Painel de cancelamento — base local (JSON) enquanto não há SimplesFique ──
+
+@router.get("/pedidos")
+def listar_pedidos_aprovados(
+    terminal_id: Optional[int] = None,
+    codigo_senha: Optional[str] = None,
+    data_operacao: Optional[str] = None,
     _: str = Depends(get_current_user),
 ):
-    """Estorna uma venda aprovada via função SiTef 123 (cancelamento direto)."""
-    venda = db.query(Saida).filter(Saida.id == id_venda).first()
-    if not venda:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Venda não encontrada")
+    """Pagamentos aprovados no pinpad (dados de vendas_homologacao.json),
+    usados pelo painel de cancelamento como base local temporária."""
+    pedidos = vendas_store.listar_pedidos_aprovados(
+        terminal_id=terminal_id,
+        codigo_senha=codigo_senha,
+        data_operacao=data_operacao,
+    )
+    return {"pedidos": pedidos}
 
-    pagamento = db.query(SaidaPagamento).filter(SaidaPagamento.id_saida == id_venda).first()
-    if not pagamento:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Dados de pagamento não encontrados")
 
-    empresa = db.query(Empresa).first()
-    cnpj = (empresa.cpf_cnpj or "") if empresa else ""
+@router.patch("/pedidos/{transacao_id}/estornar")
+def estornar_pedido(
+    transacao_id: str,
+    body: EstornarPedidoRequest,
+    _: str = Depends(get_current_user),
+):
+    """Cancela a venda na Fiserv (função SiTef 200 — Menu de Cancelamento, via NSU host da transação
+    original) e só marca como estornada na base local se a Fiserv confirmar."""
+    if not body.senha_supervisor or not body.senha_supervisor.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Senha do supervisor é obrigatória para autorizar o cancelamento",
+        )
 
-    valor_centavos = int(round(float(venda.vlr_venda or 0) * 100))
-    data_original = ""
-    if pagamento.dh_pagamento:
-        data_original = pagamento.dh_pagamento[:10].replace("-", "")
+    venda = vendas_store.obter_venda(transacao_id)
+    if not venda or venda.get("status") != "aprovada":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido aprovado não encontrado")
+    if venda.get("estornado"):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Pedido já estornado")
+
+    contexto = venda.get("contexto_venda") or {}
+    pagamento = venda.get("pagamento_sitef") or {}
+    cupom_original = venda.get("cupom") or ""
+    if not cupom_original:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Venda sem cupom original registrado — não é possível cancelar na Fiserv",
+        )
+
+    valor_centavos = int(round(float(pagamento.get("total_cobrado") or contexto.get("total") or 0) * 100))
+    nsu_host = pagamento.get("nsu_host") or pagamento.get("nsu_sitef") or ""
 
     try:
         resultado = sitef_service.cancelar_transacao_sitef(
             valor_centavos=valor_centavos,
-            cupom_original=str(id_venda),
-            data_original=data_original,
-            nsu_host=pagamento.nsu_host or "",
-            cnpj_estabelecimento=cnpj,
+            cupom_original=cupom_original,
+            data_original=cupom_original[:8],
+            nsu_host=nsu_host,
+            cnpj_estabelecimento=venda.get("cnpj_estabelecimento") or "",
+            senha_supervisor=body.senha_supervisor,
         )
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"CliSiTef não disponível: {exc}")
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Falha ao cancelar na Fiserv: {exc}")
 
     if not resultado.get("aprovada"):
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Cancelamento negado pelo SiTef: {resultado.get('resultado')}",
-        )
+        detail = resultado.get("erro") or f"Cancelamento recusado pela Fiserv (código {resultado.get('resultado')})"
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail)
 
-    return resultado
-
-
-@router.get("", response_model=List[SaidaOut])
-def list_vendas(
-    db: Session = Depends(get_db),
-    _: str = Depends(get_current_user),
-):
-    return db.query(Saida).order_by(Saida.id.desc()).all()
-
-
-@router.get("/{id_venda}", response_model=SaidaOut)
-def get_venda(
-    id_venda: int,
-    db: Session = Depends(get_db),
-    _: str = Depends(get_current_user),
-):
-    venda = db.query(Saida).filter(Saida.id == id_venda).first()
-    if not venda:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Venda não encontrada")
-    return venda
-
-
-@router.get("/{id_venda}/itens", response_model=List[SaidaItemOut])
-def get_itens_venda(
-    id_venda: int,
-    db: Session = Depends(get_db),
-    _: str = Depends(get_current_user),
-):
-    return db.query(SaidaItem).filter(SaidaItem.id_saida == id_venda).all()
-
-
-@router.get("/pagamentos/tipos", response_model=List[TipoPagamentoOut])
-def list_tipos_pagamento(
-    db: Session = Depends(get_db),
-    _: str = Depends(get_current_user),
-):
-    return db.query(TipoPagamento).all()
+    pedido = vendas_store.marcar_estornada(transacao_id, body.motivo, resultado_cancelamento=resultado)
+    if not pedido:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Pedido já estornado")
+    return {"pedido": pedido}
 

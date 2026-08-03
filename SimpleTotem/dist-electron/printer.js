@@ -170,9 +170,48 @@ function createUsbAdapter(printerConfig) {
 const RECEIPT_WIDTH = 48
 
 /**
+ * Quebra `text` em uma ou mais linhas de até `width` caracteres, sem descartar
+ * conteúdo. Prefere quebrar nos espaços (sem cortar palavra ao meio); se uma
+ * única palavra já for maior que `width`, quebra por tamanho fixo mesmo assim
+ * (não há como preservar a palavra inteira numa linha só nesse caso).
+ */
+function wrapLine(text, width) {
+  const str = String(text ?? '')
+  if (str.length <= width) return [str]
+
+  const out = []
+  let current = ''
+
+  for (const word of str.split(' ')) {
+    if (word.length > width) {
+      if (current) {
+        out.push(current)
+        current = ''
+      }
+      for (let i = 0; i < word.length; i += width) {
+        out.push(word.substring(i, i + width))
+      }
+      continue
+    }
+
+    const candidate = current ? `${current} ${word}` : word
+    if (candidate.length > width) {
+      out.push(current)
+      current = word
+    } else {
+      current = candidate
+    }
+  }
+  if (current) out.push(current)
+
+  return out
+}
+
+/**
  * Normaliza linhas para impressão. Cada item pode ser uma string simples
  * (imprime normal) ou um objeto { text, bold } para destacar títulos/totais.
  * Linhas vazias são preservadas para dar espaçamento real no papel.
+ * Linhas maiores que RECEIPT_WIDTH são quebradas em várias linhas — nunca cortadas.
  */
 function normalizePrintLines(lines) {
   const out = []
@@ -181,8 +220,11 @@ function normalizePrintLines(lines) {
     const isObj = typeof item === 'object' && 'text' in item
     const raw = isObj ? item.text : item
     const text = String(raw ?? '')
+    const bold = isObj && Boolean(item.bold)
     for (const line of text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')) {
-      out.push({ text: line.trim().substring(0, RECEIPT_WIDTH), bold: isObj && Boolean(item.bold) })
+      for (const wrapped of wrapLine(line.trim(), RECEIPT_WIDTH)) {
+        out.push({ text: wrapped, bold })
+      }
     }
   }
   return out
@@ -204,6 +246,11 @@ function sanitizeCupomLine(line) {
 /**
  * Converte cupom SiTef/Fiserv em linhas para a térmica.
  * Spec: '\' e '\\n' são separadores de linha — não enviar buffer bruto (causa papel em branco).
+ * Exigência Fiserv: imprimir a string exatamente como recebida, sem omissão ou
+ * alteração — cada linha vai inteira num único comando de impressão, sem corte
+ * NEM quebra feita por nós. Se ultrapassar RECEIPT_WIDTH, é a própria impressora
+ * térmica (hardware) que continua na linha seguinte — não inserimos nenhum
+ * caractere de quebra que não estivesse no conteúdo original.
  */
 function parseCupomFiserv(linesOrText) {
   const texto = Array.isArray(linesOrText) ? joinCupomBruto(linesOrText) : String(linesOrText ?? '')
@@ -216,7 +263,7 @@ function parseCupomFiserv(linesOrText) {
     for (const part of block.split('\\')) {
       const line = sanitizeCupomLine(part)
       if (line.trim()) {
-        out.push(line.substring(0, RECEIPT_WIDTH))
+        out.push(line)
       }
     }
   }

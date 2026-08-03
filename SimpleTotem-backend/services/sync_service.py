@@ -1,26 +1,14 @@
 import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
-from urllib.parse import quote
 
-import httpx
 from fastapi import HTTPException, Request
 from jose import jwt
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from core.config import api_v1_url
-from models.orm import (
-    Empresa,
-    Grupo,
-    Marca,
-    Medida,
-    Produto,
-    Subgrupo,
-    SyncCheckpoint,
-    TipoPagamento,
-)
-from services import api_session
+from models.orm import Empresa, SyncCheckpoint
+from services import api_session, mock_data
 from services.empresa_credentials import apply_credentials
 
 logger = logging.getLogger(__name__)
@@ -29,15 +17,6 @@ DHSINC_INICIAL = "1970-01-01 00:00:00"
 
 SYNC_STEPS: List[Dict[str, Any]] = [
     {"id": "empresas", "label": "Empresas", "path": "empresas", "dhsinc": True, "id_saas": True},
-    {"id": "grupos", "label": "Grupos", "path": "grupos", "dhsinc": True, "id_saas": True},
-    {"id": "subgrupos", "label": "Subgrupos", "path": "subgrupos", "dhsinc": True, "id_saas": True},
-    {"id": "marcas", "label": "Marcas", "path": "marcas", "dhsinc": True, "id_saas": True},
-    {"id": "medidas", "label": "Medidas", "path": "medidas", "dhsinc": True, "id_saas": False},
-    {"id": "tipos-pag-rec", "label": "Tipos de pagamento", "path": "tipos-pag-rec", "dhsinc": False, "id_saas": False},
-    {"id": "produtos", "label": "Produtos", "path": "produtos", "dhsinc": True, "id_saas": True, "idempresa": True},
-    {"id": "terminais", "label": "Terminais", "path": "terminais", "dhsinc": True, "id_saas": True},
-    {"id": "paineis", "label": "Painéis", "path": "paineis", "dhsinc": True, "id_saas": True},
-    {"id": "ambientes", "label": "Ambientes", "path": "ambientes", "dhsinc": True, "id_saas": True},
 ]
 
 
@@ -52,31 +31,6 @@ def _model_fields(model) -> set:
 def _filter_fields(model, data: Dict[str, Any]) -> Dict[str, Any]:
     allowed = _model_fields(model)
     return {k: v for k, v in data.items() if k in allowed}
-
-
-def _num(value: Any, default: float = 0) -> float:
-    if value is None or value == "":
-        return default
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return default
-
-
-def _int(value: Any, default: int = 0) -> int:
-    if value is None or value == "":
-        return default
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
-
-
-def _text(value: Any, default: str = "") -> str:
-    if value is None:
-        return default
-    s = str(value).strip()
-    return s if s else default
 
 
 def _session_ids(request: Request) -> tuple[int, int]:
@@ -126,6 +80,11 @@ def extract_data(payload: Any) -> List[Dict[str, Any]]:
     return []
 
 
+_MOCK_DELTA_PAYLOADS = {
+    "empresas": mock_data.mock_empresas_delta_payload,
+}
+
+
 async def fetch_delta(
     request: Request,
     path: str,
@@ -134,38 +93,22 @@ async def fetch_delta(
     id_saas: bool = False,
     idempresa: bool = False,
 ) -> Any:
-    token = _get_token(request)
-    params: Dict[str, Any] = {}
+    """Retorna dados mockados no lugar da API externa SimpleSfique.
+
+    Mantém as mesmas validações de sessão do fluxo original (token/ids
+    presentes) para que o restante da lógica de sincronização — checkpoints,
+    persistência local, etc. — continue funcionando sem alterações.
+    """
+    _get_token(request)
     if id_saas:
-        saas, empresa = _session_ids(request)
-        params["id_saas"] = saas
+        _session_ids(request)
     if idempresa:
-        _, empresa = _session_ids(request)
-        params["idempresa"] = empresa
+        _session_ids(request)
 
-    if dhsinc:
-        dhsinc_enc = quote(dhsinc, safe="")
-        url = api_v1_url(f"sinc/{path}/{dhsinc_enc}")
-    else:
-        url = api_v1_url(f"sinc/{path}")
-
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                url,
-                params=params or None,
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Accept": "application/json",
-                },
-                timeout=60.0,
-            )
-            if response.status_code == 401:
-                raise HTTPException(status_code=401, detail="Token SimpleSfique expirado. Faça login novamente.")
-            response.raise_for_status()
-            return response.json()
-    except httpx.HTTPError as exc:
-        raise HTTPException(status_code=500, detail=f"Erro ao sincronizar {path}: {exc}") from exc
+    builder = _MOCK_DELTA_PAYLOADS.get(path)
+    if not builder:
+        return {"data": [], "records": 0}
+    return builder()
 
 
 def _normalize_dhinc(value: Any) -> str:
@@ -255,83 +198,6 @@ def attach_session_creds_to_empresa(db: Session, id_saas: int, sessao) -> Option
     return empresa
 
 
-def map_grupo(item: Dict[str, Any]) -> Dict[str, Any]:
-    return _filter_fields(Grupo, {
-        "id_grupo": item.get("id_grupo") or item.get("id"),
-        "descgrupo": _text(item.get("descgrupo"), "Grupo"),
-        "foto": item.get("foto") or b"",
-    })
-
-
-def map_subgrupo(item: Dict[str, Any]) -> Dict[str, Any]:
-    mapped = dict(item)
-    if "id" in mapped and "id_subgrupo" not in mapped:
-        mapped["id_subgrupo"] = mapped.pop("id")
-    mapped["descsubgrupo"] = _text(mapped.get("descsubgrupo"), "Subgrupo")
-    return _filter_fields(Subgrupo, mapped)
-
-
-def map_marca(item: Dict[str, Any]) -> Dict[str, Any]:
-    return _filter_fields(Marca, {
-        "id_marca": item.get("id_marca") or item.get("id"),
-        "descmarca": _text(item.get("descmarca"), "Marca"),
-    })
-
-
-def map_medida(item: Dict[str, Any]) -> Dict[str, Any]:
-    abrev = _text(item.get("abreviatura"), "UN")
-    return _filter_fields(Medida, {
-        "id_medida": item.get("id_medida") or item.get("id"),
-        "descmedida": _text(item.get("descmedida"), "Unidade"),
-        "abreviatura": abrev[:3] if abrev else "UN",
-    })
-
-
-def map_produto(item: Dict[str, Any]) -> Dict[str, Any]:
-    custo_compra = _num(item.get("custo_compra"))
-    custo_medio = _num(item.get("custo_medio"), custo_compra)
-    custo_aquisicao = _num(
-        item.get("custo_aquisicao"),
-        custo_compra if custo_compra else custo_medio,
-    )
-    return _filter_fields(Produto, {
-        "id_produto": item.get("id_produto") or item.get("id"),
-        "descproduto": _text(item.get("descproduto"), "Produto"),
-        "gtin": item.get("codigo_gtin") or item.get("gtin"),
-        "cod_referencia": item.get("codigo_ref") or item.get("codigo_sku"),
-        "cod_fabricacao": item.get("codigo_fab"),
-        "id_grupo": _int(item.get("id_grupo")),
-        "id_subgrupo": _int(item.get("id_subgrupo")),
-        "id_marca": _int(item.get("id_marca")),
-        "id_medida": _int(item.get("id_medida")),
-        "id_ncm": item.get("id_ncm"),
-        "peso": _num(item.get("peso")),
-        "custo_compra": custo_compra,
-        "custo_medio": custo_medio,
-        "custo_aquisicao": custo_aquisicao,
-        "preco_venda": _num(item.get("preco_venda")),
-        "foto": item.get("foto") or b"",
-        "estoque": _num(item.get("estoque")),
-        "dhinc": _normalize_dhinc(item.get("dhinc")),
-    })
-
-
-def map_tipo_pag(item: Dict[str, Any]) -> Dict[str, Any]:
-    tipo_id = item.get("id") or item.get("id_tipo_pagamento") or item.get("codigo")
-    descricao = (
-        item.get("desctipopagrec")
-        or item.get("descricao")
-        or item.get("desc")
-        or item.get("nome")
-        or (f"Pagamento {tipo_id}" if tipo_id is not None else "Pagamento")
-    )
-    id_str = str(tipo_id).strip() if tipo_id is not None else ""
-    return _filter_fields(TipoPagamento, {
-        "id": id_str,
-        "desctipopagrec": _text(descricao, "Pagamento"),
-    })
-
-
 def persist_empresas(db: Session, empresas: List[Dict[str, Any]]) -> Dict[str, Any]:
     results = {"created": 0, "updated": 0, "errors": []}
     for empresa_data in empresas:
@@ -341,10 +207,9 @@ def persist_empresas(db: Session, empresas: List[Dict[str, Any]]) -> Dict[str, A
             if not id_saas or not id_empresa:
                 results["errors"].append("Registro de empresa sem id_saas ou id_empresa")
                 continue
-            existing = db.query(Empresa).filter(
-                Empresa.id_saas == id_saas,
-                Empresa.id_empresa == id_empresa,
-            ).first()
+            # id_saas é UNIQUE no schema real (uma empresa por SaaS) — casar só por
+            # ele evita violar a constraint quando id_empresa muda entre logins.
+            existing = db.query(Empresa).filter(Empresa.id_saas == id_saas).first()
             if existing:
                 for key, value in empresa_data.items():
                     if value is not None:
@@ -363,61 +228,6 @@ def persist_empresas(db: Session, empresas: List[Dict[str, Any]]) -> Dict[str, A
     return results
 
 
-def _persist_by_key(db: Session, model, items: List[Dict[str, Any]], key: str) -> Dict[str, Any]:
-    results = {"created": 0, "updated": 0, "errors": []}
-    for item in items:
-        try:
-            filtered = _filter_fields(model, item)
-            pk = filtered.get(key)
-            if pk is None or pk == "":
-                results["errors"].append(f"Registro sem {key}")
-                continue
-            existing = db.query(model).filter(getattr(model, key) == pk).first()
-            if existing:
-                for k, v in filtered.items():
-                    if v is not None:
-                        setattr(existing, k, v)
-                results["updated"] += 1
-            else:
-                db.add(model(**filtered))
-                results["created"] += 1
-            db.commit()
-        except IntegrityError as exc:
-            db.rollback()
-            results["errors"].append(str(exc))
-        except Exception as exc:
-            db.rollback()
-            results["errors"].append(str(exc))
-    return results
-
-
-def persist_subgrupos(db: Session, items: List[Dict[str, Any]]) -> Dict[str, Any]:
-    results = {"created": 0, "updated": 0, "errors": []}
-    for item in items:
-        try:
-            filtered = map_subgrupo(item)
-            existing = db.query(Subgrupo).filter(
-                Subgrupo.id_grupo == filtered.get("id_grupo"),
-                Subgrupo.id_subgrupo == filtered.get("id_subgrupo"),
-            ).first()
-            if existing:
-                for fld, value in filtered.items():
-                    if value is not None:
-                        setattr(existing, fld, value)
-                results["updated"] += 1
-            else:
-                db.add(Subgrupo(**filtered))
-                results["created"] += 1
-            db.commit()
-        except IntegrityError as exc:
-            db.rollback()
-            results["errors"].append(str(exc))
-        except Exception as exc:
-            db.rollback()
-            results["errors"].append(str(exc))
-    return results
-
-
 async def pull_etapa(db: Session, request: Request, etapa_id: str) -> Dict[str, Any]:
     step = next((s for s in SYNC_STEPS if s["id"] == etapa_id), None)
     if not step:
@@ -432,49 +242,23 @@ async def pull_etapa(db: Session, request: Request, etapa_id: str) -> Dict[str, 
         idempresa=step.get("idempresa", False),
     )
 
-    records = 0
-    persist_result: Dict[str, Any] = {"created": 0, "updated": 0, "errors": []}
+    items = extract_data(raw)
+    records = int(raw.get("records", len(items))) if isinstance(raw, dict) else len(items)
+    id_saas, id_empresa = _session_ids(request)
 
-    if etapa_id == "ambientes":
-        records = int(raw.get("records", 0)) if isinstance(raw, dict) else len(extract_data(raw))
-    elif etapa_id in ("terminais", "paineis"):
-        items = extract_data(raw)
-        records = int(raw.get("records", len(items))) if isinstance(raw, dict) else len(items)
-    else:
-        items = extract_data(raw)
-        records = int(raw.get("records", len(items))) if isinstance(raw, dict) else len(items)
-        id_saas, id_empresa = _session_ids(request)
-
-        if etapa_id == "empresas":
-            sessao = api_session.get_session(db)
-            mapped = []
-            for i in items:
-                emp_id = id_empresa or i.get("id_empresa") or i.get("id")
-                if not emp_id:
-                    continue
-                mapped.append(
-                    enrich_empresa_from_session(
-                        map_empresa(i, id_saas, int(emp_id)),
-                        sessao,
-                    )
-                )
-            persist_result = persist_empresas(db, mapped)
-        elif etapa_id == "grupos":
-            persist_result = _persist_by_key(db, Grupo, [map_grupo(i) for i in items], "id_grupo")
-        elif etapa_id == "subgrupos":
-            persist_result = persist_subgrupos(db, items)
-        elif etapa_id == "marcas":
-            persist_result = _persist_by_key(db, Marca, [map_marca(i) for i in items], "id_marca")
-        elif etapa_id == "medidas":
-            persist_result = _persist_by_key(db, Medida, [map_medida(i) for i in items], "id_medida")
-        elif etapa_id == "tipos-pag-rec":
-            persist_result = _persist_by_key(
-                db, TipoPagamento, [map_tipo_pag(i) for i in items], "id"
+    sessao = api_session.get_session(db)
+    mapped = []
+    for i in items:
+        emp_id = id_empresa or i.get("id_empresa") or i.get("id")
+        if not emp_id:
+            continue
+        mapped.append(
+            enrich_empresa_from_session(
+                map_empresa(i, id_saas, int(emp_id)),
+                sessao,
             )
-        elif etapa_id == "produtos":
-            persist_result = _persist_by_key(
-                db, Produto, [map_produto(i) for i in items], "id_produto"
-            )
+        )
+    persist_result = persist_empresas(db, mapped)
 
     synced_records = records
     if persist_result:
@@ -549,34 +333,8 @@ async def login_simplesfique(
     if not email or not senha:
         raise HTTPException(status_code=400, detail="Email e senha são obrigatórios")
 
-    url = api_v1_url("auth/login")
-    logger.info("Login SimpleSfique: POST %s", url)
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url,
-                json={"email": email, "senha": senha},
-                headers={"Accept": "application/json", "Content-Type": "application/json"},
-                timeout=30.0,
-            )
-    except httpx.HTTPError as exc:
-        raise HTTPException(status_code=503, detail=f"Não foi possível conectar ao SimpleSfique: {exc}") from exc
-
-    if response.status_code == 401:
-        detail = response.json().get("erro", "Credenciais inválidas") if response.content else "Credenciais inválidas"
-        raise HTTPException(status_code=401, detail=detail)
-    if response.status_code == 403:
-        detail = response.json().get("erro", "Acesso negado para esta empresa") if response.content else "Acesso negado"
-        raise HTTPException(status_code=403, detail=detail)
-    if response.status_code >= 400:
-        try:
-            body = response.json()
-            detail = body.get("erro") or body.get("detail") or response.text
-        except Exception:
-            detail = response.text
-        raise HTTPException(status_code=response.status_code, detail=detail)
-
-    data = response.json()
+    logger.info("Login SimpleSfique (mock): %s", email)
+    data = mock_data.mock_login_response(email)
     token = data.get("token")
     if not token:
         raise HTTPException(status_code=502, detail="Resposta de login sem token")

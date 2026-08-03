@@ -225,6 +225,8 @@ async function _confirmarSiTef(impressaoOk) {
       confirma: impressaoOk ? 1 : 0,
       impressao_ok: impressaoOk,
       xml_emitido: true,  // sem integração NF-e: sempre true
+      codigo_senha: codigoSenha.value || null,
+      cupom_fiscal: tx.value?.cupom_fiscal || null,
     })
     if (!impressaoOk) {
       printError.value = (printError.value || '') + ' — pagamento desfeito automaticamente'

@@ -163,7 +163,7 @@ def _selecionar_menu(msg: str, funcao: int) -> str:
             if idx and any(k in label for k in ("pix", "carteira", "digital", "qr")):
                 return idx
 
-    # Crédito (2) e Débito (3) → "A Vista" é sempre a opção certa para pagamento simples
+    # Crédito (3) e Débito (2) → "A Vista" é sempre a opção certa para pagamento simples
     if funcao in (2, 3, 0):
         for opcao in opcoes:
             idx, label = partes_de(opcao)
@@ -598,11 +598,19 @@ def cancelar_transacao(
     nsu_host: str,
     cnpj_estabelecimento: str = "",
     on_event: EventCallback = None,
+    senha_supervisor: Optional[str] = None,
 ) -> dict:
     """
-    Cancelamento via função SiTef 123 (cancelamento direto).
+    Cancelamento via função SiTef 200 (Menu de Cancelamento — mesma acessada
+    pela opção 3 do menu administrativo modalidade 110, "Cancelamento de
+    transação"). Cobre cartão (débito/crédito); a função 123 é especificamente
+    "Carteira Digital — Cancelamento" (PIX/QR), não cartão.
     data_original: AAAAMMDD da transação original.
     nsu_host: NSU do host retornado na transação original.
+    senha_supervisor: senha digitada ao vivo pelo supervisor no painel admin
+    (requisito Fiserv — TC 500 não pode ser respondido com valor pré-configurado
+    silenciosamente). Se None, cai no fallback SITEF_SUPERVISOR_SENHA — reservado
+    a fluxos totalmente automáticos sem humano (ex.: resolver_pendencias no boot).
     """
     lib = carregar_lib()
     configurar(lib, cnpj_estabelecimento, on_event)
@@ -615,14 +623,14 @@ def cancelar_transacao(
     valor_str = f"{{{valor_display}}}"
 
     logger.info(
-        "cancelar_transacao: funcao=123 valor=%s cupom_orig=%s data_orig=%s nsu_host=%s",
+        "cancelar_transacao: funcao=200 valor=%s cupom_orig=%s data_orig=%s nsu_host=%s",
         valor_str, cupom_original, data_original, nsu_host,
     )
 
     resultado2 = _mk_buf(8)
     lib.IniciaFuncaoSiTefInterativoA(
         resultado2,
-        _b("000123"),
+        _b("000200"),
         _b(valor_str),
         _b(cupom_cancelamento),
         _b(data),
@@ -636,7 +644,7 @@ def cancelar_transacao(
     if ret_inicia != 10000:
         raise RuntimeError(f"IniciaFuncao cancelamento falhou: {ret_inicia}")
 
-    _emit_event(on_event, "iniciada", funcao=123, valor=valor_display, cupom=cupom_cancelamento)
+    _emit_event(on_event, "iniciada", funcao=200, valor=valor_display, cupom=cupom_cancelamento)
 
     # Loop que responde automaticamente aos campos de cancelamento
     ret_loop, dados, linhas_cupom = _executar_loop_cancelamento(
@@ -644,6 +652,7 @@ def cancelar_transacao(
         valor_str=valor_str,
         nsu_host=nsu_host,
         data_original=data_original,
+        senha_supervisor=senha_supervisor,
     )
 
     if not linhas_cupom:
@@ -678,12 +687,13 @@ def _executar_loop_cancelamento(
     valor_str: str,
     nsu_host: str,
     data_original: str,
+    senha_supervisor: Optional[str] = None,
 ) -> tuple[int, dict, list]:
     """
     Loop igual ao principal, mas responde automaticamente a:
     - c==34 (valor monetário) → valor_str
-    - c==23 com tc de documento/NSU → nsu_host
-    - c==23 com tc de data → data_original
+    - c==23/c==30 com tc de documento/NSU → nsu_host
+    - c==23/c==30 com tc de data → data_original (ou DDMMAAAA, conforme o tc)
     """
     buf_resultado = _mk_buf(8)
     buf_cmd = _mk_buf(14)
@@ -694,14 +704,35 @@ def _executar_loop_cancelamento(
     buffer = ctypes.create_string_buffer(BUFFER_SIZE)
     buf_tam = ctypes.create_string_buffer(_b(str(BUFFER_SIZE).rjust(6, "0")), 8)
 
-    # TCs conhecidos para documento/NSU no cancelamento
-    _TC_DOCUMENTO = frozenset({13, 14, 15, 23, 133, 134})
-    # TCs conhecidos para data no cancelamento
+    # TCs conhecidos para documento/NSU no cancelamento.
+    # 516 = "Numero do documento a ser cancelado" (visto na função 200, c==30).
+    _TC_DOCUMENTO = frozenset({13, 14, 15, 23, 133, 134, 516})
+    # TCs conhecidos para data no cancelamento (formato AAAAMMDD)
     _TC_DATA = frozenset({12, 17, 19, 45})
+    # tc==515 ("Data da transacao") é pedido em DDMMAAAA, formato diferente
+    # dos demais TCs de data — visto na função 200 (Menu de Cancelamento).
+    _TC_DATA_DDMMAAAA = frozenset({515})
+
+    data_original_ddmmaaaa = (
+        data_original[6:8] + data_original[4:6] + data_original[0:4]
+        if len(data_original or "") == 8 else data_original
+    )
 
     dados: dict = {}
     cupom_cliente: list = []
     cupom_loja: list = []
+
+    # Protege só contra o caso já visto de verdade: um campo de dado CONHECIDO
+    # (documento/NSU ou data) sendo respondido com valor real e mesmo assim
+    # repetido — sinal de que o formato está errado e nunca vai ser aceito.
+    # NÃO se aplica a mensagens/estados genéricos (ex.: aguardando cartão no
+    # pinpad), que legitimamente podem repetir várias vezes até o cliente agir
+    # — igual já acontece sem problema no fluxo normal de venda.
+    _repeticoes_campo: dict = {}
+
+    def _repetiu_demais(chave: tuple, limite: int = 8) -> bool:
+        _repeticoes_campo[chave] = _repeticoes_campo.get(chave, 0) + 1
+        return _repeticoes_campo[chave] >= limite
 
     while True:
         continua.value = b"000000"
@@ -733,7 +764,11 @@ def _executar_loop_cancelamento(
             continue
 
         if c in (1, 2, 3) and tc == 500:
-            _responder(buffer, SITEF_SUPERVISOR_SENHA)
+            # Requisito Fiserv: TC 500 deve ser respondido com senha digitada ao
+            # vivo pelo supervisor (via painel admin), não um valor fixo silencioso.
+            # NUNCA logar o valor de `senha` aqui (nem debug, nem print).
+            senha = senha_supervisor if senha_supervisor else SITEF_SUPERVISOR_SENHA
+            _responder(buffer, senha)
             _emit_event(on_event, "mensagem", texto="[Autenticação de supervisor]", destino="operador", tipo_campo=500)
 
         elif c in (1, 2, 3):
@@ -747,14 +782,66 @@ def _executar_loop_cancelamento(
 
         elif c == 23:
             if tc in _TC_DOCUMENTO and nsu_host:
+                if _repetiu_demais(("doc", c, tc)):
+                    raise RuntimeError(
+                        f"Cancelamento travado: CliSiTef recusou repetidamente o NSU "
+                        f"informado (c={c} tc={tc})."
+                    )
                 _responder(buffer, nsu_host)
             elif tc in _TC_DATA and data_original:
+                if _repetiu_demais(("data", c, tc)):
+                    raise RuntimeError(
+                        f"Cancelamento travado: CliSiTef recusou repetidamente a data "
+                        f"informada (c={c} tc={tc})."
+                    )
                 _responder(buffer, data_original)
             else:
+                logger.warning(
+                    "cancelamento: comando 23 (solicita dado) tc=%d nao mapeado — msg=%r",
+                    tc, msg[:200] if msg else "",
+                )
+                _zerar(buffer)
+
+        elif c == 30:
+            # "Solicita dado" — visto na função 200 pedindo a data original da
+            # transação (tc=515, formato DDMMAAAA, diferente do c==23), e também
+            # o código do supervisor (tc=500, "Forneca o codigo do supervisor")
+            # — visto em teste real, diferente do c in (1,2,3) usado no fluxo
+            # normal de venda. NUNCA logar o valor de `senha` aqui.
+            if tc == 500:
+                senha = senha_supervisor if senha_supervisor else SITEF_SUPERVISOR_SENHA
+                _responder(buffer, senha)
+                _emit_event(on_event, "mensagem", texto="[Autenticação de supervisor]", destino="operador", tipo_campo=500)
+            elif tc in _TC_DATA_DDMMAAAA and data_original_ddmmaaaa:
+                if _repetiu_demais(("data_ddmmaaaa", c, tc)):
+                    raise RuntimeError(
+                        f"Cancelamento travado: CliSiTef recusou repetidamente a data "
+                        f"(DDMMAAAA) informada (c={c} tc={tc})."
+                    )
+                _responder(buffer, data_original_ddmmaaaa)
+            elif tc in _TC_DOCUMENTO and nsu_host:
+                if _repetiu_demais(("doc", c, tc)):
+                    raise RuntimeError(
+                        f"Cancelamento travado: CliSiTef recusou repetidamente o NSU "
+                        f"informado (c={c} tc={tc})."
+                    )
+                _responder(buffer, nsu_host)
+            elif tc in _TC_DATA and data_original:
+                if _repetiu_demais(("data", c, tc)):
+                    raise RuntimeError(
+                        f"Cancelamento travado: CliSiTef recusou repetidamente a data "
+                        f"informada (c={c} tc={tc})."
+                    )
+                _responder(buffer, data_original)
+            else:
+                logger.warning(
+                    "cancelamento: comando 30 (solicita dado) tc=%d nao mapeado — msg=%r",
+                    tc, msg[:200] if msg else "",
+                )
                 _zerar(buffer)
 
         elif c == 21:
-            escolha = _selecionar_menu(msg, 123)
+            escolha = _selecionar_menu(msg, 200)
             _emit_event(on_event, "menu", opcoes=msg, selecionado=escolha)
             _responder(buffer, escolha)
 
@@ -771,6 +858,15 @@ def _executar_loop_cancelamento(
             buffer.value = b""
 
         else:
+            # Função 200 (Menu de Cancelamento) é mais ampla que a 123 e pode pedir
+            # passos que o loop de cancelamento direto não previa (ex.: seleção de
+            # tipo de transação, dados extras de identificação da venda original).
+            # Log específico para identificar na prática o que falta tratar.
+            logger.warning(
+                "cancelamento: comando NAO TRATADO c=%d tc=%d min=%s max=%s msg=%r",
+                c, tc, _ascii_resultado(buf_min), _ascii_resultado(buf_max),
+                msg[:200] if msg else "",
+            )
             _responder(buffer, "")
 
 

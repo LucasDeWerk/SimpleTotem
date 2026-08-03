@@ -243,50 +243,11 @@ export async function obterEmpresaSinc() {
   return JSON.parse(text)
 }
 
-export async function obterSessaoSimpleSfique() {
-  const res = await fetch(`${getApiBaseUrl()}/sinc/sessao`)
-  if (!res.ok) throw new Error(`Erro ${res.status}`)
-  const text = await res.text()
-  if (!text) return null
-  return JSON.parse(text)
-}
-
-export async function loginSimpleSfique(payload) {
-  const token = _token || (await getToken())
-  const res = await fetch(`${getApiBaseUrl()}/sinc/simplesfique/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(payload),
-  })
-  if (!res.ok) {
-    let detail = `Erro ${res.status}`
-    try {
-      const data = await res.json()
-      detail = data.detail || data.erro || detail
-    } catch {
-      detail = (await res.text()) || detail
-    }
-    throw new Error(detail)
-  }
-  return res.json()
-}
-
 export async function salvarEmpresaSimpleSfique(empresa) {
   return apiFetch('/sinc/simplesfique/empresa', {
     method: 'POST',
     body: JSON.stringify(empresa),
   })
-}
-
-export async function sincronizarEtapa(etapa) {
-  return apiFetch(`/sinc/pull/${etapa}`, { method: 'POST' })
-}
-
-export async function sincronizarCompleto() {
-  return apiFetch('/sinc/pull/completa', { method: 'POST' })
 }
 
 // ─── Vendas ───────────────────────────────────────────────────────────────────
@@ -367,97 +328,76 @@ export async function confirmarPagamento(payload) {
   })
 }
 
-// ─── SimplesFique API ──────────────────────────────────────────────────────────
+// ─── SimplesFique (mockado) ────────────────────────────────────────────────────
+//
+// O totem não depende mais de nenhum servidor SimplesFique real — os dados vêm
+// de src/services/mockSfique.js. Mantido apenas o formato/assinatura de cada
+// função para que stores e componentes continuem funcionando sem alterações.
+// A única integração externa real remanescente é o pinpad/CliSiTef (Fiserv).
 
-export function getSfiqueBaseUrl() {
-  return (import.meta.env.VITE_SFIQUE_URL || 'http://192.168.10.51:8000').replace(/\/$/, '')
-}
+import {
+  mockLogin,
+  mockListarTerminais,
+  mockValidarSenha,
+  mockObterConfig,
+  mockEmitirCupom,
+  mockVendaCompleta,
+  mockListarTiposPagamento,
+} from '@/services/mockSfique'
 
-// Callback registrado pelo simplesfique store para renovar tokens em 401
+// Callback registrado pelo simplesfique store para renovar tokens em 401 — sem
+// backend externo não há mais 401 a tratar, mas a API é mantida por compatibilidade.
 let _sfiqueTokenRefresher = null
 export function setSfiqueTokenRefresher(fn) {
   _sfiqueTokenRefresher = fn
 }
 
-// tokenType: 'jwt' | 'terminal' — determina qual token usar no retry
-async function sfFetch(path, options = {}, token = null, tokenType = 'terminal') {
-  const makeHeaders = (t) => ({
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-    ...(t ? { Authorization: `Bearer ${t}` } : {}),
-    ...(options.headers || {}),
+export function sfLogin(email) {
+  return mockLogin(email)
+}
+
+export function sfListarTerminais() {
+  return mockListarTerminais()
+}
+
+export function sfListarTiposPagamento() {
+  return mockListarTiposPagamento()
+}
+
+export function sfValidarSenha(terminalId) {
+  return mockValidarSenha(terminalId)
+}
+
+export function sfObterConfig(terminalId, configVersion, produtosVersion) {
+  return mockObterConfig(terminalId, configVersion, produtosVersion)
+}
+
+export function sfEmitirCupom(cupomId) {
+  return mockEmitirCupom(cupomId)
+}
+
+export function sfVendaCompleta(payload) {
+  return mockVendaCompleta(payload)
+}
+
+// Pedidos aprovados e estorno — vêm do backend local (dados/vendas_homologacao.json),
+// base real de evidência da homologação, não mais do mock do SimplesFique.
+
+export function sfListarPedidos({ terminalId, codigoSenha, dataOperacao } = {}) {
+  const params = new URLSearchParams()
+  if (terminalId) params.set('terminal_id', terminalId)
+  if (codigoSenha) params.set('codigo_senha', codigoSenha)
+  if (dataOperacao) params.set('data_operacao', dataOperacao)
+  const qs = params.toString()
+  return apiFetch(`/vendas/pedidos${qs ? `?${qs}` : ''}`)
+}
+
+/** senhaSupervisor: digitada ao vivo no painel admin para autorizar o cancelamento (TC 500). */
+export function sfEstornarPedido(pedidoId, motivo, senhaSupervisor) {
+  return apiFetch(`/vendas/pedidos/${pedidoId}/estornar`, {
+    method: 'PATCH',
+    body: JSON.stringify({ motivo, senha_supervisor: senhaSupervisor }),
   })
-
-  const res = await fetch(`${getSfiqueBaseUrl()}/api/v1${path}`, {
-    ...options,
-    headers: makeHeaders(token),
-  })
-
-  if (res.status === 401 && _sfiqueTokenRefresher) {
-    const novosTokens = await _sfiqueTokenRefresher()
-    if (novosTokens) {
-      const novoToken = tokenType === 'jwt' ? novosTokens.jwt_token : novosTokens.terminal_token
-      const retry = await fetch(`${getSfiqueBaseUrl()}/api/v1${path}`, {
-        ...options,
-        headers: makeHeaders(novoToken),
-      })
-      if (!retry.ok) {
-        let detail = `Erro ${retry.status}`
-        try { const d = await retry.json(); detail = d.detail || d.erro || detail } catch {}
-        throw new Error(detail)
-      }
-      return retry.status === 204 ? null : retry.json()
-    }
-  }
-
-  if (!res.ok) {
-    let detail = `Erro ${res.status}`
-    try { const d = await res.json(); detail = d.detail || d.erro || detail } catch {}
-    throw new Error(detail)
-  }
-  return res.status === 204 ? null : res.json()
-}
-
-export function sfLogin(email, senha) {
-  return sfFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email, senha }) })
-}
-
-export function sfListarTerminais(jwtToken) {
-  return sfFetch('/operacional/terminais', {}, jwtToken, 'jwt')
-}
-
-export function sfListarTiposPagamento(jwtToken) {
-  return sfFetch('/financeiro/tipo-pagamento-recebimentos', {}, jwtToken, 'jwt')
-}
-
-export function sfValidarSenha(terminalId, senha, jwtToken) {
-  return sfFetch(`/operacional/terminais/${terminalId}/validar-senha`, {
-    method: 'POST',
-    body: JSON.stringify({ senha, app: 'totem' }),
-  }, jwtToken, 'jwt')
-}
-
-export function sfObterConfig(terminalId, configVersion, produtosVersion, terminalToken) {
-  return sfFetch(
-    `/totem/terminais/${terminalId}/config?config_version=${configVersion}&produtos_version=${produtosVersion}`,
-    {},
-    terminalToken,
-    'terminal',
-  )
-}
-
-export function sfEmitirCupom(cupomId, jwtToken) {
-  return sfFetch('/vendas/cupom-fiscal/emitir', {
-    method: 'POST',
-    body: JSON.stringify({ cupom_id: cupomId }),
-  }, jwtToken, 'jwt')
-}
-
-export function sfVendaCompleta(payload, terminalToken) {
-  return sfFetch('/totem/venda-completa', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }, terminalToken, 'terminal')
 }
 
 // ─── Sessão do totem (local backend) ─────────────────────────────────────────

@@ -14,10 +14,11 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-// IDs/descrições do SimplesFique para formas aceitas no totem
+// IDs/descrições do SimplesFique para formas aceitas no totem.
+// sitef: função SiTef real, confirmada no pinpad (3=crédito, 2=débito).
 const SFIQUE_ID_MAP = {
-  '3':  { forma: 'credito', label: 'Cartão de Crédito', sitef: 2  },
-  '4':  { forma: 'debito',  label: 'Cartão de Débito',  sitef: 3  },
+  '3':  { forma: 'credito', label: 'Cartão de Crédito', sitef: 3  },
+  '4':  { forma: 'debito',  label: 'Cartão de Débito',  sitef: 2  },
   '17': { forma: 'pix',     label: 'PIX',               sitef: 122 },
   '20': { forma: 'pix',     label: 'PIX',               sitef: 122 },
 }

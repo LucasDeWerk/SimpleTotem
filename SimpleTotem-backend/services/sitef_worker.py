@@ -47,12 +47,14 @@ def main() -> int:
             return 0
 
         if modo == "cancelamento":
+            # senha_supervisor: digitada ao vivo no painel admin (TC 500) — nunca logar.
             resultado = cancelar_transacao(
                 valor_centavos=int(payload["valor_centavos"]),
                 cupom_original=str(payload["cupom_original"]),
                 data_original=str(payload["data_original"]),
                 nsu_host=str(payload.get("nsu_host") or ""),
                 cnpj_estabelecimento=cnpj,
+                senha_supervisor=payload.get("senha_supervisor") or None,
             )
             sys.stdout.write(json.dumps(resultado) + "\n")
             sys.stdout.flush()

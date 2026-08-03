@@ -121,65 +121,7 @@ class SimpleSfiqueLoginResponse(BaseModel):
     saas: Optional[Dict[str, Any]] = None
 
 
-# ── Catálogo ──────────────────────────────────────────────────────────────────
-
-class GrupoOut(BaseModel):
-    id_grupo: int
-    descgrupo: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-
-class SubgrupoOut(BaseModel):
-    id_grupo: int
-    id_subgrupo: int
-    descsubgrupo: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-
-class ProdutoOut(BaseModel):
-    id_produto: int
-    descproduto: Optional[str] = None
-    cod_referencia: Optional[str] = None
-    id_grupo: Optional[int] = None
-    id_subgrupo: Optional[int] = None
-    id_medida: Optional[int] = None
-    preco_venda: Optional[float] = None
-    estoque: Optional[float] = None
-    dhinc: Optional[str] = None
-    dhalt: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-
 # ── Vendas ────────────────────────────────────────────────────────────────────
-
-class SaidaItemOut(BaseModel):
-    id: int
-    id_saida: int
-    id_produto: Optional[int] = None
-    vlr_unitario_praticado: Optional[float] = None
-    quantidade: Optional[float] = None
-    vlr_total_item: Optional[float] = None
-
-    class Config:
-        from_attributes = True
-
-
-class SaidaOut(BaseModel):
-    id: int
-    dtemissao: Optional[str] = None
-    situacao: Optional[str] = None
-    vlr_venda: Optional[float] = None
-    id_terminal: Optional[int] = None
-
-    class Config:
-        from_attributes = True
-
 
 class TerminalOut(BaseModel):
     id: int
@@ -196,23 +138,6 @@ class TerminalOut(BaseModel):
 class AdminProfileOut(BaseModel):
     usuario: str
     role: str
-
-
-class TipoPagamentoOut(BaseModel):
-    id: str
-    desctipopagrec: Optional[str] = None
-
-    class Config:
-        from_attributes = True
-
-
-# ── Métodos de Pagamento ──────────────────────────────────────────────────────
-
-class MetodoPagamentoOut(BaseModel):
-    type: str           # credit | debit | pix | cash
-    label: str
-    icon: str
-    available: bool = True
 
 
 # ── Hardware (DB) ─────────────────────────────────────────────────────────────
@@ -324,7 +249,6 @@ class TransacaoStatusResponse(BaseModel):
     cupom_bruto: Optional[str] = None
     pix: bool = False
     resultado_codigo: Optional[int] = None
-    id_venda: Optional[int] = None
 
 
 class ConfirmarPagamentoRequest(BaseModel):
@@ -332,6 +256,15 @@ class ConfirmarPagamentoRequest(BaseModel):
     confirma: int = Field(ge=0, le=1, description="1=confirma, 0=desfaz")
     impressao_ok: bool = True
     xml_emitido: bool = True
+    codigo_senha: Optional[str] = None
+    cupom_fiscal: Optional[Dict[str, Any]] = None
+
+
+class EstornarPedidoRequest(BaseModel):
+    motivo: str
+    # Digitada ao vivo por um supervisor no painel admin (TC 500 CliSiTef) —
+    # requisito Fiserv: nunca usar um valor pré-configurado silenciosamente.
+    senha_supervisor: str
 
 
 class IniciaTransacaoResponse(BaseModel):

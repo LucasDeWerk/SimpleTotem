@@ -34,7 +34,7 @@ onMounted(() => {
 
 function onLoginSuccess({ usuario }) {
   admin.markAuthenticated(usuario)
-  router.replace({ name: 'admin-panel', query: { secao: 'sync' } })
+  router.replace({ name: 'admin-panel' })
 }
 
 function goBack() {
