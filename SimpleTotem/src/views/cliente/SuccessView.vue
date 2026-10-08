@@ -16,9 +16,29 @@
           <span class="detail-label">{{ lang.t.transactionCode }}</span>
           <span class="detail-value highlight">{{ authCode }}</span>
         </div>
-        <div v-if="nsuDisplay" class="detail-row">
-          <span class="detail-label">{{ lang.t.nsuLabel }}</span>
-          <span class="detail-value">{{ nsuDisplay }}</span>
+        <div v-else-if="documentoPix" class="detail-row">
+          <span class="detail-label">{{ lang.t.documentoPixLabel }}</span>
+          <span class="detail-value highlight">{{ documentoPix }}</span>
+        </div>
+        <div v-if="modalidade" class="detail-row">
+          <span class="detail-label">{{ lang.t.modalidadeLabel }}</span>
+          <span class="detail-value">{{ modalidade }}</span>
+        </div>
+        <div v-if="bandeira" class="detail-row">
+          <span class="detail-label">{{ lang.t.bandeiraLabel }}</span>
+          <span class="detail-value">{{ bandeira }}</span>
+        </div>
+        <div v-if="nsuSitef" class="detail-row">
+          <span class="detail-label">{{ lang.t.nsuSitefLabel }}</span>
+          <span class="detail-value">{{ nsuSitef }}</span>
+        </div>
+        <div v-if="nsuHost" class="detail-row">
+          <span class="detail-label">{{ lang.t.nsuHostLabel }}</span>
+          <span class="detail-value">{{ nsuHost }}</span>
+        </div>
+        <div v-if="valorCobrado" class="detail-row">
+          <span class="detail-label">{{ lang.t.totalCobradoLabel }}</span>
+          <span class="detail-value">R$ {{ valorCobrado }}</span>
         </div>
         <div v-if="codigoSenha" class="detail-row senha-row">
           <span class="detail-label">Retire seu pedido</span>
@@ -42,21 +62,6 @@
         <p v-if="cupomErro" class="cupom-error">⚠️ {{ cupomErro }}</p>
       </div>
 
-      <!-- Escolha de comprovante TEF (Fiserv req. 2) -->
-      <div v-if="showReceiptChoice && !receiptChosen" class="receipt-choice">
-        <p class="receipt-choice-title">Deseja imprimir o comprovante?</p>
-        <div class="receipt-choice-buttons">
-          <PrimaryActionButton
-            label="Imprimir comprovante"
-            :fullWidth="true"
-            @click="chooseReceipt('imprimir')"
-          />
-          <button class="receipt-skip-btn" type="button" @click="chooseReceipt('nao')">
-            Não quero comprovante
-          </button>
-        </div>
-      </div>
-
       <div v-if="printing" class="print-status">
         <div class="spinner-small"></div>
         <p>{{ lang.t.printing }}</p>
@@ -64,6 +69,11 @@
 
       <p v-if="printError" class="print-error">
         ⚠️ {{ lang.t.printError }} {{ printError }}
+        <span class="print-error-hint">{{ lang.t.printFailedHint }}</span>
+      </p>
+
+      <p v-if="printerUnavailable" class="print-error">
+        ⚠️ {{ lang.t.printerUnavailableMsg }}
         <span class="print-error-hint">{{ lang.t.printFailedHint }}</span>
       </p>
 
@@ -112,17 +122,20 @@ const printSuccess = ref(false)
 const emitindoCupom = ref(false)
 const cupomEmitido = ref(false)
 const cupomErro = ref('')
-const receiptChosen = ref(false)
 const empresaInfo = ref(null)
+const printerUnavailable = ref(false)
 
 const order = computed(() => payment.completedOrder)
 const tx = computed(() => payment.transactionResult)
 
-// Fiserv req. 2 — só exibe escolha se há impressora e dados de comprovante
-const showReceiptChoice = computed(() =>
+// Impressão do comprovante é OBRIGATÓRIA: o cliente não escolhe. Só não há o
+// que imprimir se faltar impressora ou se a transação não trouxe nenhum dado.
+const podeImprimirComprovante = computed(() =>
   Boolean(window.electronAPI?.printer) && Boolean(
     tx.value?.cupom_bruto ||
     tx.value?.linhas_cupom?.some(b => String(b).length > 0) ||
+    tx.value?.cupom_bruto_cliente ||
+    tx.value?.linhas_cupom_cliente?.some(b => String(b).length > 0) ||
     tx.value?.nsu_sitef
   )
 )
@@ -135,12 +148,16 @@ const orderNumber = computed(() => {
 })
 
 const authCode = computed(() => tx.value?.autorizacao || '')
-
-const nsuDisplay = computed(() => {
-  const nsu = tx.value?.nsu_host || tx.value?.nsu_sitef || ''
-  if (!nsu || nsu === authCode.value) return ''
-  return nsu
-})
+// PIX não manda código de autorização (TC 135) — usa o número de documento
+// da transação (TC 4077) como identificador equivalente.
+const documentoPix = computed(() => tx.value?.documento_pix || '')
+const modalidade = computed(() => tx.value?.modalidade || '')
+const bandeira = computed(() => tx.value?.bandeira || '')
+const nsuSitef = computed(() => tx.value?.nsu_sitef || '')
+const nsuHost = computed(() => tx.value?.nsu_host || '')
+const valorCobrado = computed(() =>
+  tx.value?.total_cobrado != null ? Number(tx.value.total_cobrado).toFixed(2) : ''
+)
 
 const codigoSenha = computed(() => tx.value?.codigo_senha || '')
 const mostrarCupomFiscal = computed(() => Boolean(tx.value?.emite_cupom_fiscal))
@@ -162,15 +179,20 @@ onMounted(async () => {
     cupomEmitido.value = true
   }
 
-  // Se não há impressora ou não há dados de comprovante, confirma imediatamente (sem impressão)
-  if (!showReceiptChoice.value) {
-    receiptChosen.value = true
+  // Impressão obrigatória: imprime sozinho, sem perguntar. A confirmação no
+  // SiTef (item 8.1.1) só vai com confirma=1 se o comprovante saiu — se a
+  // impressão falhar, o pagamento é desfeito, como já era.
+  if (podeImprimirComprovante.value) {
+    const impressaoOk = await printReceipt()
+    await _confirmarSiTef(impressaoOk)
+  } else {
+    if (!window.electronAPI?.printer) {
+      printerUnavailable.value = true
+    }
     await _confirmarSiTef(true)
   }
 
-  // Caso haja impressora, a confirmação ocorre em chooseReceipt() após impressão
-
-  // Tickets de produção por produto (ex.: cozinha) — independem da escolha do comprovante do cliente
+  // Tickets de produção por produto (ex.: cozinha) — independem do comprovante do cliente
   if (settings.imprimirTicketsIndividuais && window.electronAPI?.printer) {
     const resultado = await printProductTickets(order.value?.items, orderNumber.value)
     if (resultado.failed.length) {
@@ -198,22 +220,12 @@ function buildMinimalTxLines() {
   if (tx.value?.nsu_sitef) lines.push(`NSU: ${tx.value.nsu_sitef}`)
   if (tx.value?.nsu_host) lines.push(`Host: ${tx.value.nsu_host}`)
   if (tx.value?.autorizacao) lines.push(`AUT: ${tx.value.autorizacao}`)
+  if (tx.value?.documento_pix) lines.push(`DOCUMENTO: ${tx.value.documento_pix}`)
   if (tx.value?.total_cobrado != null) {
     lines.push(`TOTAL: R$ ${Number(tx.value.total_cobrado).toFixed(2)}`)
   }
   lines.push('----------------', '')
   return lines
-}
-
-async function chooseReceipt(choice) {
-  receiptChosen.value = true
-  if (choice === 'imprimir') {
-    const impressaoOk = await printReceipt()
-    await _confirmarSiTef(impressaoOk)
-  } else {
-    // Usuário optou por não imprimir — não é falha, confirma normalmente
-    await _confirmarSiTef(true)
-  }
 }
 
 async function _confirmarSiTef(impressaoOk) {
@@ -243,17 +255,52 @@ async function printReceipt() {
       return false
     }
 
-    // 1) Cupom TEF bruto — exatamente como a Fiserv/SiTef enviou (TC 122)
-    const cupomBruto = tx.value?.cupom_bruto
-    const blocosTef = tx.value?.linhas_cupom || []
-    const temCupomTef = Boolean(cupomBruto) || blocosTef.some(b => String(b).length > 0)
-    if (temCupomTef) {
-      const payload = cupomBruto ? [cupomBruto] : blocosTef
-      console.log('[SuccessView] Imprimindo cupom bruto TEF:', payload.join('').length, 'chars')
-      const result = await printLines(payload, { cut: true, cupomFiserv: true })
-      if (result.success) { printSuccess.value = true; return true }
-      printError.value = result.message || lang.t.printError
-      return false
+    // 1) Cupom TEF bruto — exatamente como a Fiserv/SiTef enviou (TC 121/122).
+    //    Exigência Fiserv: imprimir as DUAS vias fisicamente (loja e cliente),
+    //    cada uma como seu próprio job de impressão/corte.
+    const viaLoja = tx.value?.cupom_bruto ? [tx.value.cupom_bruto] : (tx.value?.linhas_cupom || [])
+    const viaCliente = tx.value?.cupom_bruto_cliente ? [tx.value.cupom_bruto_cliente] : (tx.value?.linhas_cupom_cliente || [])
+    const temViaLoja = viaLoja.some(b => String(b).length > 0)
+    const temViaCliente = viaCliente.some(b => String(b).length > 0)
+
+    if (temViaLoja || temViaCliente) {
+      if (!temViaLoja || !temViaCliente) {
+        console.warn('[SuccessView] Só a via', temViaLoja ? 'loja' : 'cliente', 'veio da CliSiTef — a outra não será impressa.')
+      }
+
+      if (temViaLoja) {
+        console.log('[SuccessView] Imprimindo cupom TEF (via loja):', viaLoja.join('').length, 'chars')
+        const resultLoja = await printLines(viaLoja, { cut: true, cupomFiserv: true })
+        if (!resultLoja.success) {
+          printError.value = resultLoja.message || lang.t.printError
+          return false
+        }
+      }
+
+      if (temViaCliente) {
+        console.log('[SuccessView] Imprimindo cupom TEF (via cliente):', viaCliente.join('').length, 'chars')
+        const resultCliente = await printLines(viaCliente, { cut: true, cupomFiserv: true })
+        if (!resultCliente.success) {
+          printError.value = resultCliente.message || lang.t.printError
+          return false
+        }
+      }
+
+      printSuccess.value = true
+
+      // NSU/autorização/modalidade/documento PIX vêm de outros tipoCampos
+      // (133/134/135/4077), não do texto do cupom bruto (121/122) — sem isso,
+      // esses dados reais da Fiserv nunca chegavam ao papel (só apareciam na
+      // tela). Bloco separado, não altera o texto bruto acima.
+      const dadosComplementares = buildMinimalTxLines()
+      if (dadosComplementares.length > 3) {
+        const resultComplementar = await printLines(dadosComplementares, { cut: true })
+        if (!resultComplementar.success) {
+          console.warn('[SuccessView] Falha ao imprimir dados complementares da Fiserv:', resultComplementar.message)
+        }
+      }
+
+      return true
     }
 
     // 2) Recibo do pedido (itens + total)
@@ -275,6 +322,12 @@ async function printReceipt() {
         total: order.value.total,
         paymentMethod: order.value.paymentMethod || '—',
         pickupCode: codigoSenha.value || authCode.value,
+        modalidade: modalidade.value,
+        bandeira: bandeira.value,
+        autorizacao: authCode.value,
+        documentoPix: documentoPix.value,
+        nsuSitef: nsuSitef.value,
+        nsuHost: nsuHost.value,
       }
       console.log('[SuccessView] Imprimindo recibo do pedido')
       const result = await printComplete(orderData)
@@ -542,51 +595,4 @@ function newOrder() {
   font-weight: 600;
 }
 
-/* Mesmo padrão de success-details — card verde */
-.receipt-choice {
-  width: 100%;
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(76, 175, 80, 0.04));
-  border: 1px solid rgba(76, 175, 80, 0.15);
-  border-radius: var(--radius-lg);
-  padding: var(--space-lg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-lg);
-}
-
-.receipt-choice-title {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  color: #0f172a;
-  text-align: center;
-}
-
-.receipt-choice-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  width: 100%;
-}
-
-/* Botão secundário segue o padrão payment-secondary-btn da PaymentView */
-.receipt-skip-btn {
-  width: 100%;
-  min-height: var(--btn-min-height);
-  padding: var(--space-md) var(--space-xl);
-  background: transparent;
-  border: 2px solid var(--color-primary);
-  border-radius: var(--radius-md);
-  color: var(--color-primary);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.receipt-skip-btn:active {
-  background: var(--color-primary-light);
-}
 </style>

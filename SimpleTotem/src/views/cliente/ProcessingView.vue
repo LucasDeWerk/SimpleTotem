@@ -2,7 +2,33 @@
   <div class="processing-view">
     <div class="processing-content animate-fade-in">
 
-      <template v-if="!erro">
+      <!-- ANULA físico no pinpad (Seq. 9) — a CliSiTef está bloqueada esperando
+           a confirmação real, não pode ser respondida sozinha. -->
+      <template v-if="aguardandoConfirmacaoCancelamento">
+        <div class="processing-error-icon">?</div>
+        <h2 class="processing-headline">{{ lang.t.cancelConfirmTitle }}</h2>
+        <p class="processing-subheadline">
+          {{ aguardandoConfirmacaoCancelamento.mensagem || lang.t.cancelConfirmDefaultMsg }}
+        </p>
+        <div class="processing-error-actions">
+          <PrimaryActionButton
+            :label="lang.t.cancelConfirmYes"
+            :fullWidth="true"
+            :disabled="enviandoConfirmacaoCancelamento"
+            @click="responderCancelamento(true)"
+          />
+          <button
+            class="processing-cancel-btn"
+            type="button"
+            :disabled="enviandoConfirmacaoCancelamento"
+            @click="responderCancelamento(false)"
+          >
+            {{ lang.t.cancelConfirmNo }}
+          </button>
+        </div>
+      </template>
+
+      <template v-else-if="!erro">
         <div v-if="!mostrarQr" class="processing-spinner">
           <div class="spinner-ring"></div>
         </div>
@@ -24,18 +50,21 @@
 
         <p class="processing-help">{{ lang.t.processingHelp }}</p>
         <p class="processing-cancel-hint">{{ lang.t.cancelViaPinpad }}</p>
-
-        <div class="processing-actions">
-          <button class="processing-secondary-btn" type="button" @click="voltar">
-            {{ lang.t.backToMenu }}
-          </button>
-        </div>
       </template>
 
       <template v-else>
         <div class="processing-error-icon">✕</div>
-        <h2 class="processing-headline error">{{ lang.t.paymentNotApproved }}</h2>
-        <p class="processing-subheadline">{{ erro }}</p>
+        <!-- Requisito Fiserv: exibir TODAS as mensagens/códigos retornados, sem
+             alteração. mensagemOperador é o texto literal que a CliSiTef mandou
+             durante o fluxo (ex.: "Sem conexao Servidor"); codigoRetornado é o
+             código numérico do resultado final + nossa descrição (claramente
+             rotulada como interna) — os dois são dados distintos e nenhum dos
+             dois pode sumir, mesmo quando só um deles existe. -->
+        <h2 class="processing-headline error">{{ mensagemOperador || codigoRetornado || lang.t.paymentNotApproved }}</h2>
+        <p v-if="mensagemOperador || codigoRetornado" class="processing-subheadline">{{ lang.t.paymentNotApproved }}</p>
+        <p v-else class="processing-subheadline">{{ erro }}</p>
+        <p v-if="mensagemOperador && codigoRetornado" class="processing-code">{{ codigoRetornado }}</p>
+        <p v-if="dicaPinpadTimeout" class="processing-subheadline">{{ dicaPinpadTimeout }}</p>
         <div class="processing-error-actions">
           <PrimaryActionButton
             :label="lang.t.tryAgain"
@@ -61,6 +90,7 @@ import { useSessionStore } from '@/stores/session'
 import { useLanguageStore } from '@/stores/language'
 import PrimaryActionButton from '@/components/shared/PrimaryActionButton.vue'
 import PixQrCode from '@/components/shared/PixQrCode.vue'
+import { confirmarCancelamentoTransacao } from '@/services/api'
 
 const router = useRouter()
 const cart = useCartStore()
@@ -69,8 +99,21 @@ const session = useSessionStore()
 const lang = useLanguageStore()
 
 const erro = ref('')
+const enviandoConfirmacaoCancelamento = ref(false)
 
 const txStatus = computed(() => payment.transactionStatus)
+
+// Requisito Fiserv: os dois vêm de campos independentes do backend — um não
+// deve mascarar o outro (ver template).
+const mensagemOperador = computed(() => txStatus.value?.mensagem_atual || '')
+const codigoRetornado = computed(() => txStatus.value?.erro || '')
+
+// Código -43 ("Problema na execução de rotina no pinpad") é o mesmo que
+// aparece quando o pinpad estoura o próprio timeout esperando o cartão —
+// dica adicional, sem substituir o dado real da CliSiTef acima.
+const dicaPinpadTimeout = computed(() =>
+  txStatus.value?.resultado_codigo === -43 ? lang.t.pinpadTimeoutHint : ''
+)
 
 const mostrarQr = computed(() =>
   Boolean(txStatus.value?.qrcode_ativo && txStatus.value?.qrcode)
@@ -79,6 +122,8 @@ const mostrarQr = computed(() =>
 const qrcodePayload = computed(() => txStatus.value?.qrcode || '')
 
 const mensagemAtual = computed(() => txStatus.value?.mensagem_atual || '')
+
+const aguardandoConfirmacaoCancelamento = computed(() => txStatus.value?.aguardando_confirmacao_cancelamento || null)
 
 const mensagemRodape = computed(() => {
   const msgs = txStatus.value?.mensagens || []
@@ -102,6 +147,21 @@ onMounted(async () => {
     erro.value = payment.errorMessage || lang.t.paymentError
   }
 })
+
+/** Responde a pergunta real da CliSiTef disparada pelo ANULA físico do
+ * pinpad (Seq. 9) — a atualização de tela acontece no próximo polling. */
+async function responderCancelamento(confirma) {
+  const tid = txStatus.value?.transacao_id
+  if (!tid || enviandoConfirmacaoCancelamento.value) return
+  enviandoConfirmacaoCancelamento.value = true
+  try {
+    await confirmarCancelamentoTransacao(tid, confirma)
+  } catch (err) {
+    console.error('[ProcessingView] Erro ao responder confirmação de cancelamento:', err)
+  } finally {
+    enviandoConfirmacaoCancelamento.value = false
+  }
+}
 
 function voltar() {
   payment.resetPayment()
@@ -184,6 +244,14 @@ function encerrarPedido() {
   font-weight: 500;
 }
 
+.processing-code {
+  font-size: var(--font-size-sm);
+  color: #94a3b8;
+  font-weight: 500;
+  max-width: 480px;
+  line-height: 1.4;
+}
+
 .processing-help {
   font-size: var(--font-size-md);
   color: #94a3b8;
@@ -198,15 +266,6 @@ function encerrarPedido() {
   font-weight: 600;
   max-width: 400px;
   line-height: 1.5;
-}
-
-.processing-actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  width: 100%;
-  max-width: 360px;
-  margin-top: var(--space-md);
 }
 
 .processing-error-icon {
@@ -231,8 +290,7 @@ function encerrarPedido() {
   margin-top: var(--space-md);
 }
 
-.processing-cancel-btn,
-.processing-secondary-btn {
+.processing-cancel-btn {
   min-height: var(--btn-min-height);
   padding: var(--space-md) var(--space-xl);
   border-radius: var(--radius-md);
@@ -241,22 +299,12 @@ function encerrarPedido() {
   letter-spacing: 0.5px;
   cursor: pointer;
   transition: background var(--transition-fast);
-}
-
-.processing-cancel-btn {
   background: transparent;
   border: 2px solid var(--color-border);
   color: #64748b;
 }
 
-.processing-secondary-btn {
-  background: rgba(245, 124, 0, 0.08);
-  border: 2px solid rgba(245, 124, 0, 0.15);
-  color: var(--color-primary);
-}
-
-.processing-cancel-btn:active,
-.processing-secondary-btn:active {
+.processing-cancel-btn:active {
   background: var(--bg-color-secondary);
 }
 </style>

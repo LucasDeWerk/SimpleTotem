@@ -1,0 +1,14 @@
+09:46:00: ##### Algum(ns) objeto(s) nao foi(ram) destruido(s) ##### 
+
+09:46:00: ============== 25 primeiros objetos da pilha: ==============
+
+09:46:00: Objeto String instanciado na linha 1913 do arquivo clisitefi_ascii
+
+09:46:00: Objeto String instanciado na linha 1913 do arquivo clisitefi_ascii
+
+09:46:00: Objeto String instanciado na linha 1913 do arquivo clisitefi_ascii
+
+09:46:00: Objeto String instanciado na linha 1913 do arquivo clisitefi_ascii
+
+09:46:00: ==============  Total de 4 objetos nao destuidos  ==============
+

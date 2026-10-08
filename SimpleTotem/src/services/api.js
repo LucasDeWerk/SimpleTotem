@@ -98,6 +98,29 @@ export async function loginSistema(usuario, senha) {
   return data
 }
 
+/** Chamadas autenticadas com o token admin (role="admin", via /auth/system-login) —
+ * usado pelos endpoints administrativos mais sensíveis (funções CliSiTef de
+ * homologação Fiserv), diferente do apiFetch() padrão que usa o token do dispositivo. */
+async function adminFetch(path, options = {}) {
+  const token = _adminToken || sessionStorage.getItem('admin_token')
+  if (!token) throw new Error('Sessão admin expirada')
+  const res = await fetch(`${getApiBaseUrl()}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...(options.headers || {})
+    }
+  })
+  if (!res.ok) {
+    const body = await res.text()
+    let detail = body
+    try { detail = JSON.parse(body)?.detail ?? body } catch (_) {}
+    throw new Error(detail)
+  }
+  return res.status === 204 ? null : res.json()
+}
+
 export async function validarAdmin() {
   const token = _adminToken || sessionStorage.getItem('admin_token')
   if (!token) throw new Error('Sessão admin expirada')
@@ -173,6 +196,11 @@ export async function obterStatusHardware() {
   return apiFetch('/hardware/status')
 }
 
+/** Evidência de pré-homologação Fiserv: status do parâmetro TLS (TokenRegistro). */
+export async function obterStatusTlsSitef() {
+  return apiFetch('/hardware/sitef/tls-status')
+}
+
 /**
  * Atribui QUALQUER dispositivo USB a um papel (impressora, pinpad, leitor).
  * Marca agnóstico — só precisa VID:PID.
@@ -199,7 +227,12 @@ export async function removerConfigHardware(tipo) {
   return apiFetch(`/hardware/dispositivos/${item.id}`, { method: 'DELETE' })
 }
 
-/** Status da impressora Epson (USB, permissões, banco). */
+/**
+ * Status da impressora (configurada/conectada/permissão + `pronta`). Usado no
+ * painel de periféricos e para bloquear o pagamento quando o comprovante não
+ * poderia ser impresso. O sensor de papel NÃO vem daqui: é lido no Electron
+ * (window.electronAPI.printer.paperStatus).
+ */
 export async function obterStatusImpressora() {
   return apiFetch('/hardware/impressora/status')
 }
@@ -317,6 +350,17 @@ export async function obterStatusTransacao(transacaoId) {
 }
 
 /**
+ * Responde a confirmação de cancelamento disparada pelo ANULA físico do
+ * pinpad (Seq. 9) — a CliSiTef fica bloqueada esperando essa decisão real.
+ */
+export async function confirmarCancelamentoTransacao(transacaoId, confirma) {
+  return apiFetch(`/vendas/transacao/${transacaoId}/confirmar-cancelamento`, {
+    method: 'POST',
+    body: JSON.stringify({ confirma }),
+  })
+}
+
+/**
  * Confirma ou desfaz a transação SiTef após impressão do cupom TEF e XML fiscal.
  * Deve ser chamado APÓS printReceipt() (Item 8.1.1 CliSiTef Autoatendimento).
  * @param {{ transacao_id: string, confirma: number, impressao_ok: boolean, xml_emitido: boolean }} payload
@@ -397,6 +441,35 @@ export function sfEstornarPedido(pedidoId, motivo, senhaSupervisor) {
   return apiFetch(`/vendas/pedidos/${pedidoId}/estornar`, {
     method: 'PATCH',
     body: JSON.stringify({ motivo, senha_supervisor: senhaSupervisor }),
+  })
+}
+
+// ─── Comunicação Fiserv — Menu Administrativo do pinpad (CliSiTef) ───────────
+//
+// Canal permanente do sistema com a Fiserv: abre o Menu Administrativo (110)
+// de forma interativa. O backend inicia a função em subprocesso e mantém o
+// stdin aberto; cada comando que exige decisão do operador (menu, sim/não,
+// dado, senha mascarada) vira um "prompt" que só avança quando respondido
+// pelo painel.
+
+/** Inicia uma função administrativa/de teste CliSiTef. Retorna { execucao_id }. */
+export function iniciarFuncaoAdmin(funcaoCodigo) {
+  return adminFetch('/homologacao/funcao-admin/iniciar', {
+    method: 'POST',
+    body: JSON.stringify({ funcao_codigo: funcaoCodigo }),
+  })
+}
+
+/** Estado atual da execução: mensagens acumuladas, prompt pendente, resultado final. */
+export function obterStatusFuncaoAdmin(execucaoId) {
+  return adminFetch(`/homologacao/funcao-admin/${execucaoId}/status`)
+}
+
+/** Envia a resposta do operador a um prompt pendente (menu, sim/não, dado, senha mascarada). */
+export function responderFuncaoAdmin(execucaoId, valor) {
+  return adminFetch(`/homologacao/funcao-admin/${execucaoId}/responder`, {
+    method: 'POST',
+    body: JSON.stringify({ valor }),
   })
 }
 

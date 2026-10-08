@@ -12,15 +12,49 @@ from models.orm import Empresa
 from models.schemas import (
     IniciaVendaRequest, IniciaVendaResponse, ItemVendaCalculado,
     IniciaTransacaoRequest, IniciaTransacaoStartResponse, TransacaoStatusResponse,
-    ConfirmarPagamentoRequest, EstornarPedidoRequest,
+    ConfirmarPagamentoRequest, EstornarPedidoRequest, ConfirmarCancelamentoTransacaoRequest,
 )
-from services import sitef_service, vendas_store
+from services import impressora_service, sitef_service, vendas_store
 from services.sitef_session import store
 from services.terminal_service import resolver_terminal_atual
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/vendas", tags=["vendas"])
+
+# Mensagens por motivo — o cliente do totem não deve ver jargão de hardware,
+# mas o operador precisa saber o que resolver (vai no detail do 409).
+_MSG_IMPRESSORA = {
+    "nao_configurada": "Impressora não configurada no totem.",
+    "desconectada": "Impressora desconectada.",
+    "sem_permissao": "Sem permissão de acesso à impressora.",
+}
+
+
+def _validar_impressora_pronta() -> None:
+    """409 se a impressora não estiver apta a imprimir o comprovante TEF.
+
+    Só valida o que o backend consegue verificar (configurada/conectada/
+    permissão de acesso). O sensor de papel é lido no Electron, que detém o
+    canal USB — ver electron/printer.js e a checagem em PaymentView.vue.
+    """
+    try:
+        st = impressora_service.status_impressora()
+    except Exception as exc:
+        # Falha ao consultar não deve derrubar a venda — só registra.
+        logger.warning("[Transacao] Não foi possível checar a impressora: %s", exc)
+        return
+
+    if st.get("pronta"):
+        return
+
+    motivo = st.get("motivo_indisponivel") or "indisponivel"
+    detalhe = _MSG_IMPRESSORA.get(motivo, "Impressora indisponível.")
+    logger.warning("[Transacao] Bloqueado: impressora indisponível (%s)", motivo)
+    raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail=f"{detalhe} Chame um atendente — o comprovante não poderia ser impresso.",
+    )
 
 # ─── Inicia Venda — cálculo do total ─────────────────────────────────────────
 
@@ -72,6 +106,12 @@ def inicia_transacao(
     Inicia transação SiTef (cartão ou PIX) em background.
     O frontend deve consultar GET /vendas/transacao/{id} para QR Code e status.
     """
+    # Sem impressora não se inicia pagamento: uma venda aprovada sem cupom
+    # impresso nunca é confirmada (item 8.1.1 exige imprimir antes de
+    # FinalizaFuncaoSiTefInterativo) e fica pendente no SiTef. O frontend já
+    # checa antes, isto é a rede de proteção caso ele falhe.
+    _validar_impressora_pronta()
+
     # LOG DIAGNÓSTICO — visível mesmo sem debug habilitado
     logger.warning(
         "[Transacao] >>> PAYLOAD RAW total_cliente=%r  itens=%r",
@@ -189,6 +229,21 @@ def status_transacao(
     return TransacaoStatusResponse(**data)
 
 
+@router.post("/transacao/{transacao_id}/confirmar-cancelamento")
+def confirmar_cancelamento_transacao(
+    transacao_id: str,
+    body: ConfirmarCancelamentoTransacaoRequest,
+    _: str = Depends(get_current_user),
+):
+    """Responde de verdade a pergunta da CliSiTef disparada pelo ANULA físico
+    do pinpad (Seq. 9) — o worker está bloqueado esperando essa decisão."""
+    try:
+        sitef_service.responder_confirmacao_cancelamento(transacao_id, body.confirma)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    return {"ok": True}
+
+
 def _montar_restricao_parcelamento(tipo: str, num_parcelas: int) -> str:
     """Monta restrição para IniciaFuncaoSiTefInterativo conforme tipo de crédito."""
     if num_parcelas == 1 or tipo == "a_vista":
@@ -249,7 +304,7 @@ def confirmar_pagamento(
     confirma = 1 if deve_confirmar else 0
 
     try:
-        sitef_service.confirmar_pagamento_sitef(confirma)
+        sitef_service.confirmar_pagamento_sitef(confirma, transacao_id=body.transacao_id)
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc))
 

@@ -76,7 +76,28 @@ def _validar_id_terminal(valor: str) -> None:
 SITEF_ID_TERMINAL: str = os.getenv("SITEF_ID_TERMINAL", "ST000001")
 _validar_id_terminal(SITEF_ID_TERMINAL)
 SITEF_OPERADOR: str = os.getenv("SITEF_OPERADOR", "01")
-SITEF_CNPJ_AUTOMACAO: str = os.getenv("SITEF_CNPJ_AUTOMACAO", "12523654185985")
+
+# Os valores de exemplo do roteiro Fiserv (12523654185985 / 31406434895111) e a
+# loja 00000000 são intencionalmente aceitos aqui — o suporte técnico da
+# Fiserv (Tiago Soares de Souza) confirmou por escrito que são os dados
+# fictícios oficiais a serem usados nos testes de pré-homologação, apesar do
+# texto do roteiro sugerir o contrário ("os valores de CNPJ fornecidos são
+# exemplos e não devem ser utilizados durante os testes de pré-homologação").
+# Não reintroduzir validação contra esses valores específicos sem antes
+# reconfirmar com o suporte Fiserv.
+
+
+def _validar_nao_vazio(nome_var: str, valor: str) -> None:
+    if not valor.strip():
+        raise RuntimeError(
+            f"{nome_var} não pode ser vazio — configure o valor no .env antes de "
+            f"rodar testes de pré-homologação."
+        )
+
+
+_validar_nao_vazio("SITEF_ID_LOJA", SITEF_ID_LOJA)
+SITEF_CNPJ_AUTOMACAO: str = os.getenv("SITEF_CNPJ_AUTOMACAO", "")
+_validar_nao_vazio("SITEF_CNPJ_AUTOMACAO", SITEF_CNPJ_AUTOMACAO)
 SITEF_PORTA_PINPAD: str = os.getenv("SITEF_PORTA_PINPAD", "AUTO_USB")
 # Token TLS Fiserv — fornecido durante o processo de homologação; vazio = sem TLS
 SITEF_TLS_TOKEN: str = os.getenv("SITEF_TLS_TOKEN", "")

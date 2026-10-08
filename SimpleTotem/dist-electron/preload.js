@@ -20,7 +20,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
       "printer:print-raw",
       Array.isArray(bufferData) ? [...bufferData] : Array.from(bufferData || [])
     ),
-    testPrint: () => ipcRenderer.invoke("printer:test-print")
+    testPrint: () => ipcRenderer.invoke("printer:test-print"),
+    // Sensor de papel (ESC/POS DLE EOT 4) — { suportado, temPapel, poucoPapel, message }
+    paperStatus: () => ipcRenderer.invoke("printer:paper-status")
   }
 });
 contextBridge.exposeInMainWorld("hardwareAPI", {

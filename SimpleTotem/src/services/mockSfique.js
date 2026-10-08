@@ -47,9 +47,11 @@ const MOCK_MENUS = [
 ]
 
 const MOCK_MENU_PRODUTOS = [
-  { id: 1, produto_id: 1, menu_id: 1, nome_produto: 'X-Burger Clássico', preco: 24.9, emite_ticket: true, ambiente_preparo_id: 1 },
-  { id: 2, produto_id: 2, menu_id: 1, nome_produto: 'X-Bacon', preco: 27.9, emite_ticket: true, ambiente_preparo_id: 1 },
-  { id: 3, produto_id: 3, menu_id: 1, nome_produto: 'Batata Frita Média', preco: 14.9, emite_ticket: true, ambiente_preparo_id: 1 },
+  { id: 1, produto_id: 1, menu_id: 1, nome_produto: 'X-Burger Clássico', preco: 25000, emite_ticket: true, ambiente_preparo_id: 1 },
+  { id: 2, produto_id: 2, menu_id: 1, nome_produto: 'X-Bacon', preco: 15, emite_ticket: true, ambiente_preparo_id: 1 },
+  { id: 3, produto_id: 3, menu_id: 1, nome_produto: 'Batata Frita Média', preco: 10, emite_ticket: true, ambiente_preparo_id: 1 },
+  { id: 11, produto_id: 11, menu_id: 1, nome_produto: 'X-Tudo', preco: 100, emite_ticket: true, ambiente_preparo_id: 1 },
+  { id: 12, produto_id: 12, menu_id: 1, nome_produto: 'X-Duplo', preco: 200, emite_ticket: true, ambiente_preparo_id: 1 },
   { id: 4, produto_id: 4, menu_id: 4, nome_produto: 'Combo X-Burger + Batata + Refri', preco: 34.9, emite_ticket: true, ambiente_preparo_id: 1 },
   { id: 5, produto_id: 5, menu_id: 2, nome_produto: 'Coca-Cola Lata 350ml', preco: 6.5, emite_ticket: false, ambiente_preparo_id: null },
   { id: 6, produto_id: 6, menu_id: 2, nome_produto: 'Guaraná Lata 350ml', preco: 6.5, emite_ticket: false, ambiente_preparo_id: null },

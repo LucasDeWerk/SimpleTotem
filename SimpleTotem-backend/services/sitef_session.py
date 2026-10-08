@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from services.sitef_codigos import formatar_codigo_geral
+
 
 @dataclass
 class TransacaoSession:
@@ -20,7 +22,9 @@ class TransacaoSession:
     erro: Optional[str] = None
     resultado: Optional[Dict[str, Any]] = None
     contexto_venda: Optional[Dict[str, Any]] = None
+    cnpj_estabelecimento: Optional[str] = None
     confirmada: bool = False
+    aguardando_confirmacao_cancelamento: Optional[Dict[str, Any]] = None
     criada_em: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     atualizada_em: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -33,6 +37,7 @@ class TransacaoSession:
             "qrcode": self.qrcode,
             "qrcode_ativo": self.qrcode_ativo,
             "erro": self.erro,
+            "aguardando_confirmacao_cancelamento": self.aguardando_confirmacao_cancelamento,
         }
         if self.resultado:
             base.update(self.resultado)
@@ -84,14 +89,33 @@ class TransacaoSessionStore:
             elif tipo == "qrcode_remover":
                 session.qrcode_ativo = False
 
+            elif tipo == "confirmar_cancelamento":
+                # ANULA físico no pinpad (Seq. 9) — a CliSiTef está bloqueada
+                # esperando a resposta real do cliente/operador na tela.
+                session.aguardando_confirmacao_cancelamento = {
+                    "mensagem": evento.get("mensagem", ""),
+                    "tc": evento.get("tc"),
+                }
+
+            elif tipo == "confirmacao_cancelamento_resolvida":
+                session.aguardando_confirmacao_cancelamento = None
+
             elif tipo == "finalizada":
                 codigo = evento.get("resultado")
+                # mensagem final (dados[-1]/dados[0], ver sitef_core.py) — pode ser mais
+                # completa que a última "mensagem" recebida ao longo do loop; não pode
+                # ficar de fora (exigência Fiserv: mensagem da CliSiTef na íntegra).
+                mensagem_final = evento.get("mensagem") or ""
+                if mensagem_final:
+                    session.mensagem_atual = mensagem_final
+                    if mensagem_final not in session.mensagens:
+                        session.mensagens.append(mensagem_final)
                 if evento.get("aprovada"):
                     session.status = "aprovada"
                 else:
                     session.status = "negada"
                     if codigo is not None and not session.erro:
-                        session.erro = f"Transação não aprovada (código {codigo})"
+                        session.erro = formatar_codigo_geral(codigo)
                 session.qrcode_ativo = False
                 if session.resultado is None:
                     session.resultado = {}
@@ -133,16 +157,26 @@ class TransacaoSessionStore:
                     "nsu_sitef": resultado.get("nsu_sitef", ""),
                     "nsu_host": resultado.get("nsu_host", ""),
                     "autorizacao": resultado.get("autorizacao", ""),
+                    "documento_pix": resultado.get("documento_pix", ""),
                     "modalidade": resultado.get("modalidade", ""),
                     "bandeira": resultado.get("bandeira", ""),
                     "linhas_cupom": resultado.get("linhas_cupom", []),
                     "cupom_bruto": resultado.get("cupom_bruto", ""),
+                    "linhas_cupom_cliente": resultado.get("linhas_cupom_cliente", []),
+                    "cupom_bruto_cliente": resultado.get("cupom_bruto_cliente", ""),
                     "total_cobrado": resultado.get("total_cobrado"),
                     "pix": resultado.get("pix", False),
                     "resultado_codigo": resultado.get("resultado"),
                 }
                 session.status = "aprovada" if resultado.get("aprovada") else "negada"
                 session.qrcode_ativo = False
+                # Fallback síncrono: normalmente o código numérico chega via evento
+                # "finalizada" (stderr, processado em outra thread). Se por algum
+                # motivo esse evento ainda não tiver sido processado, popula aqui
+                # mesmo — mesma fonte (formatar_codigo_geral) usada por atualizar_evento.
+                codigo = resultado.get("resultado")
+                if session.status == "negada" and not session.erro and codigo is not None:
+                    session.erro = formatar_codigo_geral(codigo)
 
 
 store = TransacaoSessionStore()

@@ -424,5 +424,2636 @@
         ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 30006\\MU                      03/08/26 10:46\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999030006\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
       ]
     }
+  },
+  {
+    "transacao_id": "72249e9e-7320-4314-8ac9-04806bdcc419",
+    "data_hora": "2026-08-03T13:36:49.508437",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260803133645",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "215239be-b82c-4229-b155-c638c6d40e0c",
+    "data_hora": "2026-08-03T13:38:13.749996",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260803133809",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "13e1a268-0e71-48aa-bc0d-fcf24fbf156b",
+    "data_hora": "2026-08-04T16:17:48.005100",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260804161626",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "040002",
+      "nsu_host": "999040002",
+      "autorizacao": "040002",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 40002\\MU                      04/08/26 16:17\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999040002\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 24,90\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 40002\\MU                      04/08/26 16:17\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999040002\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "2647a4b2-e1b9-4310-aff8-4b7cd6e8953b",
+    "data_hora": "2026-08-05T09:46:49.028564",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805094645",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "d5d03a9f-7682-43f4-b346-3397fb007e55",
+    "data_hora": "2026-08-05T10:00:24.490028",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805100021",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "324b6a3e-4f41-435f-8f53-afcd759a1625",
+    "data_hora": "2026-08-05T10:02:59.620753",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805100256",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "9a3c70cc-4c46-49de-abd2-777dfd0a78d1",
+    "data_hora": "2026-08-05T10:07:09.356308",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805100705",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "32765360-ef10-401d-aedd-bc672e446e37",
+    "data_hora": "2026-08-05T10:07:14.967131",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805100711",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "9b5ed297-1a2a-46f8-afc0-9422de5f0eac",
+    "data_hora": "2026-08-05T10:08:10.316195",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805100806",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "4555fd27-d0ec-4369-bda9-0d38992298ad",
+    "data_hora": "2026-08-05T10:19:13.313307",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805101909",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "64f038f9-5b8c-43f3-9d69-e9ca510622f7",
+    "data_hora": "2026-08-05T10:21:42.531985",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805102139",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "2c66d687-cd35-4fa4-ba9a-9ba67de7bd3b",
+    "data_hora": "2026-08-05T10:25:41.470719",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805102538",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "bba7d658-d52d-4e23-bc56-6470a8f7a30e",
+    "data_hora": "2026-08-05T10:25:47.754347",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805102544",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "05dd81da-33b6-4d81-bb1a-f8ab5b3ef30c",
+    "data_hora": "2026-08-05T10:27:13.631287",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805102710",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "9978f53e-04a9-4ddc-b332-1c24d109e963",
+    "data_hora": "2026-08-05T10:32:30.251143",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805103226",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "b3592fca-db40-4b7c-8e0b-81fd2ad291e5",
+    "data_hora": "2026-08-05T10:32:49.872088",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805103246",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "a6f77cc0-6d1d-45ba-8790-c8419e4b1389",
+    "data_hora": "2026-08-05T10:39:47.837263",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805103944",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "ede5a668-e132-4c32-9c73-1f417ffa0864",
+    "data_hora": "2026-08-05T10:47:10.604774",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805104707",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "9e559f62-2ee1-459e-b306-fcac453e6691",
+    "data_hora": "2026-08-05T11:15:52.401948",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805111549",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "cd1910b2-0bda-433d-a932-1f841794b03b",
+    "data_hora": "2026-08-05T11:28:57.769398",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805112853",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "8cafa0b6-808f-4d6c-bd02-092caaec4b9a",
+    "data_hora": "2026-08-05T11:41:01.328445",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805114056",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "c375df0b-8a8c-4572-a1e8-dffdb834f849",
+    "data_hora": "2026-08-05T13:25:19.346672",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805132515",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "f2b9c873-a14b-4408-b3b6-5b9f8a3b23ff",
+    "data_hora": "2026-08-05T13:29:08.796285",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805132904",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 24.9
+        }
+      ],
+      "total": 24.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 24,90"
+      ],
+      "cupom_bruto": "VALOR: R$ 24,90",
+      "total_cobrado": 24.9,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "50b03e70-10a4-4585-847d-dcd5a643c11a",
+    "data_hora": "2026-08-05T13:47:03.417582",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805134512",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 1.0,
+          "preco_unitario": 25000.0
+        }
+      ],
+      "total": 25000.0,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 25000,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 25000,00",
+      "total_cobrado": 25000.0,
+      "pix": false,
+      "resultado_codigo": 4
+    }
+  },
+  {
+    "transacao_id": "71f613b2-8659-49e2-ba9c-b281987779bd",
+    "data_hora": "2026-08-05T14:09:15.482352",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805140851",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "050004",
+      "nsu_host": "999050004",
+      "autorizacao": "050004",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 15,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50004\\MU                      05/08/26 14:09\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050004\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 15,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50004\\MU                      05/08/26 14:09\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050004\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 15.0,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "3127d9b0-9b76-4e43-b11d-8a0e39ba97ee",
+    "data_hora": "2026-08-05T14:18:07.338751",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805141729",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "050005",
+      "nsu_host": "999050005",
+      "autorizacao": "050005",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50005\\MU                      05/08/26 14:18\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050005\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50005\\MU                      05/08/26 14:18\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050005\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "9d163266-5346-4cbd-b668-21cf300a6140",
+    "data_hora": "2026-08-05T14:25:16.812815",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805142452",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "050006",
+      "nsu_host": "999050006",
+      "autorizacao": "050006",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50006\\MU                      05/08/26 14:25\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050006\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50006\\MU                      05/08/26 14:25\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050006\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "00ef2619-95b8-4233-88aa-b7638b99c78d",
+    "data_hora": "2026-08-05T14:27:01.578575",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805142619",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "050007",
+      "nsu_host": "999050007",
+      "autorizacao": "050007",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50007\\MU                      05/08/26 14:26\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050007\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50007\\MU                      05/08/26 14:26\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050007\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "92a7d966-5d04-4b50-bcd4-75394402961d",
+    "data_hora": "2026-08-05T14:57:14.919601",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805145647",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "050008",
+      "nsu_host": "999050008",
+      "autorizacao": "050008",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50008\\MU                      05/08/26 14:57\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050008\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50008\\MU                      05/08/26 14:57\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050008\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "e4d983f6-6476-4a64-8e11-dd3402995898",
+    "data_hora": "2026-08-05T15:09:09.177312",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805150849",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "050009",
+      "nsu_host": "999050009",
+      "autorizacao": "050009",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50009\\MU                      05/08/26 15:09\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050009\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50009\\MU                      05/08/26 15:09\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050009\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "faab48aa-51f5-47df-a73c-24dce9945d39",
+    "data_hora": "2026-08-05T15:20:15.736199",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805151946",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "050010",
+      "nsu_host": "999050010",
+      "autorizacao": "050010",
+      "modalidade": "Cartao de Credito a Vista",
+      "bandeira": "MASTERCARD      ",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                        Valor: 15,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50010\\MU                      05/08/26 15:20\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050010\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                        Valor: 15,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50010\\MU                      05/08/26 15:20\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050010\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 15.0,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "7515e7c6-125e-43e1-a6b1-0d80ff31e422",
+    "data_hora": "2026-08-05T15:40:30.085711",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805153958",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 11,
+          "descricao": "X-Tudo",
+          "quantidade": 1.0,
+          "preco_unitario": 100.0
+        }
+      ],
+      "total": 100.0,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "050011",
+      "nsu_host": "999050011",
+      "autorizacao": "050011",
+      "modalidade": "Cartao de Credito a Vista",
+      "bandeira": "MASTERCARD      ",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                       Valor: 100,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50011\\MU                      05/08/26 15:40\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050011\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                       Valor: 100,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50011\\MU                      05/08/26 15:40\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050011\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 100.0,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "eadcbc4b-8fa0-48c7-ba73-bfe9ff8e536f",
+    "data_hora": "2026-08-05T15:52:41.053663",
+    "status": "erro",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805155204",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 11,
+          "descricao": "X-Tudo",
+          "quantidade": 1.0,
+          "preco_unitario": 100.0
+        }
+      ],
+      "total": 100.0,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "erro": "SiTef: sitef_worker encerrou sem resultado"
+  },
+  {
+    "transacao_id": "0f2a6cf0-d16a-42ea-8bce-4daf6b28bf54",
+    "data_hora": "2026-08-05T15:57:50.784029",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805155643",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 11,
+          "descricao": "X-Tudo",
+          "quantidade": 1.0,
+          "preco_unitario": 100.0
+        }
+      ],
+      "total": 100.0,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "050012",
+      "nsu_host": "999050012",
+      "autorizacao": "050012",
+      "modalidade": "Cartao de Credito Parcelado Estabelecimento",
+      "bandeira": "MASTERCARD      ",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                       Valor: 100,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50012\\MU                      05/08/26 15:57\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050012\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                       Valor: 100,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50012\\MU                      05/08/26 15:57\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050012\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 100.0,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "70620bf3-d0a5-4f49-9148-f74cb8549001",
+    "data_hora": "2026-08-05T16:11:52.711685",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805161127",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 12,
+          "descricao": "X-Duplo",
+          "quantidade": 1.0,
+          "preco_unitario": 200.0
+        }
+      ],
+      "total": 200.0,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "050013",
+      "nsu_host": "999050013",
+      "autorizacao": "050013",
+      "modalidade": "Cartao de Credito Parcelado Administradora",
+      "bandeira": "MASTERCARD      ",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3800\\DO                       Valor: 200,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50013\\MU                      05/08/26 16:11\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050013\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3800\\DO                       Valor: 200,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 50013\\MU                      05/08/26 16:11\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999050013\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 200.0,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "9985a90c-eb6b-4f36-b59b-23d88067e2ac",
+    "data_hora": "2026-08-05T16:20:09.420298",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805161958",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 10,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 10,00",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": -2
+    }
+  },
+  {
+    "transacao_id": "4bfd1bfb-9eaa-460a-a7c7-7f5adbfdbfce",
+    "data_hora": "2026-08-05T16:32:37.592944",
+    "status": "erro",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805163123",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "erro": "SiTef: sitef_worker encerrou sem resultado"
+  },
+  {
+    "transacao_id": "51bb0b1b-5e0b-4107-a606-4fc337e22e6f",
+    "data_hora": "2026-08-05T16:50:18.489744",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805164916",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 15,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 15,00",
+      "total_cobrado": 15.0,
+      "pix": false,
+      "resultado_codigo": -2
+    }
+  },
+  {
+    "transacao_id": "e6aa72f9-12c0-4f10-84ad-1ec93a04c8d2",
+    "data_hora": "2026-08-05T16:52:03.155802",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805165151",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 15,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 15,00",
+      "total_cobrado": 15.0,
+      "pix": false,
+      "resultado_codigo": -2
+    }
+  },
+  {
+    "transacao_id": "dd0fa2d9-4dea-4c88-8ea4-57fd3390fa12",
+    "data_hora": "2026-08-05T16:52:55.537504",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805165220",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 15,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 15,00",
+      "total_cobrado": 15.0,
+      "pix": false,
+      "resultado_codigo": -2
+    }
+  },
+  {
+    "transacao_id": "f146dfb1-eb5b-432a-aeed-0ba5535878a5",
+    "data_hora": "2026-08-05T17:08:36.516756",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805170628",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 15,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 15,00",
+      "total_cobrado": 15.0,
+      "pix": false,
+      "resultado_codigo": -43
+    }
+  },
+  {
+    "transacao_id": "7b1dea87-f846-4fac-ba8b-1acd06ee5b89",
+    "data_hora": "2026-08-05T17:22:14.390535",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805172117",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 15,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 15,00",
+      "total_cobrado": 15.0,
+      "pix": false,
+      "resultado_codigo": -15
+    }
+  },
+  {
+    "transacao_id": "24fdfb64-43d5-458c-bb03-2a33d6c1f103",
+    "data_hora": "2026-08-05T18:08:24.694216",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260805180821",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 15,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 15,00",
+      "total_cobrado": 15.0,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "8e18ebef-8adc-486a-9f1a-fe434018d83b",
+    "data_hora": "2026-08-06T08:42:39.988835",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260806084158",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "060009",
+      "nsu_host": "00000000000008060009",
+      "autorizacao": "",
+      "modalidade": "Carteira Digital",
+      "bandeira": "Pix             ",
+      "linhas_cupom": [
+        "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060009\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060009\\          SiTef from Fiserv\\",
+      "total_cobrado": 15.0,
+      "pix": true,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "80674e1f-2781-42a3-8d96-805fe241eb6c",
+    "data_hora": "2026-08-06T08:45:00.039104",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260806084447",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "060011",
+      "nsu_host": "999060011",
+      "autorizacao": "060011",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 15,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 60011\\MU                      06/08/26 08:45\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999060011\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 15,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 60011\\MU                      06/08/26 08:45\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999060011\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 15.0,
+      "pix": false,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "9acf979a-f588-408f-a3b7-b590f1edd660",
+    "data_hora": "2026-08-06T09:09:06.953845",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260806090830",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "060012",
+      "nsu_host": "00000000000008060012",
+      "autorizacao": "",
+      "modalidade": "Carteira Digital",
+      "bandeira": "Pix             ",
+      "linhas_cupom": [
+        "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060012\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060012\\          SiTef from Fiserv\\",
+      "total_cobrado": 15.0,
+      "pix": true,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "54e7289d-b181-4646-90f5-297a83265329",
+    "data_hora": "2026-08-06T09:35:57.368215",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260806093520",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "060013",
+      "nsu_host": "00000000000008060013",
+      "autorizacao": "",
+      "modalidade": "Carteira Digital",
+      "bandeira": "Pix             ",
+      "linhas_cupom": [
+        "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060013\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060013\\          SiTef from Fiserv\\",
+      "total_cobrado": 15.0,
+      "pix": true,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "ff9789eb-3eed-4fe6-b728-8cf9c94a1ebc",
+    "data_hora": "2026-08-06T09:49:17.821859",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260806094841",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "060014",
+      "nsu_host": "00000000000008060014",
+      "autorizacao": "",
+      "modalidade": "Carteira Digital",
+      "bandeira": "Pix             ",
+      "linhas_cupom": [
+        "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060014\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060014\\          SiTef from Fiserv\\",
+      "total_cobrado": 15.0,
+      "pix": true,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "956cb946-31a3-4d52-a52a-b2fdbaea7faa",
+    "data_hora": "2026-08-06T09:52:54.115632",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260806095218",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "060015",
+      "nsu_host": "00000000000008060015",
+      "autorizacao": "",
+      "modalidade": "Carteira Digital",
+      "bandeira": "Pix             ",
+      "linhas_cupom": [
+        "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060015\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060015\\          SiTef from Fiserv\\",
+      "total_cobrado": 15.0,
+      "pix": true,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "8af98bcd-0ad4-408e-9e58-dc663126ed59",
+    "data_hora": "2026-08-06T09:53:55.190145",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260806095319",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "060016",
+      "nsu_host": "00000000000008060016",
+      "autorizacao": "",
+      "modalidade": "Carteira Digital",
+      "bandeira": "Pix             ",
+      "linhas_cupom": [
+        "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060016\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060016\\          SiTef from Fiserv\\",
+      "total_cobrado": 15.0,
+      "pix": true,
+      "resultado_codigo": 0
+    }
+  },
+  {
+    "transacao_id": "a6ccafec-4bf5-427c-a82c-b4afd155f5d1",
+    "data_hora": "2026-08-06T09:55:19.936701",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260806095443",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "060017",
+      "nsu_host": "00000000000008060017",
+      "autorizacao": "",
+      "modalidade": "Carteira Digital",
+      "bandeira": "Pix             ",
+      "linhas_cupom": [
+        "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060017\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008060017\\          SiTef from Fiserv\\",
+      "total_cobrado": 15.0,
+      "pix": true,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "104",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "d063cfec-9181-4bc4-89ea-21bd2f2173c6",
+    "data_hora": "2026-08-06T10:12:08.536274",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260806101001",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 15,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 15,00",
+      "total_cobrado": 15.0,
+      "pix": false,
+      "resultado_codigo": -43
+    }
+  },
+  {
+    "transacao_id": "bbcc4204-6765-4f53-9b00-e44a637753e4",
+    "data_hora": "2026-08-11T10:07:29.263396",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260811100724",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 10,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 10,00",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "b6c35005-006f-4110-8fb1-009ba0c26db4",
+    "data_hora": "2026-08-11T10:14:11.215891",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260811101208",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "110010",
+      "nsu_host": "999110010",
+      "autorizacao": "110010",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 110010\\MU                      11/08/26 10:14\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999110010\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 110010\\MU                      11/08/26 10:14\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999110010\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "100",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "ebbb388d-0f7e-4fe6-a60f-ee709e438b71",
+    "data_hora": "2026-08-11T11:47:28.487489",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260811114716",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "110012",
+      "nsu_host": "999110012",
+      "autorizacao": "110012",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 15,00\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 110012\\MU                      11/08/26 11:47\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999110012\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 15,00\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 110012\\MU                      11/08/26 11:47\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999110012\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 15.0,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "100",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "ad979b99-e207-451b-80e1-6296b166a961",
+    "data_hora": "2026-08-12T17:27:22.646331",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260812172650",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "120010",
+      "nsu_host": "00000000000008120010",
+      "autorizacao": "",
+      "modalidade": "Carteira Digital",
+      "bandeira": "Pix             ",
+      "linhas_cupom": [
+        "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008120010\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008120010\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": true,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "100",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "25b2ad6b-0b90-4223-8f0e-b14ef9e21f5a",
+    "data_hora": "2026-08-17T16:24:51.602319",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260817162222",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 1.0,
+          "preco_unitario": 15.0
+        }
+      ],
+      "total": 15.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "170010",
+      "nsu_host": "999170010",
+      "autorizacao": "170010",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 15,00\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 170010\\MU                      17/08/26 16:24\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999170010\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 15,00\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 170010\\MU                      17/08/26 16:24\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999170010\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 15.0,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "100",
+    "cupom_fiscal": null,
+    "estornado": true,
+    "motivo_estorno": "teste",
+    "data_estorno": "2026-08-17T16:29:26.344777",
+    "cancelamento_sitef": {
+      "aprovada": true,
+      "resultado": 0,
+      "mensagem_resultado": "Aprovada",
+      "nsu_sitef": "170011",
+      "nsu_host": "999170011",
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 15,00\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 170011\\MU                      17/08/26 16:29\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999170011\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 15,00\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 170011\\MU                      17/08/26 16:29\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999170011\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ]
+    }
+  },
+  {
+    "transacao_id": "c61bc1da-6234-4b92-b755-582c5aa7007e",
+    "data_hora": "2026-08-17T16:39:46.558963",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260817163849",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 2.0,
+          "preco_unitario": 10.0
+        },
+        {
+          "produto_id": 9,
+          "descricao": "Sorvete Casquinha",
+          "quantidade": 1.0,
+          "preco_unitario": 9.9
+        }
+      ],
+      "total": 29.9,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "170012",
+      "nsu_host": "00000000000008170012",
+      "autorizacao": "",
+      "modalidade": "Carteira Digital",
+      "bandeira": "Pix             ",
+      "linhas_cupom": [
+        "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008170012\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000008170012\\          SiTef from Fiserv\\",
+      "total_cobrado": 29.9,
+      "pix": true,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "101",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "fad4f3cc-73cb-40d3-9af0-5b94b8ca2f85",
+    "data_hora": "2026-08-17T17:04:39.284291",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260817170425",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 2,
+          "descricao": "X-Bacon",
+          "quantidade": 2.0,
+          "preco_unitario": 15.0
+        },
+        {
+          "produto_id": 9,
+          "descricao": "Sorvete Casquinha",
+          "quantidade": 1.0,
+          "preco_unitario": 9.9
+        }
+      ],
+      "total": 39.9,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "170013",
+      "nsu_host": "999170013",
+      "autorizacao": "170013",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 39,90\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 170013\\MU                      17/08/26 17:04\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999170013\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 39,90\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 170013\\MU                      17/08/26 17:04\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999170013\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 39.9,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "102",
+    "cupom_fiscal": null,
+    "estornado": true,
+    "motivo_estorno": "foi embora",
+    "data_estorno": "2026-08-17T17:09:02.207992",
+    "cancelamento_sitef": {
+      "aprovada": true,
+      "resultado": 0,
+      "mensagem_resultado": "Aprovada",
+      "nsu_sitef": "170014",
+      "nsu_host": "999170014",
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 39,90\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 170014\\MU                      17/08/26 17:09\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999170014\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 400\\LA             Codigo operacao: 200020\\DO                        Valor: 39,90\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 170014\\MU                      17/08/26 17:09\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999170014\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ]
+    }
+  },
+  {
+    "transacao_id": "be36adba-552d-477a-99fb-d83048b2a38e",
+    "data_hora": "2026-08-24T17:10:46.563586",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260824170908",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "240010",
+      "nsu_host": "999240010",
+      "autorizacao": "240010",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 240010\\MU                      24/08/26 17:10\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999240010\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 240010\\MU                      24/08/26 17:10\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999240010\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "100",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "adc1e373-d0ea-424f-b3c5-b06049cac879",
+    "data_hora": "2026-08-24T18:07:55.938915",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260824180746",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 1,
+          "descricao": "X-Burger Clássico",
+          "quantidade": 2.0,
+          "preco_unitario": 25000.0
+        },
+        {
+          "produto_id": 11,
+          "descricao": "X-Tudo",
+          "quantidade": 1.0,
+          "preco_unitario": 100.0
+        }
+      ],
+      "total": 50100.0,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 50100,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 50100,00",
+      "total_cobrado": 50100.0,
+      "pix": true,
+      "resultado_codigo": 4
+    }
+  },
+  {
+    "transacao_id": "922bbc2b-44a6-47b2-b01a-abe87d28974b",
+    "data_hora": "2026-08-25T14:44:52.160219",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260825144436",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "250002",
+      "nsu_host": "999250002",
+      "autorizacao": "250002",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 250002\\MU                      25/08/26 14:44\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999250002\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 250002\\MU                      25/08/26 14:44\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999250002\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "101",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "da824a30-d5d8-45f6-a6ff-ac118b078e50",
+    "data_hora": "2026-09-02T09:49:55.815010",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260902094830",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "020010",
+      "nsu_host": "999020010",
+      "autorizacao": "020010",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 20010\\MU                      02/09/26 09:50\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999020010\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 20010\\MU                      02/09/26 09:50\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999020010\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "100",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "e049c8d0-8348-4b9e-a28b-82d2ce595b63",
+    "data_hora": "2026-09-02T09:50:39.762882",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260902095026",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "020011",
+      "nsu_host": "999020011",
+      "autorizacao": "020011",
+      "modalidade": "Cartao de Credito a Vista",
+      "bandeira": "MASTERCARD      ",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 20011\\MU                      02/09/26 09:50\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999020011\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 20011\\MU                      02/09/26 09:50\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999020011\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "101",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "499bf782-ec7a-46eb-b8c3-62f87e9bc05e",
+    "data_hora": "2026-09-02T09:52:55.641365",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260902095228",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "020012",
+      "nsu_host": "00000000000009020012",
+      "autorizacao": "",
+      "modalidade": "Carteira Digital",
+      "bandeira": "Pix             ",
+      "linhas_cupom": [
+        "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000009020012\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000009020012\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": true,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "102",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "b2646267-190f-44b2-acba-115b75fb72e5",
+    "data_hora": "2026-09-04T09:59:26.048936",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260904095923",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 10,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 10,00",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "4d0c3de3-76fd-44e5-8759-e1e976eb5c19",
+    "data_hora": "2026-09-04T10:01:13.121233",
+    "status": "negada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260904100111",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 10,00"
+      ],
+      "cupom_bruto": "VALOR: R$ 10,00",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": -5
+    }
+  },
+  {
+    "transacao_id": "f2c5d5ae-87f3-4b15-8291-78ad10e91922",
+    "data_hora": "2026-09-04T10:07:17.020345",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260904100528",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "040002",
+      "nsu_host": "999040002",
+      "autorizacao": "040002",
+      "modalidade": "Cartao de Credito a Vista",
+      "bandeira": "MASTERCARD      ",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 40002\\MU                      04/09/26 10:07\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999040002\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 40002\\MU                      04/09/26 10:07\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999040002\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "100",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "5259cd11-c6e9-4813-bdac-c2b6ea086ea0",
+    "data_hora": "2026-09-04T10:08:09.919352",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260904100752",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "040003",
+      "nsu_host": "999040003",
+      "autorizacao": "040003",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 40003\\MU                      04/09/26 10:08\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999040003\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 40003\\MU                      04/09/26 10:08\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999040003\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "101",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "a929083e-80b3-489a-9bb3-064be7e79737",
+    "data_hora": "2026-09-04T10:08:59.867510",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260904100831",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "040012",
+      "nsu_host": "00000000000009040012",
+      "autorizacao": "",
+      "modalidade": "Carteira Digital",
+      "bandeira": "Pix             ",
+      "linhas_cupom": [
+        "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000009040012\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000009040012\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": true,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "102",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "0d6d0578-5cf3-40b7-a595-1c36241ff28b",
+    "data_hora": "2026-09-04T10:22:18.548364",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260904102207",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "040013",
+      "nsu_host": "999040013",
+      "autorizacao": "040013",
+      "modalidade": "Cartao de Credito a Vista",
+      "bandeira": "MASTERCARD      ",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 40013\\MU                      04/09/26 10:22\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999040013\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 40013\\MU                      04/09/26 10:22\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999040013\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "100",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "cbf06279-ab6f-4e21-86b6-743a10779ec6",
+    "data_hora": "2026-09-04T10:23:24.639717",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260904102311",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "3",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "040014",
+      "nsu_host": "999040014",
+      "autorizacao": "040014",
+      "modalidade": "Cartao de Credito a Vista",
+      "bandeira": "MASTERCARD      ",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 40014\\MU                      04/09/26 10:23\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999040014\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 3000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 40014\\MU                      04/09/26 10:23\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999040014\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "100",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "0e7a682c-95da-463d-955b-99c75f3a42b1",
+    "data_hora": "2026-09-04T10:23:55.469001",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260904102340",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "040015",
+      "nsu_host": "999040015",
+      "autorizacao": "040015",
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 40015\\MU                      04/09/26 10:23\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999040015\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 10,00\\.....S...I...M...U...L...A...D...O....\\SI                    NSU SiTef: 40015\\MU                      04/09/26 10:23\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999040015\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": false,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "101",
+    "cupom_fiscal": null
+  },
+  {
+    "transacao_id": "22abdc57-d849-49da-985c-2eb4ce53290b",
+    "data_hora": "2026-09-04T10:24:39.132185",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "12345678000190",
+    "cupom": "20260904102412",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 3,
+          "descricao": "Batata Frita Média",
+          "quantidade": 1.0,
+          "preco_unitario": 10.0
+        }
+      ],
+      "total": 10.0,
+      "metodo_pagamento_id": "17",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "040016",
+      "nsu_host": "00000000000009040016",
+      "autorizacao": "",
+      "modalidade": "Carteira Digital",
+      "bandeira": "Pix             ",
+      "linhas_cupom": [
+        "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000009040016\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": "X SIMULACAO\\X 000000000000000\\E 2a VIA - ESTABELECIMENTO\\X\\X DOCUMENTO = 000009040016\\          SiTef from Fiserv\\",
+      "total_cobrado": 10.0,
+      "pix": true,
+      "resultado_codigo": 0
+    },
+    "confirmado": true,
+    "impressao_ok": true,
+    "xml_emitido": true,
+    "codigo_senha": "102",
+    "cupom_fiscal": null
   }
 ]

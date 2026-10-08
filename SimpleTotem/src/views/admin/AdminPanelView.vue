@@ -69,6 +69,22 @@
         </div>
       </section>
 
+      <!-- Seção: Comunicação Fiserv -->
+      <section v-show="activeSection === 'fiserv'" class="content-section">
+        <div class="section-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Comunicação com a Fiserv</h3>
+              <p class="card-description">
+                Menu Administrativo do pinpad — diagnóstico e testes de comunicação
+              </p>
+            </div>
+          </div>
+
+          <ComunicacaoFiservPanel />
+        </div>
+      </section>
+
       <!-- Seção: Configurações -->
       <section v-show="activeSection === 'config'" class="content-section">
         <div class="section-card">
@@ -107,6 +123,13 @@
             </button>
           </div>
 
+          <div class="tls-info">
+            <h4>TLS Fiserv</h4>
+            <p><strong>Status:</strong> {{ tlsStatus.configurado ? 'Configurado' : 'Não configurado' }}</p>
+            <p v-if="tlsStatus.configurado"><strong>Token de Registro:</strong> {{ tlsStatus.token_mascarado }}</p>
+            <p class="tls-hint">Parâmetro enviado na chamada ConfiguraIntSiTefInterativoEx: [TipoComunicacaoExterna=TLSGWP;TokenRegistro=...]</p>
+          </div>
+
           <div class="printing-info">
             <h4>Impressão</h4>
             <label class="toggle-row">
@@ -136,6 +159,7 @@ import { useCompanyStore } from '@/stores/company'
 import { useSettingsStore } from '@/stores/settings'
 import PeripheralsConfigPanel from '@/components/admin/PeripheralsConfigPanel.vue'
 import CancelamentoPanel from '@/components/admin/CancelamentoPanel.vue'
+import ComunicacaoFiservPanel from '@/components/admin/ComunicacaoFiservPanel.vue'
 import * as api from '@/services/api'
 
 const router = useRouter()
@@ -145,7 +169,7 @@ const admin = useAdminStore()
 const company = useCompanyStore()
 const settings = useSettingsStore()
 
-const ADMIN_SECTIONS = new Set(['peripherals', 'cancelamento', 'config'])
+const ADMIN_SECTIONS = new Set(['peripherals', 'cancelamento', 'fiserv', 'config'])
 
 // UI State
 const sidebarOpen = ref(false)
@@ -162,6 +186,7 @@ function applySectionFromRoute() {
 const navItems = [
   { id: 'peripherals', icon: 'devices', label: 'Periféricos' },
   { id: 'cancelamento', icon: 'cancel', label: 'Cancelamento' },
+  { id: 'fiserv', icon: 'sync_alt', label: 'Comunicação Fiserv' },
   { id: 'config', icon: 'settings', label: 'Configurações' },
 ]
 
@@ -171,6 +196,7 @@ const apiBaseUrl = ref(api.getApiBaseUrl())
 const testandoConexao = ref(false)
 const configMessage = ref('')
 const configMessageType = ref('success')
+const tlsStatus = ref({ configurado: false, token_mascarado: null })
 
  function getSectionTitle() {
    const item = navItems.find(i => i.id === activeSection.value)
@@ -219,6 +245,14 @@ async function recarregarTerminal() {
   await device.loadTerminal(true)
 }
 
+async function carregarTlsStatus() {
+  try {
+    tlsStatus.value = await api.obterStatusTlsSitef()
+  } catch (err) {
+    console.error('[Admin] Erro ao obter status TLS Fiserv:', err)
+  }
+}
+
 watch(activeSection, (section) => {
   if (section === 'peripherals' && peripheralsPanel.value?.carregarTudo) {
     peripheralsPanel.value.carregarTudo()
@@ -229,6 +263,7 @@ watch(() => route.query.secao, applySectionFromRoute)
 
 onMounted(() => {
   applySectionFromRoute()
+  carregarTlsStatus()
 })
 </script>
 
@@ -280,6 +315,21 @@ onMounted(() => {
 
 .terminal-info h4 {
   margin: 0 0 0.75rem;
+}
+
+.tls-info {
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+
+.tls-info h4 {
+  margin: 0 0 0.75rem;
+}
+
+.tls-hint {
+  font-size: 0.85rem;
+  color: #777;
 }
 
 .printing-info {

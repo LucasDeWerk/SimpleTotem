@@ -25,7 +25,7 @@
       </div>
 
       <!-- Seleção do método -->
-      <template v-else>
+      <template v-else-if="!showParcelamento">
         <div class="payment-methods">
           <PaymentMethodCard
             v-for="method in payment.availableMethods"
@@ -58,15 +58,78 @@
             {{ payment.errorMessage || lang.t.paymentError }}
           </p>
 
+          <p v-if="impressoraErro" class="payment-error">
+            {{ impressoraErro }}
+          </p>
+
           <div class="payment-actions">
             <PrimaryActionButton
-              :label="lang.t.confirmPayment"
+              :label="verificandoImpressora ? lang.t.checkingPrinter : lang.t.confirmPayment"
               :fullWidth="true"
-              :disabled="!payment.selectedMethod || payment.status === 'processing'"
+              :disabled="!payment.selectedMethod || payment.status === 'processing' || verificandoImpressora"
               @click="onConfirmMethod"
             />
           </div>
         </template>
+      </template>
+
+      <!-- Parcelamento do crédito — só aparece pra crédito; débito/PIX seguem direto -->
+      <template v-else>
+        <h3 class="installment-title">{{ lang.t.installmentTitle }}</h3>
+
+        <div class="installment-options">
+          <button
+            class="installment-option"
+            :class="{ active: parcelamentoTipo === 'a_vista' }"
+            type="button"
+            @click="selecionarParcelamento('a_vista')"
+          >
+            {{ lang.t.installmentCash }}
+          </button>
+          <button
+            class="installment-option"
+            :class="{ active: parcelamentoTipo === 'parcelado_estabelecimento' }"
+            type="button"
+            @click="selecionarParcelamento('parcelado_estabelecimento')"
+          >
+            {{ lang.t.installmentMerchant }}
+          </button>
+          <button
+            class="installment-option"
+            :class="{ active: parcelamentoTipo === 'parcelado_administradora' }"
+            type="button"
+            @click="selecionarParcelamento('parcelado_administradora')"
+          >
+            {{ lang.t.installmentIssuer }}
+          </button>
+        </div>
+
+        <div v-if="parcelamentoTipo !== 'a_vista'" class="installment-stepper">
+          <button
+            class="installment-stepper-btn"
+            type="button"
+            :disabled="numParcelasEscolhidas <= MIN_PARCELAS"
+            @click="decrementarParcelas"
+          >−</button>
+          <span class="installment-stepper-value">{{ numParcelasEscolhidas }}x</span>
+          <button
+            class="installment-stepper-btn"
+            type="button"
+            :disabled="numParcelasEscolhidas >= MAX_PARCELAS"
+            @click="incrementarParcelas"
+          >+</button>
+        </div>
+
+        <div class="payment-actions">
+          <PrimaryActionButton
+            :label="lang.t.confirmPayment"
+            :fullWidth="true"
+            @click="confirmarParcelamento"
+          />
+          <button class="payment-secondary-btn" type="button" @click="voltarParcelamento">
+            {{ lang.t.back }}
+          </button>
+        </div>
       </template>
 
     </div>
@@ -74,7 +137,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { usePaymentStore } from '@/stores/payment'
@@ -83,12 +146,23 @@ import { useLanguageStore } from '@/stores/language'
 import ScreenContainer from '@/components/shared/ScreenContainer.vue'
 import PaymentMethodCard from '@/components/shared/PaymentMethodCard.vue'
 import PrimaryActionButton from '@/components/shared/PrimaryActionButton.vue'
+import * as api from '@/services/api'
 
 const router = useRouter()
 const cart = useCartStore()
 const payment = usePaymentStore()
 const session = useSessionStore()
 const lang = useLanguageStore()
+
+const MIN_PARCELAS = 2
+const MAX_PARCELAS = 12
+
+const showParcelamento = ref(false)
+const parcelamentoTipo = ref('a_vista')
+const numParcelasEscolhidas = ref(MIN_PARCELAS)
+
+const verificandoImpressora = ref(false)
+const impressoraErro = ref('')
 
 // ── Computed ─────────────────────────────────────────────────────────────────
 const methodsUnavailable = computed(() =>
@@ -134,11 +208,86 @@ function onSelectMethod(method) {
   payment.selectMethod(method)
 }
 
-function onConfirmMethod() {
-  if (!payment.selectedMethod) return
-  // Crédito sempre à vista, sem tela de parcelamento — decisão do totem, não do cliente.
+/**
+ * Motivo para NÃO deixar o cliente pagar, ou '' se pode seguir.
+ *
+ * Pagar sem poder imprimir gera venda aprovada sem comprovante: a aplicação
+ * nunca confirma (item 8.1.1 exige imprimir antes de FinalizaFuncaoSiTef) e a
+ * transação fica pendente no SiTef.
+ *
+ * Fail-open de propósito quando a checagem é inconclusiva: só bloqueia com
+ * evidência de problema (backend diz que não está pronta, ou o sensor responde
+ * "sem papel"). Uma falha na consulta não deve parar as vendas do totem.
+ */
+async function motivoImpressoraIndisponivel() {
+  try {
+    const st = await api.obterStatusImpressora()
+    if (st && st.pronta === false) return lang.t.printerUnavailableBlock
+  } catch (err) {
+    console.warn('[Payment] Não foi possível checar a impressora no backend:', err?.message)
+  }
+
+  // Sensor de papel só existe no Electron (detém o canal USB); ausente no browser.
+  try {
+    const papel = await window.electronAPI?.printer?.paperStatus?.()
+    if (papel?.suportado && papel.temPapel === false) return lang.t.printerNoPaperBlock
+  } catch (err) {
+    console.warn('[Payment] Não foi possível ler o sensor de papel:', err?.message)
+  }
+
+  return ''
+}
+
+async function onConfirmMethod() {
+  if (!payment.selectedMethod || verificandoImpressora.value) return
+
+  verificandoImpressora.value = true
+  impressoraErro.value = ''
+  try {
+    const motivo = await motivoImpressoraIndisponivel()
+    if (motivo) {
+      impressoraErro.value = motivo
+      return
+    }
+  } finally {
+    verificandoImpressora.value = false
+  }
+
+  // Crédito: mostra a escolha de parcelamento antes de seguir. Débito/PIX
+  // seguem direto, sempre à vista — não faz sentido parcelar nesses.
+  if (payment.selectedMethod.type === '3') {
+    parcelamentoTipo.value = 'a_vista'
+    numParcelasEscolhidas.value = MIN_PARCELAS
+    showParcelamento.value = true
+    return
+  }
   payment.setParcelamento('a_vista', 1)
   router.push({ name: 'processing' })
+}
+
+function selecionarParcelamento(tipo) {
+  parcelamentoTipo.value = tipo
+  if (tipo !== 'a_vista' && numParcelasEscolhidas.value < MIN_PARCELAS) {
+    numParcelasEscolhidas.value = MIN_PARCELAS
+  }
+}
+
+function incrementarParcelas() {
+  if (numParcelasEscolhidas.value < MAX_PARCELAS) numParcelasEscolhidas.value++
+}
+
+function decrementarParcelas() {
+  if (numParcelasEscolhidas.value > MIN_PARCELAS) numParcelasEscolhidas.value--
+}
+
+function confirmarParcelamento() {
+  const parcelas = parcelamentoTipo.value === 'a_vista' ? 1 : numParcelasEscolhidas.value
+  payment.setParcelamento(parcelamentoTipo.value, parcelas)
+  router.push({ name: 'processing' })
+}
+
+function voltarParcelamento() {
+  showParcelamento.value = false
 }
 </script>
 
@@ -269,6 +418,76 @@ function onConfirmMethod() {
   background: rgba(244, 67, 54, 0.08);
   border-radius: var(--radius-md);
   border: 1px solid rgba(244, 67, 54, 0.2);
+  text-align: center;
+}
+
+.installment-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: #0f172a;
+  text-align: center;
+}
+
+.installment-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.installment-option {
+  min-height: var(--btn-min-height);
+  padding: var(--space-md) var(--space-xl);
+  background: var(--bg-card);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-color);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.installment-option.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.installment-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xl);
+}
+
+.installment-stepper-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid var(--color-primary);
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.installment-stepper-btn:active:not(:disabled) {
+  background: var(--color-primary-light);
+}
+
+.installment-stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.installment-stepper-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 900;
+  color: #0f172a;
+  min-width: 3ch;
   text-align: center;
 }
 

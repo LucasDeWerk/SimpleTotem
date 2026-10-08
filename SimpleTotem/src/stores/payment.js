@@ -251,11 +251,14 @@ export const usePaymentStore = defineStore('payment', () => {
           nsu_sitef: resultado.nsu_sitef || '',
           nsu_host: resultado.nsu_host || '',
           autorizacao: resultado.autorizacao || '',
+          documento_pix: resultado.documento_pix || '',
           modalidade: resultado.modalidade || '',
           bandeira: resultado.bandeira || '',
           total_cobrado: resultado.total_cobrado ?? cartStore.total,
           linhas_cupom: resultado.linhas_cupom || [],
           cupom_bruto: resultado.cupom_bruto || '',
+          linhas_cupom_cliente: resultado.linhas_cupom_cliente || [],
+          cupom_bruto_cliente: resultado.cupom_bruto_cliente || '',
           pix: resultado.pix || false,
         }
 
@@ -283,7 +286,7 @@ export const usePaymentStore = defineStore('payment', () => {
       errorMessage.value = msgSiTef
         || resultado.erro
         || (resultado.resultado_codigo != null
-          ? `Transação não aprovada (código ${resultado.resultado_codigo})`
+          ? `Código ${resultado.resultado_codigo} retornado pela CliSiTef`
           : 'Pagamento não aprovado')
       return false
     } catch (err) {

@@ -166,6 +166,129 @@ function createUsbAdapter(printerConfig) {
   return new escposUSB(printerConfig.vendorId, printerConfig.productId)
 }
 
+// ─── Sensor de papel (ESC/POS DLE EOT 4) ───────────────────────────────────
+//
+// Falamos direto com node-usb aqui porque o escpos-usb só captura o endpoint
+// OUT (ver `direction == 'out'` no open() dele) — não dá para LER a resposta
+// por ele. A consulta é "transmissão de status em tempo real": DLE EOT n.
+const CMD_STATUS_PAPEL = Buffer.from([0x10, 0x04, 0x04]) // DLE EOT 4
+const PAPER_READ_TIMEOUT_MS = 1500   // espera por resposta de uma consulta
+const PAPER_DRAIN_TIMEOUT_MS = 120   // descarte de resposta antiga na fila
+const PAPER_TOTAL_TIMEOUT_MS = 4000  // teto do conjunto (consulta + retry)
+// Medido na i9 (20d1:7008): a 1a leitura após claim() volta sempre vazia e as
+// seguintes são consistentes — daí o dreno + 1 retry. Sem isso, a consulta
+// caía sempre em "não suportado" e o sensor nunca era usado.
+const PAPER_TENTATIVAS_EXTRA = 1
+
+/** Interpreta o byte de resposta do DLE EOT 4. */
+function parsePaperStatusByte(byte) {
+  // bits 5,6 setados → fim de papel; bits 2,3 setados → papel perto do fim.
+  return {
+    temPapel: (byte & 0x60) !== 0x60,
+    poucoPapel: (byte & 0x0c) === 0x0c,
+  }
+}
+
+/**
+ * Consulta o sensor de papel da impressora configurada.
+ *
+ * Retorna sempre { suportado, temPapel, poucoPapel, message }. Quando a
+ * impressora não responde (muitos modelos simples não implementam DLE EOT) ou
+ * o canal falha, devolve suportado:false — e nesse caso quem chama NÃO deve
+ * bloquear a venda, para não travar o totem por um sensor que não temos como
+ * ler. Bloqueio só com resposta explícita de "sem papel".
+ */
+async function getPaperStatus() {
+  const printerConfig = await findConfiguredPrinter()
+  if (!printerConfig) {
+    return { suportado: false, temPapel: null, poucoPapel: null, message: 'Impressora não encontrada ou não configurada.' }
+  }
+
+  return new Promise((resolve) => {
+    let device = null
+    let iface = null
+    let finalizado = false
+
+    const finalizar = (resultado) => {
+      if (finalizado) return
+      finalizado = true
+      try {
+        if (iface) iface.release(true, () => { try { device.close() } catch (_) {} })
+        else if (device) device.close()
+      } catch (_) { /* cleanup best-effort */ }
+      resolve(resultado)
+    }
+
+    try {
+      device = usb.findByIds(printerConfig.vendorId, printerConfig.productId)
+      if (!device) {
+        return finalizar({ suportado: false, temPapel: null, poucoPapel: null, message: 'Impressora não encontrada no USB.' })
+      }
+
+      device.open()
+      iface = device.interfaces[0]
+      if (!iface) {
+        return finalizar({ suportado: false, temPapel: null, poucoPapel: null, message: 'Interface USB não encontrada.' })
+      }
+
+      if (process.platform !== 'win32' && iface.isKernelDriverActive()) {
+        try { iface.detachKernelDriver() } catch (_) { /* segue: pode não ser necessário */ }
+      }
+      iface.claim()
+
+      const outEp = iface.endpoints.find((e) => e.direction === 'out')
+      const inEp = iface.endpoints.find((e) => e.direction === 'in')
+      if (!outEp || !inEp) {
+        // Impressora só-escrita: não há como consultar o sensor.
+        return finalizar({ suportado: false, temPapel: null, poucoPapel: null, message: 'Impressora não expõe canal de leitura (sem endpoint IN).' })
+      }
+
+      const timer = setTimeout(() => {
+        finalizar({ suportado: false, temPapel: null, poucoPapel: null, message: 'Impressora não respondeu à consulta de status.' })
+      }, PAPER_TOTAL_TIMEOUT_MS)
+
+      // Descarta resposta antiga que tenha sobrado na fila, para não parear a
+      // resposta de um comando anterior com esta consulta.
+      const drenar = (feito) => {
+        inEp.timeout = PAPER_DRAIN_TIMEOUT_MS
+        try {
+          inEp.transfer(64, () => feito()) // erro/timeout aqui é esperado
+        } catch (_) {
+          feito()
+        }
+      }
+
+      const consultar = (tentativasRestantes) => {
+        drenar(() => {
+          if (finalizado) return
+          inEp.timeout = PAPER_READ_TIMEOUT_MS
+          outEp.transfer(CMD_STATUS_PAPEL, (errWrite) => {
+            if (errWrite) {
+              clearTimeout(timer)
+              return finalizar({ suportado: false, temPapel: null, poucoPapel: null, message: formatPrinterError(errWrite) })
+            }
+            inEp.transfer(8, (errRead, data) => {
+              if (!errRead && data && data.length) {
+                clearTimeout(timer)
+                const { temPapel, poucoPapel } = parsePaperStatusByte(data[0])
+                console.log(`[Printer] Sensor de papel: byte=0x${data[0].toString(16)} temPapel=${temPapel} poucoPapel=${poucoPapel}`)
+                return finalizar({ suportado: true, temPapel, poucoPapel, message: null })
+              }
+              if (tentativasRestantes > 0) return consultar(tentativasRestantes - 1)
+              clearTimeout(timer)
+              finalizar({ suportado: false, temPapel: null, poucoPapel: null, message: errRead ? formatPrinterError(errRead) : 'Resposta vazia da impressora.' })
+            })
+          })
+        })
+      }
+
+      consultar(PAPER_TENTATIVAS_EXTRA)
+    } catch (err) {
+      finalizar({ suportado: false, temPapel: null, poucoPapel: null, message: formatPrinterError(err) })
+    }
+  })
+}
+
 /** Cupom TEF: 48 colunas, fonte A normal (size 0,0 = 1x — size 1,1 seria 2x). */
 const RECEIPT_WIDTH = 48
 
@@ -452,7 +575,11 @@ function setupPrinterIPC() {
     return testPrint()
   })
 
+  ipcMain.handle('printer:paper-status', async () => {
+    return getPaperStatus()
+  })
+
   console.log('[Printer] IPC handlers registrados')
 }
 
-module.exports = { setupPrinterIPC, printLines, testPrint, printRaw }
+module.exports = { setupPrinterIPC, printLines, testPrint, printRaw, getPaperStatus }

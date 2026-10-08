@@ -6,6 +6,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from core.config import SITEF_TLS_TOKEN
 from core.database import get_db
 from core.security import get_current_user
 from models.orm import Hardware
@@ -245,6 +246,24 @@ def listar_portas_serial(_: str = Depends(get_current_user)):
     # Filtra apenas as que existem no sysfs (confirma presença do dispositivo)
     disponiveis = [p for p in candidatas if os.path.exists(p)]
     return {"portas": disponiveis}
+
+
+def _mascarar_token_tls(token: str) -> str:
+    """Mantém só os 4 primeiros e 4 últimos caracteres visíveis — nunca expõe
+    o token completo, mesmo nesta tela de evidência de pré-homologação."""
+    if len(token) <= 8:
+        return "*" * len(token)
+    return f"{token[:4]}{'*' * (len(token) - 8)}{token[-4:]}"
+
+
+@router.get("/sitef/tls-status")
+def get_sitef_tls_status(_: str = Depends(get_current_user)):
+    """Evidência de pré-homologação Fiserv: confirma se o parâmetro TLS
+    (TokenRegistro, enviado em ConfiguraIntSiTefInterativoEx via
+    _montar_parametros_adicionais) está configurado — sem expor o token."""
+    if not SITEF_TLS_TOKEN:
+        return {"configurado": False, "token_mascarado": None}
+    return {"configurado": True, "token_mascarado": _mascarar_token_tls(SITEF_TLS_TOKEN)}
 
 
 @router.post("/sitef/porta")

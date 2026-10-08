@@ -137,6 +137,20 @@ export function useThermalPrinter() {
     lines.push(sep)
     lines.push(`Pagamento: ${orderData.paymentMethod || '—'}`)
 
+    // Dados reais retornados pela Fiserv/CliSiTef — exigência de exibir/imprimir
+    // os dados da transação sem alteração (mesmos campos da tela de aprovado).
+    const temDadosSitef = orderData.modalidade || orderData.bandeira ||
+      orderData.nsuSitef || orderData.nsuHost || orderData.autorizacao || orderData.documentoPix
+    if (temDadosSitef) {
+      lines.push(sep)
+      if (orderData.modalidade) lines.push(`Modalidade: ${orderData.modalidade}`)
+      if (orderData.bandeira) lines.push(`Bandeira: ${orderData.bandeira}`)
+      if (orderData.autorizacao) lines.push(`Autorização: ${orderData.autorizacao}`)
+      if (orderData.documentoPix) lines.push(`Documento: ${orderData.documentoPix}`)
+      if (orderData.nsuSitef) lines.push(`NSU SiTef: ${orderData.nsuSitef}`)
+      if (orderData.nsuHost) lines.push(`NSU Host: ${orderData.nsuHost}`)
+    }
+
     if (orderData.pickupCode) {
       lines.push(sepForte)
       lines.push(center('RETIRE SEU PEDIDO'))

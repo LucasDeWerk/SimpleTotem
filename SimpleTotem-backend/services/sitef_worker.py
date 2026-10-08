@@ -24,19 +24,33 @@ from services.sitef_core import (  # noqa: E402
     confirmar_transacao,
     gerar_cupom_fiscal,
     resolver_pendencias,
+    executar_funcao_administrativa,
+    _ler_mensagem_stdin,
 )
+
+# Se a confirmação (Item 8.1.1 — pós impressão/XML fiscal) não chegar nesse
+# tempo, confirma por padrão: a transação já foi aprovada pela CliSiTef,
+# então não responder é mais seguro que desfazer um pagamento já aceito.
+TIMEOUT_CONFIRMACAO_SEGUNDOS = 180.0
 
 
 def main() -> int:
     try:
-        payload = json.loads(sys.stdin.read())
+        # readline() (não read()): para "funcao_admin" o backend mantém o
+        # stdin aberto e envia novas linhas JSON com a resposta do operador
+        # enquanto este processo ainda está rodando (protocolo interativo).
+        linha_inicial = sys.stdin.readline()
+        payload = json.loads(linha_inicial)
         modo = payload.get("modo", "transacao")
         cnpj = str(payload.get("cnpj_estabelecimento", ""))
 
-        if modo == "confirmar":
-            confirma = int(payload.get("confirma", 0))
-            confirmar_transacao(confirma)
-            sys.stdout.write(json.dumps({"confirmado": True, "confirma": confirma}) + "\n")
+        if modo == "funcao_admin":
+            funcao_codigo = str(payload["funcao_codigo"])
+            resultado = executar_funcao_administrativa(
+                funcao_codigo=funcao_codigo,
+                cnpj_estabelecimento=cnpj,
+            )
+            sys.stdout.write(json.dumps(resultado, ensure_ascii=False) + "\n")
             sys.stdout.flush()
             return 0
 
@@ -66,7 +80,7 @@ def main() -> int:
         restricao = str(payload.get("restricao") or "")
         num_parcelas = int(payload.get("num_parcelas") or 1)
 
-        executar_transacao(
+        resultado = executar_transacao(
             funcao=funcao,
             valor_centavos=valor_centavos,
             cupom=cupom,
@@ -74,10 +88,37 @@ def main() -> int:
             restricao=restricao,
             num_parcelas=num_parcelas,
         )
+
+        if resultado.get("pendente_confirmacao"):
+            # Aprovada — fica de pé NESTE MESMO processo esperando o backend
+            # mandar confirmar/desfazer (Item 8.1.1), depois da impressão do
+            # cupom TEF e emissão do XML fiscal.
+            resposta = _ler_mensagem_stdin(timeout=TIMEOUT_CONFIRMACAO_SEGUNDOS)
+            if resposta and resposta.get("acao") == "confirmar":
+                confirma = int(resposta.get("confirma", 1))
+            else:
+                logger.warning(
+                    "Timeout/sem confirmação em %.0fs — confirmando por padrão (transação já aprovada).",
+                    TIMEOUT_CONFIRMACAO_SEGUNDOS,
+                )
+                confirma = 1
+            # cupom/data/hora identificam a transação no Finaliza — precisam ser
+            # os mesmos do Inicia dela.
+            confirmar_transacao(
+                confirma,
+                cupom=resultado.get("cupom", cupom),
+                data=resultado.get("data_fiscal", ""),
+                hora=resultado.get("hora_fiscal", ""),
+                cnpj_estabelecimento=cnpj,
+            )
+
         return 0
     except Exception as exc:
         logger.error("Erro fatal: %s", exc, exc_info=True)
-        sys.stdout.write(json.dumps({"erro": str(exc), "aprovada": False}) + "\n")
+        # str(exc) pode vir vazio (ex.: exceção levantada sem argumentos) —
+        # sem fallback, a tela final perderia a mensagem real da CliSiTef.
+        erro_msg = str(exc) or f"{type(exc).__name__} (sem mensagem)"
+        sys.stdout.write(json.dumps({"erro": erro_msg, "aprovada": False}) + "\n")
         sys.stdout.flush()
         return 1
 

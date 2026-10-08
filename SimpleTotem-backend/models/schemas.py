@@ -242,13 +242,21 @@ class TransacaoStatusResponse(BaseModel):
     nsu_sitef: Optional[str] = None
     nsu_host: Optional[str] = None
     autorizacao: Optional[str] = None
+    documento_pix: Optional[str] = None
     modalidade: Optional[str] = None
     bandeira: Optional[str] = None
     total_cobrado: Optional[float] = None
     linhas_cupom: List[str] = []
     cupom_bruto: Optional[str] = None
+    linhas_cupom_cliente: List[str] = []
+    cupom_bruto_cliente: Optional[str] = None
     pix: bool = False
     resultado_codigo: Optional[int] = None
+    aguardando_confirmacao_cancelamento: Optional[Dict[str, Any]] = None
+
+
+class ConfirmarCancelamentoTransacaoRequest(BaseModel):
+    confirma: bool
 
 
 class ConfirmarPagamentoRequest(BaseModel):
@@ -265,6 +273,20 @@ class EstornarPedidoRequest(BaseModel):
     # Digitada ao vivo por um supervisor no painel admin (TC 500 CliSiTef) —
     # requisito Fiserv: nunca usar um valor pré-configurado silenciosamente.
     senha_supervisor: str
+
+
+class IniciarFuncaoAdminRequest(BaseModel):
+    # Código da função CliSiTef administrativa/de teste do Roteiro de
+    # Pré-Homologação Fiserv (110=Menu Administrativo, 699=Registro de
+    # Terminal etc.)
+    funcao_codigo: str
+    cnpj_estabelecimento: Optional[str] = None
+
+
+class ResponderPromptRequest(BaseModel):
+    # Resposta do operador a um prompt pendente (menu, sim/não, dado, senha
+    # mascarada). Nunca logar este valor cru.
+    valor: str
 
 
 class IniciaTransacaoResponse(BaseModel):
