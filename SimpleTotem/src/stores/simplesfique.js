@@ -3,9 +3,9 @@ import { ref, computed } from 'vue'
 import {
   sfLogin,
   sfListarTerminais,
+  sfTerminalAtual,
   sfValidarSenha,
   sfObterConfig,
-  sfEmitirCupom,
   setSfiqueTokenRefresher,
   obterSessaoTotem,
   salvarSessaoTotem,
@@ -57,7 +57,7 @@ export const useSimpleSfiqueStore = defineStore('simplesfique', () => {
   }
 
   async function validarSenha(id, senha) {
-    const data = await sfValidarSenha(id, senha, jwtToken.value)
+    const data = await sfValidarSenha(id, senha)
     terminalToken.value = data.access_token || ''
     terminalId.value = String(id)
     terminalInfo.value = data.terminal || null
@@ -67,7 +67,7 @@ export const useSimpleSfiqueStore = defineStore('simplesfique', () => {
   async function carregarConfig(force = false) {
     const cv = force ? 0 : configVersion.value
     const pv = force ? 0 : produtosVersion.value
-    const data = await sfObterConfig(terminalId.value, cv, pv, terminalToken.value)
+    const data = await sfObterConfig(terminalId.value, cv, pv, terminalToken.value, terminalInfo.value)
 
     if (data?.config_version != null) configVersion.value = data.config_version
     if (data?.produtos_version != null) produtosVersion.value = data.produtos_version
@@ -78,10 +78,6 @@ export const useSimpleSfiqueStore = defineStore('simplesfique', () => {
     }
 
     return false
-  }
-
-  async function emitirCupom(cupomId) {
-    return sfEmitirCupom(cupomId, jwtToken.value)
   }
 
   // ── Persistência de sessão no backend ───────────────────────────────────────
@@ -133,6 +129,14 @@ export const useSimpleSfiqueStore = defineStore('simplesfique', () => {
         terminalToken.value = dados.terminal_token
         terminalId.value = String(dados.terminal_id)
         console.log('[Sfique] Sessão restaurada do backend — terminal:', dados.terminal_id)
+        // Flags do terminal (cupom fiscal, tickets, CPF) não são persistidas — revalida online
+        try {
+          const t = await sfTerminalAtual()
+          terminalInfo.value = t.terminal || null
+          emiteCupomFiscal.value = Boolean(t.terminal?.emite_cupom_fiscal)
+        } catch (err) {
+          console.warn('[Sfique] Não foi possível carregar flags do terminal:', err.message)
+        }
         // JWT vazio (token expirado ou não gravado) → renova agora para não bloquear na próxima chamada
         if (!jwtToken.value) {
           console.warn('[Sfique] JWT ausente no banco — relogin proativo')
@@ -198,7 +202,6 @@ export const useSimpleSfiqueStore = defineStore('simplesfique', () => {
     listarTerminais,
     validarSenha,
     carregarConfig,
-    emitirCupom,
     hydrateFromBackend,
     persistirSessao,
     reloginAutomatico,

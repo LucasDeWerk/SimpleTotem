@@ -48,16 +48,6 @@
 
       <!-- Cupom fiscal -->
       <div v-if="mostrarCupomFiscal" class="cupom-fiscal-section">
-        <button
-          v-if="!cupomEmitido"
-          class="btn-cupom"
-          type="button"
-          :disabled="emitindoCupom"
-          @click="emitirCupomFiscal"
-        >
-          <span v-if="emitindoCupom" class="spinner-small"></span>
-          {{ emitindoCupom ? 'Emitindo...' : 'Emitir Cupom Fiscal' }}
-        </button>
         <p v-if="cupomEmitido" class="cupom-success">✓ Cupom emitido com sucesso</p>
         <p v-if="cupomErro" class="cupom-error">⚠️ {{ cupomErro }}</p>
       </div>
@@ -114,12 +104,11 @@ const session = useSessionStore()
 const lang = useLanguageStore()
 const sfique = useSimpleSfiqueStore()
 const settings = useSettingsStore()
-const { printing, printComplete, printLines, printProductTickets } = useThermalPrinter()
+const { printing, printComplete, printLines, printProductTickets, printTicketsRetirada, printCupomFiscal } = useThermalPrinter()
 
 const countdown = ref(10)
 const printError = ref(null)
 const printSuccess = ref(false)
-const emitindoCupom = ref(false)
 const cupomEmitido = ref(false)
 const cupomErro = ref('')
 const empresaInfo = ref(null)
@@ -160,7 +149,7 @@ const valorCobrado = computed(() =>
 )
 
 const codigoSenha = computed(() => tx.value?.codigo_senha || '')
-const mostrarCupomFiscal = computed(() => Boolean(tx.value?.emite_cupom_fiscal))
+const mostrarCupomFiscal = computed(() => Boolean(tx.value?.emite_cupom_fiscal || tx.value?.aviso_fiscal))
 
 let timer = null
 
@@ -174,9 +163,11 @@ onMounted(async () => {
     console.warn('[SuccessView] Não foi possível obter dados da empresa para o cupom:', err.message)
   }
 
-  // venda-completa já emitiu o cupom internamente — não precisa emitir de novo
-  if (tx.value?.cupom_fiscal) {
+  // venda-nfce já emitiu a NFC-e na própria chamada; falha fiscal não desfaz a venda
+  if (tx.value?.cupom_fiscal && !tx.value.cupom_fiscal.erro_cupom_fiscal) {
     cupomEmitido.value = true
+  } else if (tx.value?.aviso_fiscal) {
+    cupomErro.value = `${tx.value.aviso_fiscal} — a retaguarda irá reemitir`
   }
 
   // Impressão obrigatória: imprime sozinho, sem perguntar. A confirmação no
@@ -192,8 +183,19 @@ onMounted(async () => {
     await _confirmarSiTef(true)
   }
 
+  // NFC-e emitida pela venda: imprime o cupom fiscal com o QR de consulta
+  if (cupomEmitido.value && window.electronAPI?.printer) {
+    const r = await printCupomFiscal(tx.value.cupom_fiscal, { cpf: payment.clienteCpf })
+    if (!r.success) console.warn('[SuccessView] Falha ao imprimir cupom fiscal:', r.message)
+  }
+
   // Tickets de produção por produto (ex.: cozinha) — independem do comprovante do cliente
-  if (settings.imprimirTicketsIndividuais && window.electronAPI?.printer) {
+  if (tx.value?.tickets?.length && window.electronAPI?.printer) {
+    const resultado = await printTicketsRetirada(tx.value.tickets, order.value?.items, codigoSenha.value)
+    if (resultado.failed.length) {
+      console.warn('[SuccessView] Falha ao imprimir tickets de retirada:', resultado.failed)
+    }
+  } else if (settings.imprimirTicketsIndividuais && window.electronAPI?.printer) {
     const resultado = await printProductTickets(order.value?.items, orderNumber.value)
     if (resultado.failed.length) {
       console.warn('[SuccessView] Falha ao imprimir alguns tickets de produção:', resultado.failed)
@@ -353,26 +355,6 @@ async function printReceipt() {
     printError.value = error.message || lang.t.printError
     console.error('[SuccessView] Erro ao imprimir:', error)
     return false
-  }
-}
-
-async function emitirCupomFiscal() {
-  // venda-completa já emitiu internamente — apenas marca como feito
-  if (tx.value?.cupom_fiscal) {
-    cupomEmitido.value = true
-    return
-  }
-  // Fallback: fluxo separado (seção 5 da doc) com emissão manual
-  if (!tx.value?.cupom_fiscal_id) return
-  emitindoCupom.value = true
-  cupomErro.value = ''
-  try {
-    await sfique.emitirCupom(tx.value.cupom_fiscal_id)
-    cupomEmitido.value = true
-  } catch (err) {
-    cupomErro.value = err.message || 'Erro ao emitir cupom fiscal'
-  } finally {
-    emitindoCupom.value = false
   }
 }
 

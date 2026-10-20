@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from models.orm import Empresa, SyncCheckpoint
-from services import api_session, mock_data
+from services import api_session, mock_data, ticketera
 from services.empresa_credentials import apply_credentials
 
 logger = logging.getLogger(__name__)
@@ -144,7 +144,7 @@ def map_empresa(
 ) -> Dict[str, Any]:
     emp_id = item.get("id_empresa") or item.get("id") or id_empresa
     razao = (item.get("razao_social") or "").strip() or "Empresa"
-    nome = (item.get("nome_fantasia") or "").strip() or razao
+    nome = (item.get("nome_fantasia") or item.get("fantasia") or "").strip() or razao
     mapped = _filter_fields(Empresa, {
         "id_saas": id_saas,
         "id_empresa": int(emp_id),
@@ -158,7 +158,7 @@ def map_empresa(
         "numero": item.get("numero"),
         "cep": item.get("cep"),
         "cidade": item.get("cidade"),
-        "id_uf": item.get("id_uf"),
+        "id_uf": item.get("id_uf") or item.get("uf"),
         "id_ibge": item.get("id_ibge"),
         "id_bairro": item.get("id_bairro"),
         "bairro": item.get("bairro"),
@@ -314,7 +314,7 @@ def _resolve_login_context(data: Dict[str, Any], token: str) -> Tuple[Optional[i
         usuario.get("id_empresa")
         or claims.get("id_empresa")
     )
-    if not id_empresa and len(empresas) == 1:
+    if not id_empresa and empresas:  # o JWT da Ticketera já vem na primeira empresa ativa
         id_empresa = empresas[0].get("id_empresa") or empresas[0].get("id")
 
     return id_saas, id_empresa, empresas
@@ -333,8 +333,8 @@ async def login_simplesfique(
     if not email or not senha:
         raise HTTPException(status_code=400, detail="Email e senha são obrigatórios")
 
-    logger.info("Login SimpleSfique (mock): %s", email)
-    data = mock_data.mock_login_response(email)
+    logger.info("Login Ticketera: %s", email)
+    data = await ticketera.login(email, senha)
     token = data.get("token")
     if not token:
         raise HTTPException(status_code=502, detail="Resposta de login sem token")

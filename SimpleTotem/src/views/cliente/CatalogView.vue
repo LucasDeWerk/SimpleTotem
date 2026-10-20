@@ -220,9 +220,8 @@ onMounted(async () => {
   }
 
   try {
-    if (catalog.categories.length === 0) {
-      await catalog.fetchCatalog()
-    }
+    // Totem online: sempre busca o catálogo atual na API ao entrar
+    await catalog.fetchCatalog(true)
     if (!catalog.selectedCategoryId && catalog.categories.length > 0) {
       catalog.selectCategory(catalog.categories[0].id)
     }

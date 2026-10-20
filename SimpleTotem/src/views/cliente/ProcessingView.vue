@@ -65,7 +65,19 @@
         <p v-else class="processing-subheadline">{{ erro }}</p>
         <p v-if="mensagemOperador && codigoRetornado" class="processing-code">{{ codigoRetornado }}</p>
         <p v-if="dicaPinpadTimeout" class="processing-subheadline">{{ dicaPinpadTimeout }}</p>
-        <div class="processing-error-actions">
+        <div v-if="payment.registroPendente" class="processing-error-actions">
+          <p class="processing-subheadline">
+            Seu pagamento foi aprovado, mas não conseguimos registrar o pedido. Não pague novamente.
+            Tente de novo ou chame um atendente.
+          </p>
+          <PrimaryActionButton
+            label="Tentar novamente"
+            :fullWidth="true"
+            :disabled="registrando"
+            @click="tentarRegistrarPedido()"
+          />
+        </div>
+        <div v-else class="processing-error-actions">
           <PrimaryActionButton
             :label="lang.t.tryAgain"
             :fullWidth="true"
@@ -99,6 +111,7 @@ const session = useSessionStore()
 const lang = useLanguageStore()
 
 const erro = ref('')
+const registrando = ref(false)
 const enviandoConfirmacaoCancelamento = ref(false)
 
 const txStatus = computed(() => payment.transactionStatus)
@@ -143,10 +156,33 @@ onMounted(async () => {
   if (ok) {
     cart.clearCart()
     router.push({ name: 'success' })
+  } else if (payment.registroPendente && !payment.registroErroDefinitivo) {
+    await tentarRegistrarPedido(3)
+  } else if (payment.registroPendente) {
+    erro.value = payment.errorMessage
   } else {
     erro.value = payment.errorMessage || lang.t.paymentError
   }
 })
+
+/** Pagamento aprovado mas a venda não foi gravada: repete (seguro — o backend não duplica). */
+async function tentarRegistrarPedido(tentativas = 1) {
+  registrando.value = true
+  try {
+    for (let i = 0; i < tentativas; i++) {
+      if (await payment.retryRegistroPedido()) {
+        cart.clearCart()
+        router.push({ name: 'success' })
+        return
+      }
+      if (payment.registroErroDefinitivo) break
+      if (i < tentativas - 1) await new Promise(r => setTimeout(r, 3000))
+    }
+    erro.value = payment.errorMessage
+  } finally {
+    registrando.value = false
+  }
+}
 
 /** Responde a pergunta real da CliSiTef disparada pelo ANULA físico do
  * pinpad (Seq. 9) — a atualização de tela acontece no próximo polling. */

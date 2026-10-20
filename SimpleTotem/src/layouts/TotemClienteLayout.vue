@@ -43,7 +43,7 @@
 </template>
 
 <script setup>
-import { computed, watch, onMounted } from 'vue'
+import { computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
 import { useSessionStore } from '@/stores/session'
@@ -148,10 +148,19 @@ function encerrar() {
   router.replace({ name: 'home' })
 }
 
+const CATALOG_REFRESH_MS = 60_000
+let catalogTimer = null
+
 onMounted(() => {
   device.init()
   catalog.fetchCatalog()
+  // Catálogo vem da Ticketera: reatualiza periodicamente (produtos, preços e estoque)
+  catalogTimer = setInterval(() => {
+    catalog.fetchCatalog(true, { silent: true }).catch(() => {})
+  }, CATALOG_REFRESH_MS)
 })
+
+onUnmounted(() => clearInterval(catalogTimer))
 </script>
 
 <style scoped>

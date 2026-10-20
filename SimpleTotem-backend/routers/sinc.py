@@ -154,13 +154,10 @@ async def relogin_simplesfique(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=f"Erro ao descriptografar credenciais: {exc}") from exc
 
-    # Renovação mockada — sem SimplesFique real, apenas gera novos tokens válidos
-    login_data = mock_data.mock_login_response(sessao.email)
-    jwt_token = login_data["token"]
-    terminal_token = mock_data.mock_terminal_validar_senha_response(sessao.terminal_id)["access_token"]
+    from services import ticketera
 
-    api_session.update_tokens(db, jwt_token=jwt_token, terminal_token=terminal_token)
-    request.app.state.external_api_token = jwt_token
+    jwt_token = await ticketera.relogin(db, request)
+    terminal_token = jwt_token  # Ticketera: mesmo JWT + X-Terminal-Id
 
     return ReloginOut(jwt_token=jwt_token, terminal_token=terminal_token)
 

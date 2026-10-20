@@ -20,6 +20,7 @@
     <p class="busca-hint">Preencha ao menos um campo para localizar o pedido.</p>
 
     <p v-if="erroBusca" class="feedback feedback--error">{{ erroBusca }}</p>
+    <p v-if="avisoTicketera" class="feedback feedback--error">{{ avisoTicketera }}</p>
 
     <div v-if="buscando" class="loading-state">
       <span class="material-icons spinner-anim">progress_activity</span>
@@ -87,12 +88,12 @@
 
           <div v-else class="estorno-form">
             <p class="estorno-warning">
-              Ao confirmar, o cancelamento é enviado direto para a Fiserv (função SiTef 200, pelo NSU
-              desta venda) — não emite nada à SEFAZ. Só marca como estornado aqui se a Fiserv confirmar.
+              Ao confirmar, o cartão é estornado na Fiserv (função SiTef 200, pelo NSU desta venda) e, em seguida,
+              a venda e a NFC-e são canceladas na Ticketera. Só marca como estornado se a Fiserv confirmar.
             </p>
             <label class="busca-field">
-              <span>Motivo do estorno</span>
-              <textarea v-model="motivo" maxlength="500" rows="3" placeholder="Ex: cliente desistiu da compra após pagamento"></textarea>
+              <span>Motivo do estorno (mínimo 15 caracteres — exigência da SEFAZ)</span>
+              <textarea v-model="motivo" maxlength="255" rows="3" placeholder="Ex: cliente desistiu da compra após pagamento"></textarea>
             </label>
             <label class="busca-field">
               <span>Senha do supervisor para autorizar o cancelamento</span>
@@ -112,7 +113,7 @@
                 class="btn-primary"
                 type="button"
                 @click="confirmarEstorno(pedido)"
-                :disabled="confirmando || !motivo.trim() || !senhaSupervisor.trim()"
+                :disabled="confirmando || motivo.trim().length < 15 || !senhaSupervisor.trim()"
               >
                 {{ confirmando ? 'Cancelando na Fiserv...' : 'Confirmar estorno' }}
               </button>
@@ -142,6 +143,7 @@ const motivo = ref('')
 const senhaSupervisor = ref('')
 const confirmando = ref(false)
 const erroEstorno = ref('')
+const avisoTicketera = ref('')
 
 function formatMoeda(valor) {
   const num = Number(valor ?? 0)
@@ -198,6 +200,7 @@ async function confirmarEstorno(pedido) {
   erroEstorno.value = ''
   try {
     const resultado = await sfEstornarPedido(pedido.id, motivo.value.trim(), senhaSupervisor.value.trim())
+    avisoTicketera.value = resultado?.ticketera?.cancelada === false ? resultado.ticketera.aviso : ''
     const atualizado = resultado?.pedido
     if (atualizado) {
       const idx = pedidos.value.findIndex(p => p.id === pedido.id)

@@ -226,6 +226,103 @@ export function useThermalPrinter() {
   }
 
   /**
+   * Ticket de retirada da Ticketera: 1 por ticket devolvido na venda, com QR code
+   * (conteúdo = UUID do ticket) em ESC/POS. Falha de um não interrompe os demais.
+   */
+  function buildTicketRetiradaBytes(ticket, nomeProduto, senha) {
+    const enc = new TextEncoder()
+    const ascii = (t) => enc.encode(String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '') + '\n')
+    const qr = enc.encode(String(ticket.id))
+    const len = qr.length + 3
+    const qty = Number(ticket.quantidade) || 1
+    return new Uint8Array([
+      0x1b, 0x40, 0x1b, 0x61, 0x01,
+      0x1b, 0x45, 0x01, ...ascii('TICKET DE RETIRADA'), 0x1b, 0x45, 0x00,
+      ...ascii(senha ? `SENHA ${senha}` : ''),
+      ...ascii(`${qty > 1 ? qty + 'x ' : ''}${nomeProduto || ''}`.substring(0, RECEIPT_WIDTH)),
+      0x1d, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00,
+      0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x07,
+      0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, 0x31,
+      0x1d, 0x28, 0x6b, len & 0xff, len >> 8, 0x31, 0x50, 0x30, ...qr,
+      0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30,
+      ...ascii(new Date().toLocaleString('pt-BR')),
+      0x0a, 0x0a, 0x0a, 0x1d, 0x56, 0x42, 0x00,
+    ])
+  }
+
+  async function printTicketsRetirada(tickets, items, senha) {
+    const nomes = new Map((items || []).map(i => [Number(i.productId), i.name]))
+    let printed = 0
+    const failed = []
+    for (const t of tickets || []) {
+      const result = await printRaw(Array.from(buildTicketRetiradaBytes(t, nomes.get(Number(t.id_produto)), senha)))
+      if (result.success) printed++
+      else failed.push({ ticket: t.id, message: result.message })
+    }
+    return { success: failed.length === 0, printed, failed }
+  }
+
+  /**
+   * Cupom fiscal (NFC-e) devolvido pelo venda-nfce: itens, totais, chave de acesso,
+   * protocolo e QR code da consulta (URL em <qrCode> do XML assinado).
+   */
+  async function printCupomFiscal(cupomFiscal, { cpf } = {}) {
+    if (!cupomFiscal || cupomFiscal.erro_cupom_fiscal) return { success: false, message: 'Sem cupom fiscal' }
+    const enc = new TextEncoder()
+    const asc = (t) => enc.encode(String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '') + '\n')
+    const L = (t) => [...asc(String(t).substring(0, RECEIPT_WIDTH))]
+    const money = (v) => Number(v || 0).toFixed(2).replace('.', ',')
+    const sep = '-'.repeat(RECEIPT_WIDTH)
+
+    let chave = '', protocolo = '', urlQr = ''
+    try {
+      const doc = new DOMParser().parseFromString(cupomFiscal.xml || '', 'application/xml')
+      const infNFe = doc.querySelector('infNFe')
+      chave = (infNFe?.getAttribute('Id') || '').replace(/^NFe/, '')
+      protocolo = doc.querySelector('nProt')?.textContent || ''
+      urlQr = doc.querySelector('qrCode')?.textContent?.trim() || ''
+    } catch (e) {
+      console.warn('[Printer] XML da NFC-e ilegível:', e.message)
+    }
+
+    chave = cupomFiscal.chave_acesso || chave
+    protocolo = cupomFiscal.protocolo || protocolo
+    const numero = cupomFiscal.cupom?.numero_cupom || (chave ? String(Number(chave.slice(25, 34))) : '')
+    const emp = cupomFiscal.empresa || {}
+    const tot = cupomFiscal.totais || {}
+    const bytes = [0x1b, 0x40, 0x1b, 0x61, 0x01]
+    bytes.push(...L(emp.fantasia || ''), ...L(emp.cnpj ? `CNPJ ${emp.cnpj}` : ''))
+    bytes.push(...L('DANFE NFC-e - Documento Auxiliar'), ...L('da Nota Fiscal de Consumidor Eletronica'))
+    bytes.push(...L(sep), 0x1b, 0x61, 0x00)
+    for (const it of cupomFiscal.itens || []) {
+      bytes.push(...L(it.descproduto || ''))
+      bytes.push(...L(padLine(`${Number(it.quantidade)} x ${money(it.vlr_unitario)}`, money(it.vlr_total))))
+    }
+    bytes.push(...L(sep))
+    if (Number(tot.vlr_desconto) > 0) bytes.push(...L(padLine('Desconto', money(tot.vlr_desconto))))
+    bytes.push(0x1b, 0x45, 0x01, ...L(padLine('TOTAL R$', money(tot.vlr_liquido ?? tot.vlr_total_produto))), 0x1b, 0x45, 0x00)
+    bytes.push(...L(sep), 0x1b, 0x61, 0x01)
+    bytes.push(...L(`NFC-e ${numero}  ${cupomFiscal.cupom?.dtemissao || ''}`))
+    if (chave) bytes.push(...L('Chave de acesso:'), ...L(chave.replace(/(\d{4})/g, '$1 ').trim()))
+    if (protocolo) bytes.push(...L(`Protocolo: ${protocolo}`))
+    bytes.push(...L(cpf ? `CONSUMIDOR CPF ${cpf}` : 'CONSUMIDOR NAO IDENTIFICADO'))
+    if (urlQr) {
+      const qr = enc.encode(urlQr)
+      const len = qr.length + 3
+      bytes.push(
+        0x1d, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00,
+        0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x05,
+        0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, 0x31,
+        0x1d, 0x28, 0x6b, len & 0xff, len >> 8, 0x31, 0x50, 0x30, ...qr,
+        0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30,
+      )
+      bytes.push(...L('Consulte pela chave de acesso ou QR code'))
+    }
+    bytes.push(0x0a, 0x0a, 0x0a, 0x1d, 0x56, 0x42, 0x00)
+    return printRaw(bytes)
+  }
+
+  /**
    * Testa a impressora
    */
   async function testPrint() {
@@ -262,6 +359,8 @@ export function useThermalPrinter() {
     printRaw,
     printComplete,
     printProductTickets,
+    printTicketsRetirada,
+    printCupomFiscal,
     testPrint,
   }
 }

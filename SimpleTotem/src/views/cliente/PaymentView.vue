@@ -133,6 +133,13 @@
       </template>
 
     </div>
+
+    <CpfPrompt
+      v-if="showCpf"
+      :obrigatorio="cpfObrigatorio"
+      @confirm="onCpfConfirm"
+      @cancel="showCpf = false"
+    />
   </ScreenContainer>
 </template>
 
@@ -145,6 +152,8 @@ import { useSessionStore } from '@/stores/session'
 import { useLanguageStore } from '@/stores/language'
 import ScreenContainer from '@/components/shared/ScreenContainer.vue'
 import PaymentMethodCard from '@/components/shared/PaymentMethodCard.vue'
+import CpfPrompt from '@/components/shared/CpfPrompt.vue'
+import { useSimpleSfiqueStore } from '@/stores/simplesfique'
 import PrimaryActionButton from '@/components/shared/PrimaryActionButton.vue'
 import * as api from '@/services/api'
 
@@ -152,10 +161,31 @@ const router = useRouter()
 const cart = useCartStore()
 const payment = usePaymentStore()
 const session = useSessionStore()
+const sfique = useSimpleSfiqueStore()
 const lang = useLanguageStore()
 
 const MIN_PARCELAS = 2
 const MAX_PARCELAS = 12
+
+const LIMITE_CPF_OBRIGATORIO = 999
+const showCpf = ref(false)
+const cpfObrigatorio = computed(() => Number(cart.vendaCalculada?.total ?? cart.total) > LIMITE_CPF_OBRIGATORIO)
+
+/** Pergunta o CPF quando o terminal pede (pede_cpf) ou a venda passa de R$ 999,00; senão segue direto. */
+function seguirParaProcessamento() {
+  if (sfique.terminalInfo?.pede_cpf || cpfObrigatorio.value) {
+    showCpf.value = true
+    return
+  }
+  payment.setClienteCpf(null)
+  router.push({ name: 'processing' })
+}
+
+function onCpfConfirm(cpf) {
+  payment.setClienteCpf(cpf)
+  showCpf.value = false
+  router.push({ name: 'processing' })
+}
 
 const showParcelamento = ref(false)
 const parcelamentoTipo = ref('a_vista')
@@ -262,7 +292,7 @@ async function onConfirmMethod() {
     return
   }
   payment.setParcelamento('a_vista', 1)
-  router.push({ name: 'processing' })
+  seguirParaProcessamento()
 }
 
 function selecionarParcelamento(tipo) {
@@ -283,7 +313,7 @@ function decrementarParcelas() {
 function confirmarParcelamento() {
   const parcelas = parcelamentoTipo.value === 'a_vista' ? 1 : numParcelasEscolhidas.value
   payment.setParcelamento(parcelamentoTipo.value, parcelas)
-  router.push({ name: 'processing' })
+  seguirParaProcessamento()
 }
 
 function voltarParcelamento() {

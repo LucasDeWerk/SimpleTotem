@@ -36,6 +36,14 @@ function inferFormaPorDescricao(descricao = '') {
   return null
 }
 
+const BANDEIRAS = ['visa', 'mastercard', 'amex', 'sorocred', 'diners', 'elo', 'hipercard', 'aura', 'cabal']
+
+/** Nome da bandeira aceito pela Ticketera; qualquer outra (inclusive código cru da adquirente) vira "outros". */
+function mapBandeira(raw) {
+  const t = String(raw || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  return BANDEIRAS.find(b => t.includes(b)) || (t.includes('master') ? 'mastercard' : 'outros')
+}
+
 function mapFormapagamento(tipo, descricao = '') {
   const normalized = normalizeMetodoId(tipo)
   return SFIQUE_ID_MAP[normalized]?.forma ?? inferFormaPorDescricao(descricao) ?? 'dinheiro'
@@ -55,10 +63,17 @@ export const usePaymentStore = defineStore('payment', () => {
   const numParcelas = ref(1)
   // Dados guardados para retry quando venda-completa falha após pagamento aprovado
   const registroPendente = ref(null)
+  // Erro 4xx (validação/regra) não se resolve repetindo — a tela não deve insistir sozinha
+  const registroErroDefinitivo = ref(false)
+  const clienteCpf = ref(null)
   let transacaoEmCurso = false
 
   function selectMethod(method) {
     selectedMethod.value = method
+  }
+
+  function setClienteCpf(cpf) {
+    clienteCpf.value = cpf || null
   }
 
   function setParcelamento(tipo, parcelas) {
@@ -122,14 +137,8 @@ export const usePaymentStore = defineStore('payment', () => {
     const sfique = useSimpleSfiqueStore()
 
     if (!sfique.isConfigured) {
-      if (sfique.emiteCupomFiscal) {
-        throw new Error('Terminal não configurado — cupom fiscal não pode ser emitido')
-      }
-      console.warn('[Payment] SimplesFique não configurado — pedido não registrado')
-      return
+      throw new Error('Terminal não configurado — a venda não pode ser registrada')
     }
-
-    const { terminalToken } = sfique
 
     const itensSfique = cartItems.map(item => ({
       produto_id: item.productId ?? null,
@@ -138,7 +147,6 @@ export const usePaymentStore = defineStore('payment', () => {
       nome_produto: item.name,
       quantidade: item.quantity,
       valor_unitario: item.unitPrice,
-      emite_ticket: item.emite_ticket ?? false,
       observacao: item.notes || null,
     }))
 
@@ -149,19 +157,24 @@ export const usePaymentStore = defineStore('payment', () => {
       itens: itensSfique,
       pagamento: {
         forma_pagamento: formaPagamento,
+        ...(['credito', 'debito'].includes(formaPagamento) ? { bandeira: mapBandeira(txResult.bandeira) } : {}),
         gateway: 'fiserv',
         transaction_id: txResult.transacao_id || null,
         nsu: txResult.nsu_sitef || null,
-        codigo_autorizacao: txResult.autorizacao || null,
+        // PIX não devolve autorização na CliSiTef, mas a Ticketera exige o campo: usa o documento/NSU
+        codigo_autorizacao: txResult.autorizacao || txResult.documento_pix || txResult.nsu_host || txResult.nsu_sitef || null,
       },
-      idempotency_key: crypto.randomUUID(),
+      ...(clienteCpf.value ? { cliente_cpf: clienteCpf.value } : {}),
+      // Chave estável: o retry reusa a mesma, e o backend não duplica a venda
+      idempotency_key: txResult.venda_idempotency_key || (txResult.venda_idempotency_key = crypto.randomUUID()),
     }
 
     try {
-      const resp = await sfVendaCompleta(payload, terminalToken)
+      const resp = await sfVendaCompleta(payload, { nfce: sfique.emiteCupomFiscal })
       const codigoSenha = resp?.pedido?.codigo_senha || null
       const cupomFiscal = resp?.cupom_fiscal || null
       const cupomFiscalId = resp?.cupom_fiscal?.cupom?.id || null
+      const falhaFiscal = Boolean(cupomFiscal?.erro_cupom_fiscal)
 
       if (transactionResult.value) {
         transactionResult.value = {
@@ -169,17 +182,17 @@ export const usePaymentStore = defineStore('payment', () => {
           codigo_senha: codigoSenha,
           cupom_fiscal: cupomFiscal,
           cupom_fiscal_id: cupomFiscalId,
-          emite_cupom_fiscal: Boolean(cupomFiscal),
+          emite_cupom_fiscal: Boolean(cupomFiscal) && !falhaFiscal,
+          aviso_fiscal: resp?.aviso_fiscal || null,
+          tickets: resp?.tickets || [],
         }
       }
 
       console.log('[Payment] ✅ Pedido registrado via venda-completa — senha:', codigoSenha)
     } catch (err) {
-      if (sfique.emiteCupomFiscal) {
-        // Terminal precisa do XML — propaga para o caller tratar
-        throw err
-      }
-      console.warn('[Payment] ⚠️ Falha ao registrar pedido (pagamento já aprovado):', err.message)
+      // Totem 100% online: sem venda gravada não há senha nem tickets — o caller trata (retry)
+      console.error('[Payment] Falha ao registrar pedido (pagamento já aprovado):', err.message)
+      throw err
     }
   }
 
@@ -199,6 +212,7 @@ export const usePaymentStore = defineStore('payment', () => {
       return true
     } catch (err) {
       status.value = 'error'
+      registroErroDefinitivo.value = err.status >= 400 && err.status < 500 && ![401, 408, 429].includes(err.status)
       errorMessage.value = err.message || 'Falha ao confirmar pedido'
       console.error('[Payment] Retry registro falhou:', err)
       return false
@@ -271,7 +285,8 @@ export const usePaymentStore = defineStore('payment', () => {
             txResult: { ...transactionResult.value },
           }
           status.value = 'error'
-          errorMessage.value = 'Pagamento aprovado! Aguardando confirmação fiscal...'
+          registroErroDefinitivo.value = err.status >= 400 && err.status < 500 && ![401, 408, 429].includes(err.status)
+          errorMessage.value = err.status >= 400 && err.status < 500 ? err.message : 'Pagamento aprovado! Registrando o pedido...'
           console.error('[Payment] Registro bloqueado por falha na venda-completa:', err.message)
           return false
         }
@@ -310,6 +325,7 @@ export const usePaymentStore = defineStore('payment', () => {
     tipoParcelamento.value = 'a_vista'
     numParcelas.value = 1
     registroPendente.value = null
+    clienteCpf.value = null
     transacaoEmCurso = false
   }
 
@@ -337,6 +353,10 @@ export const usePaymentStore = defineStore('payment', () => {
     numParcelas,
     selectMethod,
     setParcelamento,
+    setClienteCpf,
+    retryRegistroPedido,
+    registroPendente,
+    registroErroDefinitivo,
     fetchPaymentMethods,
     iniciarTransacao,
     setCompletedOrder,

@@ -372,56 +372,119 @@ export async function confirmarPagamento(payload) {
   })
 }
 
-// ─── SimplesFique (mockado) ────────────────────────────────────────────────────
+// ─── Ticketera ─────────────────────────────────────────────────────────────────
 //
-// O totem não depende mais de nenhum servidor SimplesFique real — os dados vêm
-// de src/services/mockSfique.js. Mantido apenas o formato/assinatura de cada
-// função para que stores e componentes continuem funcionando sem alterações.
-// A única integração externa real remanescente é o pinpad/CliSiTef (Fiserv).
+// Todas as chamadas passam pelo backend local (/ticketera/*), que guarda o JWT
+// da sessão, envia X-Terminal-Id e renova o token em 401.
 
-import {
-  mockLogin,
-  mockListarTerminais,
-  mockValidarSenha,
-  mockObterConfig,
-  mockEmitirCupom,
-  mockVendaCompleta,
-  mockListarTiposPagamento,
-} from '@/services/mockSfique'
-
-// Callback registrado pelo simplesfique store para renovar tokens em 401 — sem
-// backend externo não há mais 401 a tratar, mas a API é mantida por compatibilidade.
+// Mantido por compatibilidade com o store: a renovação agora é feita no backend.
 let _sfiqueTokenRefresher = null
 export function setSfiqueTokenRefresher(fn) {
   _sfiqueTokenRefresher = fn
 }
 
-export function sfLogin(email) {
-  return mockLogin(email)
+async function ticketeraFetch(path, options = {}) {
+  const res = await fetch(`${getApiBaseUrl()}/ticketera${path}`, {
+    cache: 'no-store',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${await getToken()}`,
+      ...(options.headers || {}),
+    },
+  })
+  if (!res.ok) {
+    let msg = `Erro ${res.status}`
+    try {
+      const d = await res.json()
+      const det = d.detail
+      msg = (typeof det === 'string' ? det : det?.mensagem) || msg
+    } catch {}
+    const err = new Error(msg)
+    err.status = res.status
+    throw err
+  }
+  return res.json()
+}
+
+export async function sfLogin(email, senha) {
+  const res = await fetch(`${getApiBaseUrl()}/sinc/simplesfique/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, senha }),
+  })
+  if (!res.ok) {
+    let msg = `Erro ${res.status}`
+    try { const d = await res.json(); msg = d.detail || msg } catch {}
+    throw new Error(typeof msg === 'string' ? msg : 'Falha ao autenticar')
+  }
+  const data = await res.json()
+  const sessao = await obterSessaoTotem()
+  return { ...data, token: sessao?.jwt_token || '' }
+}
+
+export function sfTerminalAtual() {
+  return ticketeraFetch('/terminal-atual')
 }
 
 export function sfListarTerminais() {
-  return mockListarTerminais()
+  return ticketeraFetch('/terminais')
 }
 
-export function sfListarTiposPagamento() {
-  return mockListarTiposPagamento()
+export async function sfListarTiposPagamento() {
+  return [
+    { id: '3', descricao: 'Cartão de Crédito' },
+    { id: '4', descricao: 'Cartão de Débito' },
+    { id: '17', descricao: 'PIX' },
+  ]
 }
 
-export function sfValidarSenha(terminalId) {
-  return mockValidarSenha(terminalId)
+/** Retorna { access_token, terminal } — terminal traz as flags (emite_cupom_fiscal, emite_ticket, modo_ticket, pede_cpf). */
+export function sfValidarSenha(terminalId, senha) {
+  return ticketeraFetch(`/terminais/${terminalId}/validar-senha`, {
+    method: 'POST',
+    body: JSON.stringify({ senha }),
+  })
 }
 
-export function sfObterConfig(terminalId, configVersion, produtosVersion) {
-  return mockObterConfig(terminalId, configVersion, produtosVersion)
+/** Cardápio do terminal, já no formato consumido pelo store (menus + menu_produtos). */
+export async function sfObterConfig(terminalId, _cv, _pv, _token, terminal = null) {
+  const data = await ticketeraFetch(`/terminais/${terminalId}/produtos`)
+  const emiteTicket = terminal ? terminal.emite_ticket !== false : true
+  const ambientes = new Map()
+  const menu_produtos = (data.produtos || []).map(p => {
+    if (p.ambiente_preparo_id != null) {
+      ambientes.set(p.ambiente_preparo_id, { id: p.ambiente_preparo_id, nome: p.ambiente_preparo_nome })
+    }
+    return {
+      produto_id: p.produto_id,
+      menu_id: p.menu_id,
+      nome_produto: p.produto?.nome || '',
+      preco: Number(p.produto?.preco) || 0,
+      foto: Array.isArray(p.produto?.fotos) ? p.produto.fotos[0] || '' : '',
+      emite_ticket: emiteTicket,
+      ambiente_preparo_id: p.ambiente_preparo_id ?? null,
+    }
+  })
+  return {
+    updated: true,
+    ambientes: [...ambientes.values()],
+    menus: (data.menus || []).map(m => ({ id: m.id, nome: m.descmenu, ordem: m.ordem, ativo: m.ativo !== 'n' })),
+    menu_produtos,
+    terminal,
+  }
 }
 
-export function sfEmitirCupom(cupomId) {
-  return mockEmitirCupom(cupomId)
+/** Fecha a venda na Ticketera. Chamar só depois do pagamento aprovado. Sem retry automático. */
+export function sfVendaCompleta(payload, { nfce = false } = {}) {
+  return ticketeraFetch(`/venda?nfce=${nfce ? 'true' : 'false'}`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 }
 
-export function sfVendaCompleta(payload) {
-  return mockVendaCompleta(payload)
+export function sfValidarTicket(ticketId) {
+  return ticketeraFetch(`/tickets/${encodeURIComponent(ticketId)}/validar`, { method: 'POST' })
 }
 
 // Pedidos aprovados e estorno — vêm do backend local (dados/vendas_homologacao.json),

@@ -87,19 +87,16 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   /** Carrega catálogo exclusivamente da API SimplesFique */
-  async function fetchCatalog(force = false) {
-    loading.value = true
+  async function fetchCatalog(force = false, { silent = false } = {}) {
+    // silent: atualização periódica em segundo plano; caso contrário mostra carregando
+    // e só exibe o que acabou de vir da API (nunca dado em cache)
+    if (!silent) loading.value = true
     loadError.value = null
     try {
       const sfique = useSimpleSfiqueStore()
 
       if (!sfique.isConfigured) {
         throw new Error('Terminal não configurado. Faça login no totem.')
-      }
-
-      // Usa cache local enquanto sincroniza
-      if (sfique.menuProdutos.length > 0) {
-        applySfiqueData(sfique)
       }
 
       await sfique.carregarConfig(force)
@@ -121,7 +118,8 @@ export const useCatalogStore = defineStore('catalog', () => {
     } catch (error) {
       loadError.value = error.message || 'Erro ao carregar catálogo'
       console.error('[Catalog]', loadError.value)
-      if (products.value.length === 0) {
+      // Busca explícita falhou: não mostra catálogo antigo como se fosse o atual
+      if (!silent) {
         categories.value = []
         products.value = []
       }

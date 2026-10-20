@@ -286,6 +286,15 @@ def iniciar_transacao_async(
                     return
 
                 resultado["total_cobrado"] = total_cobrado
+                # Diagnóstico: todos os tipoCampo devolvidos (menos os textos de cupom),
+                # para conferir de onde sai o código de autorização (ex.: PIX).
+                campos_sitef = {
+                    k: v for k, v in (resultado.get("dados") or {}).items() if k not in ("121", "122")
+                }
+                logger.warning(
+                    "[SiTef] Campos devolvidos transacao=%s pix=%s aprovada=%s: %s",
+                    tid, resultado.get("pix"), resultado.get("aprovada"), campos_sitef,
+                )
                 store.finalizar(tid, resultado=resultado)
                 vendas_store.registrar_venda(tid, {
                     "data_hora": datetime.now().isoformat(),
@@ -297,6 +306,8 @@ def iniciar_transacao_async(
                         "nsu_sitef": resultado.get("nsu_sitef", ""),
                         "nsu_host": resultado.get("nsu_host", ""),
                         "autorizacao": resultado.get("autorizacao", ""),
+                        "documento_pix": resultado.get("documento_pix", ""),
+                        "campos_sitef": campos_sitef,
                         "modalidade": resultado.get("modalidade", ""),
                         "bandeira": resultado.get("bandeira", ""),
                         "linhas_cupom": resultado.get("linhas_cupom", []),

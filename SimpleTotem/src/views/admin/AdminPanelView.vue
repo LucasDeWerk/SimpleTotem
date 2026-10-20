@@ -69,6 +69,20 @@
         </div>
       </section>
 
+      <!-- Seção: Validar Ticket -->
+      <section v-show="activeSection === 'tickets'" class="content-section">
+        <div class="section-card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">Validação de Ticket de Retirada</h3>
+              <p class="card-description">Baixa o ticket (uso único) no balcão de retirada</p>
+            </div>
+          </div>
+
+          <TicketValidarPanel />
+        </div>
+      </section>
+
       <!-- Seção: Comunicação Fiserv -->
       <section v-show="activeSection === 'fiserv'" class="content-section">
         <div class="section-card">
@@ -158,6 +172,7 @@ import { useAdminStore } from '@/stores/admin'
 import { useCompanyStore } from '@/stores/company'
 import { useSettingsStore } from '@/stores/settings'
 import PeripheralsConfigPanel from '@/components/admin/PeripheralsConfigPanel.vue'
+import TicketValidarPanel from '@/components/admin/TicketValidarPanel.vue'
 import CancelamentoPanel from '@/components/admin/CancelamentoPanel.vue'
 import ComunicacaoFiservPanel from '@/components/admin/ComunicacaoFiservPanel.vue'
 import * as api from '@/services/api'
@@ -169,7 +184,7 @@ const admin = useAdminStore()
 const company = useCompanyStore()
 const settings = useSettingsStore()
 
-const ADMIN_SECTIONS = new Set(['peripherals', 'cancelamento', 'fiserv', 'config'])
+const ADMIN_SECTIONS = new Set(['peripherals', 'cancelamento', 'tickets', 'fiserv', 'config'])
 
 // UI State
 const sidebarOpen = ref(false)
@@ -186,6 +201,7 @@ function applySectionFromRoute() {
 const navItems = [
   { id: 'peripherals', icon: 'devices', label: 'Periféricos' },
   { id: 'cancelamento', icon: 'cancel', label: 'Cancelamento' },
+  { id: 'tickets', icon: 'confirmation_number', label: 'Validar Ticket' },
   { id: 'fiserv', icon: 'sync_alt', label: 'Comunicação Fiserv' },
   { id: 'config', icon: 'settings', label: 'Configurações' },
 ]

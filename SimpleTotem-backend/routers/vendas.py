@@ -14,7 +14,9 @@ from models.schemas import (
     IniciaTransacaoRequest, IniciaTransacaoStartResponse, TransacaoStatusResponse,
     ConfirmarPagamentoRequest, EstornarPedidoRequest, ConfirmarCancelamentoTransacaoRequest,
 )
-from services import impressora_service, sitef_service, vendas_store
+from fastapi.concurrency import run_in_threadpool
+
+from services import api_session, impressora_service, sitef_service, ticketera, vendas_store
 from services.sitef_session import store
 from services.terminal_service import resolver_terminal_atual
 
@@ -350,9 +352,11 @@ def listar_pedidos_aprovados(
 
 
 @router.patch("/pedidos/{transacao_id}/estornar")
-def estornar_pedido(
+async def estornar_pedido(
     transacao_id: str,
     body: EstornarPedidoRequest,
+    request: Request,
+    db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
     """Cancela a venda na Fiserv (função SiTef 200 — Menu de Cancelamento, via NSU host da transação
@@ -369,6 +373,16 @@ def estornar_pedido(
     if venda.get("estornado"):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Pedido já estornado")
 
+    motivo = body.motivo.strip()
+    if not 15 <= len(motivo) <= 255:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="O motivo deve ter entre 15 e 255 caracteres (mínimo exigido pela SEFAZ).",
+        )
+
+    # Ordem correta: localizar a venda na Ticketera -> estornar o cartão -> cancelar a venda/NFC-e.
+    venda_ticketera = await _localizar_venda_ticketera(db, request, venda)
+
     contexto = venda.get("contexto_venda") or {}
     pagamento = venda.get("pagamento_sitef") or {}
     cupom_original = venda.get("cupom") or ""
@@ -382,7 +396,8 @@ def estornar_pedido(
     nsu_host = pagamento.get("nsu_host") or pagamento.get("nsu_sitef") or ""
 
     try:
-        resultado = sitef_service.cancelar_transacao_sitef(
+        resultado = await run_in_threadpool(
+            sitef_service.cancelar_transacao_sitef,
             valor_centavos=valor_centavos,
             cupom_original=cupom_original,
             data_original=cupom_original[:8],
@@ -399,8 +414,49 @@ def estornar_pedido(
         detail = resultado.get("erro") or f"Cancelamento recusado pela Fiserv (código {resultado.get('resultado')})"
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail)
 
-    pedido = vendas_store.marcar_estornada(transacao_id, body.motivo, resultado_cancelamento=resultado)
+    pedido = vendas_store.marcar_estornada(transacao_id, motivo, resultado_cancelamento=resultado)
     if not pedido:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Pedido já estornado")
-    return {"pedido": pedido}
+
+    # Cartão já estornado: cancela a venda (e a NFC-e) na Ticketera. Falha aqui não desfaz o estorno.
+    return {"pedido": pedido, "ticketera": await _cancelar_venda_ticketera(db, request, venda_ticketera, motivo)}
+
+
+async def _localizar_venda_ticketera(db: Session, request: Request, venda: dict) -> Optional[dict]:
+    """Venda paga na Ticketera correspondente à senha do pedido, ou None se não houver."""
+    senha = venda.get("codigo_senha")
+    if not senha:
+        return None
+    sessao = api_session.get_session(db)
+    params = {"codigo_senha": str(senha), "data": (venda.get("data_hora") or "")[:10]}
+    if sessao and sessao.terminal_id:
+        params["terminal_id"] = sessao.terminal_id
+    try:
+        dados = await ticketera.call(db, request, "GET", "terminal/vendas", params=params)
+    except HTTPException as exc:
+        if exc.status_code >= 500:
+            # Sem conexão: não estorna o cartão para não deixar a venda ativa na Ticketera.
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Sem comunicação com a Ticketera — estorno não iniciado. Tente novamente.",
+            )
+        return None
+    return next((v for v in dados.get("vendas", []) if v.get("status") == "pago"), None)
+
+
+async def _cancelar_venda_ticketera(db: Session, request: Request, venda_ticketera: Optional[dict], motivo: str) -> dict:
+    if not venda_ticketera:
+        return {"cancelada": False, "aviso": "Venda não localizada na Ticketera — nada a cancelar lá."}
+    try:
+        r = await ticketera.call(
+            db, request, "PATCH", f"terminal/vendas/{venda_ticketera['id']}/cancelar", json={"motivo": motivo}
+        )
+    except HTTPException as exc:
+        logger.error("Cartão estornado mas cancelamento na Ticketera falhou: %s", exc.detail)
+        detalhe = exc.detail.get("mensagem") if isinstance(exc.detail, dict) else exc.detail
+        return {
+            "cancelada": False,
+            "aviso": f"Cartão estornado, mas a venda NÃO foi cancelada na Ticketera: {detalhe}. Cancele pela retaguarda.",
+        }
+    return {"cancelada": True, "nfce_cancelada": r.get("nfce_cancelada"), "protocolo": r.get("protocolo_cancelamento")}
 
