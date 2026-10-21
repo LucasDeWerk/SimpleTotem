@@ -593,5 +593,193 @@
       },
       "aviso_fiscal": null
     }
+  },
+  "166367c1-e8d6-400a-b31b-a5a327497de9": {
+    "estado": "ok",
+    "inicio": "2026-10-20T19:00:42.258926+00:00",
+    "resposta": {
+      "pedido": {
+        "id": 786,
+        "codigo_senha": "786",
+        "status": "pago",
+        "total": 42
+      },
+      "tickets": [
+        {
+          "id": "c2f507dc-182b-4f83-ae01-ae1f7f2e2d64",
+          "id_produto": 102,
+          "tipo_ticket": "I",
+          "quantidade": "1.000"
+        }
+      ],
+      "cupom_fiscal": {
+        "empresa": {
+          "id": 1,
+          "razao_social": "J.H. SERVICO AUTOMOTIVO LTDA",
+          "fantasia": "SO PORTAS",
+          "cnpj": "13881912000161",
+          "ie": "13.427.242-0",
+          "crt": "1"
+        },
+        "itens": [
+          {
+            "id_seq": 1,
+            "id_produto": 102,
+            "descproduto": "Carpaccio de Peixe Branco",
+            "unidade": "UN",
+            "codigo_ncm": null,
+            "cfop": "5102",
+            "quantidade": 1,
+            "vlr_unitario": 42,
+            "vlr_desconto": 0,
+            "vlr_total": 42,
+            "tributos": {
+              "csosn": "102",
+              "cst_icms": null,
+              "aliquota_icms": 0,
+              "reducao_bc": 0,
+              "base_icms": 0,
+              "vlr_icms": 0,
+              "cst_pis": "49",
+              "aliquota_pis": 0,
+              "base_pis": 0,
+              "vlr_pis": 0,
+              "cst_cofins": "49",
+              "aliquota_cofins": 0,
+              "base_cofins": 0,
+              "vlr_cofins": 0,
+              "cst_ipi": "99",
+              "aliquota_ipi": 0,
+              "base_ipi": 0,
+              "vlr_ipi": 0,
+              "base_ii": 0,
+              "vlr_ii": 0,
+              "cst_cbsibs": "000",
+              "cclasstrib": "000001",
+              "base_cbsibs": 42,
+              "aliquota_ibsuf": 0.1,
+              "vlr_ibsuf": 0.04,
+              "aliquota_ibsmun": 0,
+              "vlr_ibsmun": 0,
+              "aliquota_cbs": 0.9,
+              "vlr_cbs": 0.38
+            }
+          }
+        ],
+        "totais": {
+          "vlr_total_produto": 42,
+          "vlr_desconto": 0,
+          "vlr_liquido": 42,
+          "vlr_icms": 0,
+          "vlr_pis": 0,
+          "vlr_cofins": 0,
+          "vlr_ipi": 0,
+          "vlr_ii": 0
+        },
+        "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><nfeProc versao=\"4.00\" xmlns=\"http://www.portalfiscal.inf.br/nfe\"><NFe xmlns=\"http://www.portalfiscal.inf.br/nfe\"><infNFe versao=\"4.00\" Id=\"NFe51261013881912000161650010000000431460788718\"><ide><cUF>51</cUF><cNF>46078871</cNF><natOp>VENDA AO CONSUMIDOR</natOp><mod>65</mod><serie>1</serie><nNF>43</nNF><dhEmi>2026-10-20T15:00:49-04:00</dhEmi><tpNF>1</tpNF><idDest>1</idDest><cMunFG>5103403</cMunFG><tpImp>4</tpImp><tpEmis>1</tpEmis><cDV>8</cDV><tpAmb>2</tpAmb><finNFe>1</finNFe><indFinal>1</indFinal><indPres>1</indPres><indIntermed>0</indIntermed><procEmi>0</procEmi><verProc>1.0.0</verProc></ide><emit><CNPJ>13881912000161</CNPJ><xNome>J.H. SERVICO AUTOMOTIVO LTDA</xNome><xFant>SO PORTAS</xFant><enderEmit><xLgr>Avenida Tenente Praeiro</xLgr><nro>2555</nro><xBairro>Centro</xBairro><cMun>5103403</cMun><xMun>Cuiab'a</xMun><UF>MT</UF><CEP>78070300</CEP><cPais>1058</cPais><xPais>BRASIL</xPais></enderEmit><IE>134272420</IE><CRT>1</CRT></emit><det nItem=\"1\"><prod><cProd>102</cProd><cEAN>SEM GTIN</cEAN><xProd>NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL</xProd><NCM>00000000</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>1.0000</qCom><vUnCom>42.0000000000</vUnCom><vProd>42.00</vProd><cEANTrib>SEM GTIN</cEANTrib><uTrib>UN</uTrib><qTrib>1.0000</qTrib><vUnTrib>42.0000000000</vUnTrib><indTot>1</indTot></prod><imposto><ICMS><ICMSSN102><orig>0</orig><CSOSN>102</CSOSN></ICMSSN102></ICMS><PIS><PISOutr><CST>49</CST><vBC>0.00</vBC><pPIS>0.0000</pPIS><vPIS>0.00</vPIS></PISOutr></PIS><COFINS><COFINSOutr><CST>49</CST><vBC>0.00</vBC><pCOFINS>0.0000</pCOFINS><vCOFINS>0.00</vCOFINS></COFINSOutr></COFINS><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>42.00</vBC><gIBSUF><pIBSUF>0.1000</pIBSUF><vIBSUF>0.04</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.0000</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>0.04</vIBS><gCBS><pCBS>0.9000</pCBS><vCBS>0.38</vCBS></gCBS></gIBSCBS></IBSCBS></imposto></det><total><ICMSTot><vBC>0.00</vBC><vICMS>0.00</vICMS><vICMSDeson>0.00</vICMSDeson><vFCP>0.00</vFCP><vBCST>0.00</vBCST><vST>0.00</vST><vFCPST>0.00</vFCPST><vFCPSTRet>0.00</vFCPSTRet><vProd>42.00</vProd><vFrete>0.00</vFrete><vSeg>0.00</vSeg><vDesc>0.00</vDesc><vII>0.00</vII><vIPI>0.00</vIPI><vIPIDevol>0.00</vIPIDevol><vPIS>0.00</vPIS><vCOFINS>0.00</vCOFINS><vOutro>0.00</vOutro><vNF>42.00</vNF></ICMSTot><IBSCBSTot><vBCIBSCBS>42.00</vBCIBSCBS><gIBS><gIBSUF><vDif>0.00</vDif><vDevTrib>0.00</vDevTrib><vIBSUF>0.04</vIBSUF></gIBSUF><gIBSMun><vDif>0.00</vDif><vDevTrib>0.00</vDevTrib><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>0.04</vIBS><vCredPres>0.00</vCredPres><vCredPresCondSus>0.00</vCredPresCondSus></gIBS><gCBS><vDif>0.00</vDif><vDevTrib>0.00</vDevTrib><vCBS>0.38</vCBS><vCredPres>0.00</vCredPres><vCredPresCondSus>0.00</vCredPresCondSus></gCBS></IBSCBSTot></total><transp><modFrete>9</modFrete></transp><pag><detPag><indPag>0</indPag><tPag>04</tPag><vPag>42.00</vPag><card><tpIntegra>2</tpIntegra><CNPJ>04962772000165</CNPJ><tBand>02</tBand><cAut>200010</cAut><CNPJReceb>13881912000161</CNPJReceb></card></detPag></pag></infNFe><infNFeSupl><qrCode>http://homologacao.sefaz.mt.gov.br/nfce/consultanfce?p=51261013881912000161650010000000431460788718|3|2</qrCode><urlChave>http://homologacao.sefaz.mt.gov.br/nfce/consultanfce</urlChave></infNFeSupl><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#NFe51261013881912000161650010000000431460788718\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/><Transform Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>D6pjh3e1Zs4rVcdH8f0Uvq53xk0=</DigestValue></Reference></SignedInfo><SignatureValue>MxYEBPxwZZNocY7vYFE/i0tqQYxQci7iRXSfbbB0PkWKCb3xCGOfdwKVx+KVF1CulksJIJqEIryzRX54GS+RHA0FeXBFo8fqsb6q2h5FASxozGOypCt6778JaTW8aguEkC3rIZLw11X1Ap74N/M2TvwMT13ffj7nA7UcM7u23BOOIhSUe5S7ZaPdCzO6sjFsOmdEfQcQNucSALZqPn95+RhwwVBUx+OBiFZwHJgzL1l0dnGkahJv7PfJNn/VdVS3nYba7axxIBN5tezNEaxrJecCQeF2yoxPm8f1+olLlg2cqO/ii9wR+Z8JsXwqsJiCzF3wMNWKe4U+IdswApjtQw==</SignatureValue><KeyInfo><X509Data><X509Certificate>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</X509Certificate></X509Data></KeyInfo></Signature></NFe><protNFe versao=\"4.00\"><infProt Id=\"ID151260000378351\"><tpAmb>2</tpAmb><verAplic>4.00</verAplic><chNFe>51261013881912000161650010000000431460788718</chNFe><dhRecbto>2026-10-20T15:00:53-04:00</dhRecbto><nProt>151260000378351</nProt><digVal>D6pjh3e1Zs4rVcdH8f0Uvq53xk0=</digVal><cStat>100</cStat><xMotivo>Autorizado o uso da NF-e</xMotivo></infProt></protNFe></nfeProc>",
+        "xml_path": "cupom-fiscal/6/1/786/20261020150053.xml",
+        "chave_acesso": "51261013881912000161650010000000431460788718",
+        "protocolo": "151260000378351",
+        "status_sefaz": "autorizado"
+      },
+      "aviso_fiscal": null
+    }
+  },
+  "a99b4e3a-0d4c-4098-9503-244459647665": {
+    "estado": "ok",
+    "inicio": "2026-10-20T21:36:18.469330+00:00",
+    "resposta": {
+      "pedido": {
+        "id": 787,
+        "codigo_senha": "787",
+        "status": "pago",
+        "total": 178
+      },
+      "tickets": [
+        {
+          "id": "05ae5529-e65e-4ff2-b340-e7f706a93ee5",
+          "id_produto": 111,
+          "tipo_ticket": "I",
+          "quantidade": "1.000"
+        },
+        {
+          "id": "92cf4692-fbe2-4e64-9c34-02a44adea7ae",
+          "id_produto": 111,
+          "tipo_ticket": "I",
+          "quantidade": "1.000"
+        }
+      ],
+      "cupom_fiscal": {
+        "empresa": {
+          "id": 1,
+          "razao_social": "J.H. SERVICO AUTOMOTIVO LTDA",
+          "fantasia": "SO PORTAS",
+          "cnpj": "13881912000161",
+          "ie": "13.427.242-0",
+          "crt": "1"
+        },
+        "itens": [
+          {
+            "id_seq": 1,
+            "id_produto": 111,
+            "descproduto": "Combo Hot Roll",
+            "unidade": "UN",
+            "codigo_ncm": null,
+            "cfop": "5102",
+            "quantidade": 2,
+            "vlr_unitario": 89,
+            "vlr_desconto": 0,
+            "vlr_total": 178,
+            "tributos": {
+              "csosn": "102",
+              "cst_icms": null,
+              "aliquota_icms": 0,
+              "reducao_bc": 0,
+              "base_icms": 0,
+              "vlr_icms": 0,
+              "cst_pis": "49",
+              "aliquota_pis": 0,
+              "base_pis": 0,
+              "vlr_pis": 0,
+              "cst_cofins": "49",
+              "aliquota_cofins": 0,
+              "base_cofins": 0,
+              "vlr_cofins": 0,
+              "cst_ipi": "99",
+              "aliquota_ipi": 0,
+              "base_ipi": 0,
+              "vlr_ipi": 0,
+              "base_ii": 0,
+              "vlr_ii": 0,
+              "cst_cbsibs": "000",
+              "cclasstrib": "000001",
+              "base_cbsibs": 178,
+              "aliquota_ibsuf": 0.1,
+              "vlr_ibsuf": 0.18,
+              "aliquota_ibsmun": 0,
+              "vlr_ibsmun": 0,
+              "aliquota_cbs": 0.9,
+              "vlr_cbs": 1.6
+            }
+          }
+        ],
+        "totais": {
+          "vlr_total_produto": 178,
+          "vlr_desconto": 0,
+          "vlr_liquido": 178,
+          "vlr_icms": 0,
+          "vlr_pis": 0,
+          "vlr_cofins": 0,
+          "vlr_ipi": 0,
+          "vlr_ii": 0
+        },
+        "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><nfeProc versao=\"4.00\" xmlns=\"http://www.portalfiscal.inf.br/nfe\"><NFe xmlns=\"http://www.portalfiscal.inf.br/nfe\"><infNFe versao=\"4.00\" Id=\"NFe51261013881912000161650010000000441354028877\"><ide><cUF>51</cUF><cNF>35402887</cNF><natOp>VENDA AO CONSUMIDOR</natOp><mod>65</mod><serie>1</serie><nNF>44</nNF><dhEmi>2026-10-20T17:36:25-04:00</dhEmi><tpNF>1</tpNF><idDest>1</idDest><cMunFG>5103403</cMunFG><tpImp>4</tpImp><tpEmis>1</tpEmis><cDV>7</cDV><tpAmb>2</tpAmb><finNFe>1</finNFe><indFinal>1</indFinal><indPres>1</indPres><indIntermed>0</indIntermed><procEmi>0</procEmi><verProc>1.0.0</verProc></ide><emit><CNPJ>13881912000161</CNPJ><xNome>J.H. SERVICO AUTOMOTIVO LTDA</xNome><xFant>SO PORTAS</xFant><enderEmit><xLgr>Avenida Tenente Praeiro</xLgr><nro>2555</nro><xBairro>Centro</xBairro><cMun>5103403</cMun><xMun>Cuiab'a</xMun><UF>MT</UF><CEP>78070300</CEP><cPais>1058</cPais><xPais>BRASIL</xPais></enderEmit><IE>134272420</IE><CRT>1</CRT></emit><det nItem=\"1\"><prod><cProd>111</cProd><cEAN>SEM GTIN</cEAN><xProd>NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL</xProd><NCM>00000000</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>2.0000</qCom><vUnCom>89.0000000000</vUnCom><vProd>178.00</vProd><cEANTrib>SEM GTIN</cEANTrib><uTrib>UN</uTrib><qTrib>2.0000</qTrib><vUnTrib>89.0000000000</vUnTrib><indTot>1</indTot></prod><imposto><ICMS><ICMSSN102><orig>0</orig><CSOSN>102</CSOSN></ICMSSN102></ICMS><PIS><PISOutr><CST>49</CST><vBC>0.00</vBC><pPIS>0.0000</pPIS><vPIS>0.00</vPIS></PISOutr></PIS><COFINS><COFINSOutr><CST>49</CST><vBC>0.00</vBC><pCOFINS>0.0000</pCOFINS><vCOFINS>0.00</vCOFINS></COFINSOutr></COFINS><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>178.00</vBC><gIBSUF><pIBSUF>0.1000</pIBSUF><vIBSUF>0.18</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.0000</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>0.18</vIBS><gCBS><pCBS>0.9000</pCBS><vCBS>1.60</vCBS></gCBS></gIBSCBS></IBSCBS></imposto></det><total><ICMSTot><vBC>0.00</vBC><vICMS>0.00</vICMS><vICMSDeson>0.00</vICMSDeson><vFCP>0.00</vFCP><vBCST>0.00</vBCST><vST>0.00</vST><vFCPST>0.00</vFCPST><vFCPSTRet>0.00</vFCPSTRet><vProd>178.00</vProd><vFrete>0.00</vFrete><vSeg>0.00</vSeg><vDesc>0.00</vDesc><vII>0.00</vII><vIPI>0.00</vIPI><vIPIDevol>0.00</vIPIDevol><vPIS>0.00</vPIS><vCOFINS>0.00</vCOFINS><vOutro>0.00</vOutro><vNF>178.00</vNF></ICMSTot><IBSCBSTot><vBCIBSCBS>178.00</vBCIBSCBS><gIBS><gIBSUF><vDif>0.00</vDif><vDevTrib>0.00</vDevTrib><vIBSUF>0.18</vIBSUF></gIBSUF><gIBSMun><vDif>0.00</vDif><vDevTrib>0.00</vDevTrib><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>0.18</vIBS><vCredPres>0.00</vCredPres><vCredPresCondSus>0.00</vCredPresCondSus></gIBS><gCBS><vDif>0.00</vDif><vDevTrib>0.00</vDevTrib><vCBS>1.60</vCBS><vCredPres>0.00</vCredPres><vCredPresCondSus>0.00</vCredPresCondSus></gCBS></IBSCBSTot></total><transp><modFrete>9</modFrete></transp><pag><detPag><indPag>0</indPag><tPag>17</tPag><vPag>178.00</vPag><card><tpIntegra>2</tpIntegra><CNPJ>04962772000165</CNPJ><cAut>000010200011</cAut><CNPJReceb>13881912000161</CNPJReceb></card></detPag></pag></infNFe><infNFeSupl><qrCode>http://homologacao.sefaz.mt.gov.br/nfce/consultanfce?p=51261013881912000161650010000000441354028877|3|2</qrCode><urlChave>http://homologacao.sefaz.mt.gov.br/nfce/consultanfce</urlChave></infNFeSupl><Signature xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><SignedInfo xmlns=\"http://www.w3.org/2000/09/xmldsig#\"><CanonicalizationMethod Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315\"/><SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><Reference URI=\"#NFe51261013881912000161650010000000441354028877\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/><Transform Algorithm=\"http://www.w3.org/TR/2001/REC-xml-c14n-20010315\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>Jm53H56PrgAIq9D8uGuDDWCzEHs=</DigestValue></Reference></SignedInfo><SignatureValue>Sz9ebcj9e+OIOAYboWbgPmFFNC3duJ9B1y1UfUt0otwhFvjUzEYQIzI+Ga1EBYY3j3vtE681cFPvC5FPCdpGZgWZTTPCNrIJE9hsUfL9cyCT+o0GPXfSwBHUm0s2VLqbDdU311oPvCz1gn4iR8V64oW+mHzm3hfn5f9z8mF4FAIEUfh4JV/qZ8ASNIT+JJp/etvAY3fqM1b6tjLImzA9oU+/rG9wFUy1J2eLdViY3YGDvr6PZOkIlWZgrcUBriW3uRDx+NM5ui5NBJHdzmV7bQ5PnjNlmjJ5rc4zPv7tO68/o5qieVDuWkUdNX14LB1OnEUcUOeF/nN11c/hnj6sxQ==</SignatureValue><KeyInfo><X509Data><X509Certificate>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</X509Certificate></X509Data></KeyInfo></Signature></NFe><protNFe versao=\"4.00\"><infProt Id=\"ID151260000378389\"><tpAmb>2</tpAmb><verAplic>4.00</verAplic><chNFe>51261013881912000161650010000000441354028877</chNFe><dhRecbto>2026-10-20T17:36:26-04:00</dhRecbto><nProt>151260000378389</nProt><digVal>Jm53H56PrgAIq9D8uGuDDWCzEHs=</digVal><cStat>100</cStat><xMotivo>Autorizado o uso da NF-e</xMotivo></infProt></protNFe></nfeProc>",
+        "xml_path": "cupom-fiscal/6/1/787/20261020173626.xml",
+        "chave_acesso": "51261013881912000161650010000000441354028877",
+        "protocolo": "151260000378389",
+        "status_sefaz": "autorizado"
+      },
+      "aviso_fiscal": null
+    }
   }
 }
