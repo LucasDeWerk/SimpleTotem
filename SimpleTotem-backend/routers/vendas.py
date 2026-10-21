@@ -122,8 +122,10 @@ def inicia_transacao(
     )
 
     # 1. Re-calcular total
+    # arredonda por item (como /iniciavenda e o carrinho) — evita 1 centavo de
+    # divergência com quantidades fracionadas (produto pesável)
     total_recalculado = round(
-        sum(float(i.quantidade) * float(i.preco_unitario) for i in req.itens), 2
+        sum(round(float(i.quantidade) * float(i.preco_unitario), 2) for i in req.itens), 2
     )
 
     logger.info(

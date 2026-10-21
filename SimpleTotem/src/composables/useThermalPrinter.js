@@ -82,6 +82,11 @@ export function useThermalPrinter() {
     return `R$ ${Number(value || 0).toFixed(2)}`
   }
 
+  /** Peso em kg com vírgula e 3 casas: 1.185 → "1,185 kg". */
+  function formatKg(value) {
+    return `${Number(value || 0).toFixed(3).replace('.', ',')} kg`
+  }
+
   /** Alinha um rótulo à esquerda e um valor à direita na largura do papel. */
   function padLine(label, value, width = RECEIPT_WIDTH) {
     const l = String(label)
@@ -120,9 +125,14 @@ export function useThermalPrinter() {
 
     for (const item of orderData.items || []) {
       const qty = item.quantity ?? 1
-      const total = qty * (item.unitPrice ?? 0)
+      const total = Math.round(qty * (item.unitPrice ?? 0) * 100) / 100
       lines.push(`${item.name}`.substring(0, RECEIPT_WIDTH))
-      lines.push(padLine(`  ${qty}x ${formatMoney(item.unitPrice)}`, formatMoney(total)))
+      lines.push(padLine(
+        item.pesavel
+          ? `  ${formatKg(qty)} x ${formatMoney(item.unitPrice)}/kg`
+          : `  ${qty}x ${formatMoney(item.unitPrice)}`,
+        formatMoney(total),
+      ))
     }
 
     lines.push(sep)
@@ -189,6 +199,10 @@ export function useThermalPrinter() {
       lines.push('', center(String(item.notes).substring(0, RECEIPT_WIDTH)))
     }
 
+    if (item.pesavel) {
+      lines.push('', center(formatKg(item.quantity)))
+    }
+
     lines.push('', sep, center(new Date().toLocaleString('pt-BR')), '', '')
     return lines
   }
@@ -211,7 +225,8 @@ export function useThermalPrinter() {
     const failed = []
 
     for (const item of alvo) {
-      const qty = Math.max(1, Number(item.quantity) || 1)
+      // pesável: quantity é o peso em kg — um único ticket por pesagem
+      const qty = item.pesavel ? 1 : Math.max(1, Number(item.quantity) || 1)
       for (let unit = 1; unit <= qty; unit++) {
         const result = await printLines(buildTicketLines(item, orderNumber, unit, qty), { cut: true })
         if (result.success) {
@@ -229,7 +244,7 @@ export function useThermalPrinter() {
    * Ticket de retirada da Ticketera: 1 por ticket devolvido na venda, com QR code
    * (conteúdo = UUID do ticket) em ESC/POS. Falha de um não interrompe os demais.
    */
-  function buildTicketRetiradaBytes(ticket, nomeProduto, senha) {
+  function buildTicketRetiradaBytes(ticket, nomeProduto, senha, pesavel = false) {
     const enc = new TextEncoder()
     const ascii = (t) => enc.encode(String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '') + '\n')
     const qr = enc.encode(String(ticket.id))
@@ -239,7 +254,9 @@ export function useThermalPrinter() {
       0x1b, 0x40, 0x1b, 0x61, 0x01,
       0x1b, 0x45, 0x01, ...ascii('TICKET DE RETIRADA'), 0x1b, 0x45, 0x00,
       ...ascii(senha ? `SENHA ${senha}` : ''),
-      ...ascii(`${qty > 1 ? qty + 'x ' : ''}${nomeProduto || ''}`.substring(0, RECEIPT_WIDTH)),
+      ...ascii((pesavel
+        ? `${nomeProduto || ''} ${formatKg(ticket.quantidade)}`
+        : `${qty > 1 ? qty + 'x ' : ''}${nomeProduto || ''}`).substring(0, RECEIPT_WIDTH)),
       0x1d, 0x28, 0x6b, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00,
       0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x43, 0x07,
       0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x45, 0x31,
@@ -251,11 +268,12 @@ export function useThermalPrinter() {
   }
 
   async function printTicketsRetirada(tickets, items, senha) {
-    const nomes = new Map((items || []).map(i => [Number(i.productId), i.name]))
+    const porProduto = new Map((items || []).map(i => [Number(i.productId), i]))
     let printed = 0
     const failed = []
     for (const t of tickets || []) {
-      const result = await printRaw(Array.from(buildTicketRetiradaBytes(t, nomes.get(Number(t.id_produto)), senha)))
+      const item = porProduto.get(Number(t.id_produto))
+      const result = await printRaw(Array.from(buildTicketRetiradaBytes(t, item?.name, senha, Boolean(item?.pesavel))))
       if (result.success) printed++
       else failed.push({ ticket: t.id, message: result.message })
     }
@@ -296,7 +314,10 @@ export function useThermalPrinter() {
     bytes.push(...L(sep), 0x1b, 0x61, 0x00)
     for (const it of cupomFiscal.itens || []) {
       bytes.push(...L(it.descproduto || ''))
-      bytes.push(...L(padLine(`${Number(it.quantidade)} x ${money(it.vlr_unitario)}`, money(it.vlr_total))))
+      const qtdTxt = String(it.unidade || '').toUpperCase() === 'KG'
+        ? `${Number(it.quantidade).toFixed(3).replace('.', ',')} KG`
+        : `${Number(it.quantidade)}`
+      bytes.push(...L(padLine(`${qtdTxt} x ${money(it.vlr_unitario)}`, money(it.vlr_total))))
     }
     bytes.push(...L(sep))
     if (Number(tot.vlr_desconto) > 0) bytes.push(...L(padLine('Desconto', money(tot.vlr_desconto))))

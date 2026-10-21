@@ -3,8 +3,9 @@ import { ref, computed } from 'vue'
 
 export const useCartStore = defineStore('cart', () => {
   const items = ref([])
+  // item pesável conta como 1 (quantity é o peso em kg)
   const itemCount = computed(() => {
-    return items.value.reduce((total, item) => total + item.quantity, 0)
+    return items.value.reduce((total, item) => total + (item.pesavel ? 1 : item.quantity), 0)
   })
   const subtotal = computed(() => {
     return items.value.reduce((total, item) => total + item.totalPrice, 0)
@@ -17,9 +18,35 @@ export const useCartStore = defineStore('cart', () => {
   const calculandoVenda = ref(false)
   const erroCalculo = ref(null)
 
+  /**
+   * Produto pesável: `quantity` é o peso em kg (balança) e `product.price` o R$/kg.
+   * Cada pesagem é uma linha própria (nunca soma) e o peso fica congelado.
+   */
   function addItem(product, quantity = 1, notes = '', modifiers = []) {
+    if (product.pesavel) {
+      const pesoKg = Math.round(Number(quantity) * 1000) / 1000
+      if (!(pesoKg > 0)) return
+      const precoKg = Number(product.price || 0)
+      items.value.push({
+        productId: product.id,
+        name: product.name,
+        image: product.image || '',
+        quantity: pesoKg,
+        unitPrice: precoKg,
+        totalPrice: Math.round(precoKg * pesoKg * 100) / 100,
+        pesavel: true,
+        unidade: 'KG',
+        notes,
+        modifiers: [],
+        menu_id: product.menu_id ?? null,
+        ambiente_preparo_id: product.ambiente_preparo_id ?? null,
+        emite_ticket: product.emite_ticket ?? true,
+      })
+      vendaCalculada.value = null
+      return
+    }
     const existingIndex = items.value.findIndex(
-      item => item.productId === product.id && JSON.stringify(item.modifiers) === JSON.stringify(modifiers)
+      item => !item.pesavel && item.productId === product.id && JSON.stringify(item.modifiers) === JSON.stringify(modifiers)
     )
     if (existingIndex >= 0) {
       items.value[existingIndex].quantity += quantity
@@ -50,6 +77,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   function updateQuantity(index, quantity) {
+    if (items.value[index]?.pesavel) return // peso congelado: só remover e pesar de novo
     if (quantity <= 0) {
       removeItem(index)
       return

@@ -9,14 +9,16 @@
     </div>
     <div class="item-bottom">
       <div class="item-controls">
+        <span v-if="pesavel" class="item-weight">{{ quantity.toFixed(3).replace('.', ',') }} kg</span>
         <QuantityStepper
+          v-else
           :modelValue="quantity"
           :min="0"
           @update:modelValue="$emit('updateQuantity', $event)"
         />
       </div>
       <div class="item-prices">
-        <span class="item-unit-price">R$ {{ unitPrice.toFixed(2) }} {{ lang.t.unitPrice }}</span>
+        <span class="item-unit-price">R$ {{ unitPrice.toFixed(2) }} {{ pesavel ? '/ kg' : lang.t.unitPrice }}</span>
         <span class="item-total-price">R$ {{ totalPrice.toFixed(2) }}</span>
       </div>
       <button
@@ -43,6 +45,7 @@ defineProps({
   totalPrice: { type: Number, required: true },
   notes: { type: String, default: '' },
   modifiers: { type: Array, default: () => [] },
+  pesavel: { type: Boolean, default: false },
 })
 
 defineEmits(['updateQuantity', 'remove'])
@@ -92,6 +95,11 @@ const lang = useLanguageStore()
   color: var(--text-color-fourth);
   opacity: 0.8;
   margin-top: 2px;
+}
+
+.item-weight {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .item-controls {

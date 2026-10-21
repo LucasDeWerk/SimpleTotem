@@ -44,6 +44,7 @@ const MOCK_MENUS = [
   { id: 2, nome: 'Bebidas', ordem: 2, ativo: true, icone: '' },
   { id: 3, nome: 'Sobremesas', ordem: 3, ativo: true, icone: '' },
   { id: 4, nome: 'Combos', ordem: 4, ativo: true, icone: '' },
+  { id: 5, nome: 'Self-Service', ordem: 5, ativo: true, icone: '' },
 ]
 
 const MOCK_MENU_PRODUTOS = [
@@ -59,6 +60,8 @@ const MOCK_MENU_PRODUTOS = [
   { id: 8, produto_id: 8, menu_id: 2, nome_produto: 'Suco Natural de Laranja 300ml', preco: 8.9, emite_ticket: true, ambiente_preparo_id: 2 },
   { id: 9, produto_id: 9, menu_id: 3, nome_produto: 'Sorvete Casquinha', preco: 9.9, emite_ticket: true, ambiente_preparo_id: 1 },
   { id: 10, produto_id: 10, menu_id: 3, nome_produto: 'Petit Gateau', preco: 16.9, emite_ticket: true, ambiente_preparo_id: 1 },
+  // pesavel: preco = R$/kg; a quantidade vem da balança (kg)
+  { id: 13, produto_id: 13, menu_id: 5, nome_produto: 'Self-Service (por kg)', preco: 69.9, pesavel: true, unidade: 'KG', emite_ticket: false, ambiente_preparo_id: null },
 ]
 
 // Senha de retirada sequencial — o registro completo da venda (para o painel

@@ -19,6 +19,7 @@
           :totalPrice="item.totalPrice"
           :notes="item.notes"
           :modifiers="item.modifiers"
+          :pesavel="item.pesavel"
           @updateQuantity="cart.updateQuantity(index, $event)"
           @remove="cart.removeItem(index)"
         />

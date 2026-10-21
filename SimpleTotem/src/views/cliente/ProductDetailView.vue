@@ -10,10 +10,15 @@
       <div class="pd-info">
         <h2 class="pd-name">{{ product.descproduto }}</h2>
         <p class="pd-description">{{ product.descsubgrupo }} - {{ product.descmarca }}</p>
-        <span class="pd-price">R$ {{ finalPrice.toFixed(2) }}</span>
+        <span class="pd-price">R$ {{ finalPrice.toFixed(2) }}<template v-if="product.pesavel"> / kg</template></span>
       </div>
 
-      <div class="pd-quantity">
+      <div v-if="product.pesavel" class="pd-scale" :class="`pd-scale--${scaleState}`">
+        <span class="pd-scale-label">Peso na balança</span>
+        <span class="pd-scale-value">{{ scaleDisplay }}</span>
+        <span class="pd-scale-hint">{{ scaleHint }}</span>
+      </div>
+      <div v-else class="pd-quantity">
         <span class="pd-qty-label">Quantidade:</span>
         <QuantityStepper v-model="quantity" :min="1" :max="20" />
       </div>
@@ -31,7 +36,7 @@
 
       <div class="pd-total">
         <span class="pd-total-label">Total:</span>
-        <span class="pd-total-value">R$ {{ (finalPrice * quantity).toFixed(2) }}</span>
+        <span class="pd-total-value">R$ {{ totalPrice.toFixed(2) }}</span>
       </div>
 
       <div class="pd-actions">
@@ -39,6 +44,7 @@
           label="ADICIONAR AO CARRINHO"
           icon="shopping-cart"
           :fullWidth="true"
+          :disabled="product.pesavel && !balanca.pronto.value"
           @click="addToCart"
         />
       </div>
@@ -51,10 +57,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCatalogStore } from '@/stores/catalog'
 import { useCartStore } from '@/stores/cart'
+import { useBalanca } from '@/composables/useBalanca'
 import ScreenContainer from '@/components/shared/ScreenContainer.vue'
 import QuantityStepper from '@/components/shared/QuantityStepper.vue'
 import PrimaryActionButton from '@/components/shared/PrimaryActionButton.vue'
@@ -67,6 +74,25 @@ const cart = useCartStore()
 const product = ref(null)
 const quantity = ref(1)
 const notes = ref('')
+const balanca = useBalanca()
+
+// só liga a leitura da balança quando o produto é pesável
+watch(product, (p) => { if (p?.pesavel) balanca.start() }, { immediate: true })
+
+const scaleState = computed(() => {
+  if (balanca.indisponivel.value) return 'erro'
+  return balanca.pronto.value ? 'ok' : 'espera'
+})
+const scaleDisplay = computed(() =>
+  balanca.pesoKg.value == null ? '— kg' : `${balanca.pesoKg.value.toFixed(3).replace('.', ',')} kg`
+)
+const scaleHint = computed(() => {
+  if (balanca.indisponivel.value) return 'Balança indisponível. Chame o atendente.'
+  if (balanca.status.value === 'conectando') return 'Conectando à balança...'
+  if (balanca.status.value === 'instavel' || (balanca.status.value === 'ok' && !balanca.estavel.value)) return 'Aguarde o peso estabilizar...'
+  if (!(balanca.pesoG.value > 0)) return 'Coloque o produto na balança'
+  return 'Peso confirmado'
+})
 
 onMounted(async () => {
   const idProduto = route.params.id
@@ -87,15 +113,27 @@ const finalPrice = computed(() => {
   return product.value.preco_venda || product.value.price || 0
 })
 
+const totalPrice = computed(() => {
+  if (product.value?.pesavel) {
+    return Math.round(finalPrice.value * (balanca.pesoKg.value ?? 0) * 100) / 100
+  }
+  return finalPrice.value * quantity.value
+})
+
 function addToCart() {
   if (!product.value) return
+  if (product.value.pesavel && !balanca.pronto.value) return
 
   cart.addItem({
     id: product.value.id_produto,
     name: product.value.descproduto,
     price: finalPrice.value,
-    image: productImage.value
-  }, quantity.value, notes.value)
+    image: productImage.value,
+    pesavel: product.value.pesavel,
+    menu_id: product.value.menu_id,
+    ambiente_preparo_id: product.value.ambiente_preparo_id,
+    emite_ticket: product.value.emite_ticket,
+  }, product.value.pesavel ? balanca.pesoKg.value : quantity.value, notes.value)
 
   router.back()
 }
@@ -191,6 +229,42 @@ function addToCart() {
   gap: var(--space-lg);
   padding: var(--space-lg) 0;
   border-bottom: 1px solid rgba(245, 124, 0, 0.08);
+}
+
+.pd-scale {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  border: 2px solid rgba(245, 124, 0, 0.25);
+  background: rgba(245, 124, 0, 0.05);
+}
+
+.pd-scale-label {
+  font-size: var(--font-size-sm);
+  opacity: 0.7;
+}
+
+.pd-scale-value {
+  font-size: 3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pd-scale-hint {
+  font-size: var(--font-size-md, 1rem);
+}
+
+.pd-scale--ok {
+  border-color: #2e7d32;
+  background: rgba(46, 125, 50, 0.08);
+}
+
+.pd-scale--erro {
+  border-color: #c62828;
+  background: rgba(198, 40, 40, 0.08);
 }
 
 .pd-qty-label {

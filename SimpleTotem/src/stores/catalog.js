@@ -63,6 +63,8 @@ export const useCatalogStore = defineStore('catalog', () => {
       descsubgrupo: null,
       descmarca: null,
       emite_ticket: mp.emite_ticket ?? false,
+      pesavel: Boolean(mp.pesavel ?? mp.produto?.pesavel ?? false),
+      unidade: String(mp.unidade ?? mp.produto?.unidade ?? 'UN').toUpperCase(),
       menu_id: menuId,
       ambiente_preparo_id: mp.ambiente_preparo_id != null ? Number(mp.ambiente_preparo_id) : null,
     }

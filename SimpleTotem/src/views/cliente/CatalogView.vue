@@ -82,7 +82,7 @@
             :badge="null"
             :shortDescription="product.descsubgrupo || product.descmarca || ''"
             :hasCustomization="false"
-            :actionHint="lang.t.chooseQuantity"
+            :actionHint="product.pesavel ? 'Pesar na balança' : lang.t.chooseQuantity"
             @click="handleProductClick(product)"
           />
         </div>
@@ -106,7 +106,7 @@
             :key="index"
             class="footer-item-chip"
           >
-            <span class="chip-qty">{{ item.quantity }}x</span>
+            <span class="chip-qty">{{ item.pesavel ? item.quantity.toFixed(3).replace('.', ',') + ' kg' : item.quantity + 'x' }}</span>
             <span class="chip-name">{{ item.name }}</span>
           </div>
           <span v-if="cart.items.length > 4" class="chip-more">
@@ -151,9 +151,14 @@
             <p v-if="selectedProduct.descsubgrupo || selectedProduct.descmarca" class="modal-product-desc">
               {{ [selectedProduct.descsubgrupo, selectedProduct.descmarca].filter(Boolean).join(' - ') }}
             </p>
-            <span class="modal-product-price">R$ {{ Number(selectedProduct.preco_venda).toFixed(2) }}</span>
+            <span class="modal-product-price">R$ {{ Number(selectedProduct.preco_venda).toFixed(2) }}<template v-if="selectedProduct.pesavel"> / kg</template></span>
 
-            <div class="modal-quantity">
+            <div v-if="selectedProduct.pesavel" class="modal-scale" :class="`modal-scale--${scaleState}`">
+              <span class="modal-scale-label">Peso na balança</span>
+              <span class="modal-scale-value">{{ scaleDisplay }}</span>
+              <span class="modal-scale-hint">{{ scaleHint }}</span>
+            </div>
+            <div v-else class="modal-quantity">
               <span class="modal-qty-label">{{ lang.t.quantity }}</span>
               <QuantityStepper v-model="detailQuantity" :min="1" :max="20" />
             </div>
@@ -170,10 +175,14 @@
 
             <div class="modal-total">
               <span>{{ lang.t.total }}:</span>
-              <strong>R$ {{ (Number(selectedProduct.preco_venda) * detailQuantity).toFixed(2) }}</strong>
+              <strong>R$ {{ detailTotal.toFixed(2) }}</strong>
             </div>
 
-            <button class="modal-add-btn" @click="addDetailToCart">
+            <button
+              class="modal-add-btn"
+              :disabled="selectedProduct.pesavel && !balanca.pronto.value"
+              @click="addDetailToCart"
+            >
               {{ lang.t.addToCart }}
             </button>
           </div>
@@ -184,10 +193,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCatalogStore } from '@/stores/catalog'
 import { useCartStore } from '@/stores/cart'
+import { useBalanca } from '@/composables/useBalanca'
 import { useSessionStore } from '@/stores/session'
 import { useLanguageStore } from '@/stores/language'
 import { useDeviceStore } from '@/stores/device'
@@ -252,6 +262,35 @@ const selectedProduct = ref(null)
 const detailQuantity = ref(1)
 const detailNotes = ref('')
 
+// Balança: só lê enquanto o modal de um produto pesável está aberto
+const balanca = useBalanca()
+watch(selectedProduct, (p) => {
+  if (p?.pesavel) balanca.start()
+  else balanca.stop()
+})
+
+const scaleState = computed(() => {
+  if (balanca.indisponivel.value) return 'erro'
+  return balanca.pronto.value ? 'ok' : 'espera'
+})
+const scaleDisplay = computed(() =>
+  balanca.pesoKg.value == null ? '— kg' : `${balanca.pesoKg.value.toFixed(3).replace('.', ',')} kg`
+)
+const scaleHint = computed(() => {
+  if (balanca.indisponivel.value) return 'Balança indisponível. Chame o atendente.'
+  if (balanca.status.value === 'conectando') return 'Conectando à balança...'
+  if (balanca.status.value === 'instavel' || (balanca.status.value === 'ok' && !balanca.estavel.value)) return 'Aguarde o peso estabilizar...'
+  if (!(balanca.pesoG.value > 0)) return 'Coloque o produto na balança'
+  return 'Peso confirmado'
+})
+const detailTotal = computed(() => {
+  const preco = Number(selectedProduct.value?.preco_venda || 0)
+  if (selectedProduct.value?.pesavel) {
+    return Math.round(preco * (balanca.pesoKg.value ?? 0) * 100) / 100
+  }
+  return preco * detailQuantity.value
+})
+
 const currentCategoryName = computed(() => {
   const cat = catalog.categories.find(c => c.id === catalog.selectedCategoryId)
   return cat ? cat.name : 'Todos os Produtos'
@@ -274,6 +313,7 @@ function closeDetail() {
 
 function addDetailToCart() {
   if (!selectedProduct.value) return
+  if (selectedProduct.value.pesavel && !balanca.pronto.value) return
 
   const produtoParaCarrinho = {
     id: selectedProduct.value.id_produto,
@@ -283,9 +323,11 @@ function addDetailToCart() {
     menu_id: selectedProduct.value.menu_id,
     ambiente_preparo_id: selectedProduct.value.ambiente_preparo_id,
     emite_ticket: selectedProduct.value.emite_ticket,
+    pesavel: selectedProduct.value.pesavel,
   }
 
-  cart.addItem(produtoParaCarrinho, detailQuantity.value, detailNotes.value)
+  const qtd = selectedProduct.value.pesavel ? balanca.pesoKg.value : detailQuantity.value
+  cart.addItem(produtoParaCarrinho, qtd, detailNotes.value)
   showFeedback(selectedProduct.value.descproduto)
   closeDetail()
 }
@@ -1005,7 +1047,46 @@ function closeSidebarExpand() {
   letter-spacing: 0.5px;
 }
 
-.modal-add-btn:hover {
+.modal-add-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.modal-scale {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm, 8px);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  border: 2px solid rgba(245, 124, 0, 0.25);
+  background: rgba(245, 124, 0, 0.05);
+}
+
+.modal-scale-label {
+  font-size: var(--font-size-sm);
+  opacity: 0.7;
+}
+
+.modal-scale-value {
+  font-size: 3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.modal-scale--ok {
+  border-color: #2e7d32;
+  background: rgba(46, 125, 50, 0.08);
+}
+
+.modal-scale--erro {
+  border-color: #c62828;
+  background: rgba(198, 40, 40, 0.08);
+}
+
+.modal-add-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 12px 32px rgba(245, 124, 0, 0.4);
 }

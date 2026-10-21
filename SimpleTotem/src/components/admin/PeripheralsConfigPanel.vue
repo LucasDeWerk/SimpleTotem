@@ -109,6 +109,32 @@
           {{ resultadoTeste.texto }}
         </p>
       </article>
+
+      <!-- Balança (serial CH340 — detectada sozinha, sem atribuição USB) -->
+      <article class="periph-role" :class="`periph-role--${balancaBadge}`">
+        <div class="periph-role__head">
+          <span class="periph-role__icon">⚖️</span>
+          <div>
+            <h3>Balança</h3>
+            <span class="periph-badge" :class="`periph-badge--${balancaBadge}`">
+              {{ balancaLabel }}
+            </span>
+          </div>
+        </div>
+
+        <p class="periph-role__nome">{{ balancaPesoTexto }}</p>
+        <p v-if="balanca.porta.value" class="periph-detail">{{ balanca.porta.value }} · 2400 8N1</p>
+        <p v-if="balancaMensagem" class="periph-msg periph-msg--erro">{{ balancaMensagem }}</p>
+
+        <div class="periph-role__actions">
+          <button class="periph-btn periph-btn--ghost" :disabled="balancaAoVivo" @click="balanca.lerUma()">
+            Ler agora
+          </button>
+          <button class="periph-btn periph-btn--ghost" @click="alternarBalancaAoVivo">
+            {{ balancaAoVivo ? 'Parar leitura' : 'Leitura ao vivo' }}
+          </button>
+        </div>
+      </article>
     </div>
 
     <!-- Ações resumo (só no painel admin) -->
@@ -173,9 +199,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useHardwareAdmin, CATEGORIAS } from '@/composables/useHardwareAdmin'
+import { useBalanca } from '@/composables/useBalanca'
 
 const props = defineProps({
   embedded: { type: Boolean, default: false },
@@ -209,6 +236,39 @@ const {
   salvarPorta,
 } = useHardwareAdmin()
 
+// ── Balança ──
+const balanca = useBalanca()
+const balancaAoVivo = ref(false)
+
+const balancaBadge = computed(() => {
+  const s = balanca.status.value
+  if (s === 'conectando') return 'pendente'
+  if (s === 'ok' || s === 'instavel') return 'ok'
+  return 'desconectado'
+})
+const balancaLabel = computed(() => {
+  const s = balanca.status.value
+  if (s === 'conectando') return 'Não testada'
+  return balancaBadge.value === 'ok' ? 'Operacional' : 'Desconectada'
+})
+const balancaPesoTexto = computed(() => {
+  if (balanca.status.value === 'instavel') return 'Peso instável...'
+  if (balanca.pesoKg.value == null) return '— kg'
+  return `${balanca.pesoKg.value.toFixed(3).replace('.', ',')} kg${balanca.estavel.value ? ' (estável)' : ''}`
+})
+const balancaMensagem = computed(() => ({
+  desconectada: 'Adaptador USB-serial (CH340) não encontrado.',
+  sem_resposta: 'Adaptador encontrado, mas a balança não respondeu. Confira cabo e energia.',
+  invalido: 'Resposta inválida da balança (protocolo ou baud diferente).',
+  erro: 'Backend indisponível.',
+}[balanca.status.value] || ''))
+
+function alternarBalancaAoVivo() {
+  balancaAoVivo.value = !balancaAoVivo.value
+  if (balancaAoVivo.value) balanca.start()
+  else balanca.stop()
+}
+
 const electronDisponivel = computed(() => Boolean(window.hardwareAPI?.listarUSB))
 
 async function atualizar() {
@@ -224,7 +284,7 @@ function irConfigurar() {
 }
 
 onMounted(async () => {
-  await Promise.all([carregarTudo(), carregarPortas()])
+  await Promise.all([carregarTudo(), carregarPortas(), balanca.lerUma()])
   if (props.showUsbScan && electronDisponivel.value) {
     await buscarUSB()
   }

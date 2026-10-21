@@ -318,6 +318,7 @@ async function printReceipt() {
           name: item.name,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
+          pesavel: item.pesavel,
         })),
         subtotal: order.value.subtotal,
         discount: order.value.discount,

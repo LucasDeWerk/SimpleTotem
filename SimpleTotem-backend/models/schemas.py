@@ -18,6 +18,15 @@ class EmpresaStatusOut(BaseModel):
     configurada: bool
 
 
+# ── Balança ───────────────────────────────────────────────────────────────────
+
+class BalancaLeitura(BaseModel):
+    status: str  # ok | instavel | sem_resposta | invalido | desconectada
+    peso_g: Optional[int] = None
+    estavel: bool = False
+    porta: Optional[str] = None
+
+
 # ── Hardware (psutil) ─────────────────────────────────────────────────────────
 
 class CPUInfo(BaseModel):

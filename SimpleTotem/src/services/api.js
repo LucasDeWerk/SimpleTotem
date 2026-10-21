@@ -192,6 +192,11 @@ export async function salvarConfigHardware(config) {
 }
 
 /** Status consolidado de todos os periféricos. */
+/** Leitura atual da balança: { status, peso_g, estavel, porta }. */
+export async function obterPesoBalanca() {
+  return apiFetch('/balanca/peso')
+}
+
 export async function obterStatusHardware() {
   return apiFetch('/hardware/status')
 }
@@ -447,6 +452,13 @@ export function sfValidarSenha(terminalId, senha) {
   })
 }
 
+// IDs de produto tratados como pesáveis, via .env (VITE_PRODUTOS_PESAVEIS=12,15) — para testar a
+// balança enquanto a Ticketera não envia a flag. Quando ela enviar (produto.pesavel / unidade 'KG'), vale a da API.
+const PRODUTOS_PESAVEIS_ENV = new Set(
+  String(import.meta.env.VITE_PRODUTOS_PESAVEIS || '')
+    .split(',').map(s => Number(s.trim())).filter(Boolean)
+)
+
 /** Cardápio do terminal, já no formato consumido pelo store (menus + menu_produtos). */
 export async function sfObterConfig(terminalId, _cv, _pv, _token, terminal = null) {
   const data = await ticketeraFetch(`/terminais/${terminalId}/produtos`)
@@ -464,12 +476,33 @@ export async function sfObterConfig(terminalId, _cv, _pv, _token, terminal = nul
       foto: Array.isArray(p.produto?.fotos) ? p.produto.fotos[0] || '' : '',
       emite_ticket: emiteTicket,
       ambiente_preparo_id: p.ambiente_preparo_id ?? null,
+      unidade: String(p.produto?.unidade || 'UN').toUpperCase(),
+      pesavel: Boolean(p.produto?.pesavel) || String(p.produto?.unidade || '').toUpperCase() === 'KG'
+        || PRODUTOS_PESAVEIS_ENV.has(Number(p.produto_id)),
     }
   })
+  const menus = (data.menus || []).map(m => ({ id: m.id, nome: m.descmenu, ordem: m.ordem, ativo: m.ativo !== 'n' }))
+
+  // Só para testar a balança (VITE_PRODUTO_TESTE_BALANCA=true, apenas em dev): produto fictício por kg
+  // no 1º menu. Não existe na Ticketera — serve para validar a tela; a venda dele não fecha de verdade.
+  if (import.meta.env.DEV && String(import.meta.env.VITE_PRODUTO_TESTE_BALANCA) === 'true' && menus.length) {
+    menu_produtos.push({
+      produto_id: 999001,
+      menu_id: menus[0].id,
+      nome_produto: 'TESTE Balança (por kg)',
+      preco: 69.9,
+      foto: '',
+      emite_ticket: false,
+      ambiente_preparo_id: null,
+      unidade: 'KG',
+      pesavel: true,
+    })
+  }
+
   return {
     updated: true,
     ambientes: [...ambientes.values()],
-    menus: (data.menus || []).map(m => ({ id: m.id, nome: m.descmenu, ordem: m.ordem, ativo: m.ativo !== 'n' })),
+    menus,
     menu_produtos,
     terminal,
   }
