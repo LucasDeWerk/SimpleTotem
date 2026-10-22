@@ -10,6 +10,8 @@ const INTERVALO_MS = 300
 export function useBalanca() {
   const pesoG = ref(null)
   const estavel = ref(false)
+  const pesoBrutoG = ref(null)
+  const taraG = ref(0)
   const porta = ref(null)
   const status = ref('conectando') // conectando | ok | instavel | sem_resposta | desconectada | invalido | erro
 
@@ -28,12 +30,15 @@ export function useBalanca() {
     try {
       const r = await obterPesoBalanca()
       status.value = r.status
-      pesoG.value = r.peso_g
+      pesoG.value = r.peso_g // líquido (bruto − tara), calculado no backend
+      pesoBrutoG.value = r.peso_bruto_g ?? null
+      taraG.value = r.tara_g ?? 0
       estavel.value = Boolean(r.estavel)
       porta.value = r.porta ?? null
     } catch {
       status.value = 'erro' // backend fora do ar
       pesoG.value = null
+      pesoBrutoG.value = null
       estavel.value = false
     }
   }
@@ -49,6 +54,7 @@ export function useBalanca() {
     ativo = true
     status.value = 'conectando' // descarta leitura antiga: nada de liberar venda com peso velho
     pesoG.value = null
+    pesoBrutoG.value = null
     estavel.value = false
     ciclo()
   }
@@ -60,5 +66,5 @@ export function useBalanca() {
 
   onBeforeUnmount(stop)
 
-  return { pesoG, pesoKg, estavel, status, porta, pronto, indisponivel, lerUma, start, stop }
+  return { pesoG, pesoKg, pesoBrutoG, taraG, estavel, status, porta, pronto, indisponivel, lerUma, start, stop }
 }

@@ -22,9 +22,15 @@ class EmpresaStatusOut(BaseModel):
 
 class BalancaLeitura(BaseModel):
     status: str  # ok | instavel | sem_resposta | invalido | desconectada
-    peso_g: Optional[int] = None
+    peso_bruto_g: Optional[int] = None
+    tara_g: int = 0
+    peso_g: Optional[int] = None  # líquido (bruto − tara)
     estavel: bool = False
     porta: Optional[str] = None
+
+
+class BalancaTara(BaseModel):
+    tara_g: int
 
 
 # ── Hardware (psutil) ─────────────────────────────────────────────────────────

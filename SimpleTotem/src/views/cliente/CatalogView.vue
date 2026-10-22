@@ -156,6 +156,9 @@
             <div v-if="selectedProduct.pesavel" class="modal-scale" :class="`modal-scale--${scaleState}`">
               <span class="modal-scale-label">Peso na balança</span>
               <span class="modal-scale-value">{{ scaleDisplay }}</span>
+              <span v-if="balanca.taraG.value > 0 && balanca.pesoBrutoG.value != null" class="modal-scale-tara">
+                Bruto {{ gToKg(balanca.pesoBrutoG.value) }} − Tara {{ gToKg(balanca.taraG.value) }}
+              </span>
               <span class="modal-scale-hint">{{ scaleHint }}</span>
             </div>
             <div v-else class="modal-quantity">
@@ -269,6 +272,8 @@ watch(selectedProduct, (p) => {
   else balanca.stop()
 })
 
+const gToKg = (g) => `${(g / 1000).toFixed(3).replace('.', ',')} kg`
+
 const scaleState = computed(() => {
   if (balanca.indisponivel.value) return 'erro'
   return balanca.pronto.value ? 'ok' : 'espera'
@@ -280,7 +285,11 @@ const scaleHint = computed(() => {
   if (balanca.indisponivel.value) return 'Balança indisponível. Chame o atendente.'
   if (balanca.status.value === 'conectando') return 'Conectando à balança...'
   if (balanca.status.value === 'instavel' || (balanca.status.value === 'ok' && !balanca.estavel.value)) return 'Aguarde o peso estabilizar...'
-  if (!(balanca.pesoG.value > 0)) return 'Coloque o produto na balança'
+  if (!(balanca.pesoG.value > 0)) {
+    return balanca.taraG.value > 0 && balanca.pesoBrutoG.value === 0
+      ? 'Coloque o prato com o produto na balança'
+      : 'Coloque o produto no prato'
+  }
   return 'Peso confirmado'
 })
 const detailTotal = computed(() => {
@@ -1073,6 +1082,12 @@ function closeSidebarExpand() {
 .modal-scale-value {
   font-size: 3rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.modal-scale-tara {
+  font-size: var(--font-size-sm);
+  opacity: 0.7;
   font-variant-numeric: tabular-nums;
 }
 

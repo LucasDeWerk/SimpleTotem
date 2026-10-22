@@ -124,7 +124,35 @@
 
         <p class="periph-role__nome">{{ balancaPesoTexto }}</p>
         <p v-if="balanca.porta.value" class="periph-detail">{{ balanca.porta.value }} · 2400 8N1</p>
+        <p v-if="balanca.pesoBrutoG.value != null" class="periph-detail">
+          Bruto {{ balanca.pesoBrutoG.value }} g · Tara {{ balanca.taraG.value }} g
+        </p>
         <p v-if="balancaMensagem" class="periph-msg periph-msg--erro">{{ balancaMensagem }}</p>
+
+        <div class="porta-block">
+          <label class="porta-label">Tara do prato (g)</label>
+          <div class="porta-row">
+            <input
+              v-model.number="taraInput"
+              class="porta-select"
+              type="number"
+              min="0"
+              max="10000"
+              step="1"
+              :disabled="salvandoTara"
+            />
+            <button class="periph-btn periph-btn--primary porta-btn" :disabled="salvandoTara" @click="salvarTara">
+              Salvar
+            </button>
+          </div>
+          <button class="periph-btn periph-btn--ghost" :disabled="salvandoTara" @click="capturarTara">
+            Usar peso atual como tara
+          </button>
+          <p class="periph-hint">Coloque o prato vazio na balança, espere estabilizar e clique.</p>
+          <p v-if="taraMensagem" class="periph-msg" :class="taraMensagem.tipo === 'ok' ? 'periph-msg--ok' : 'periph-msg--erro'">
+            {{ taraMensagem.texto }}
+          </p>
+        </div>
 
         <div class="periph-role__actions">
           <button class="periph-btn periph-btn--ghost" :disabled="balancaAoVivo" @click="balanca.lerUma()">
@@ -203,6 +231,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useHardwareAdmin, CATEGORIAS } from '@/composables/useHardwareAdmin'
 import { useBalanca } from '@/composables/useBalanca'
+import { obterTaraBalanca, salvarTaraBalanca, capturarTaraBalanca } from '@/services/api'
 
 const props = defineProps({
   embedded: { type: Boolean, default: false },
@@ -263,6 +292,44 @@ const balancaMensagem = computed(() => ({
   erro: 'Backend indisponível.',
 }[balanca.status.value] || ''))
 
+// ── Tara ──
+const taraInput = ref(0)
+const salvandoTara = ref(false)
+const taraMensagem = ref(null)
+
+async function executarTara(acao, msgOk) {
+  salvandoTara.value = true
+  taraMensagem.value = null
+  try {
+    const r = await acao()
+    taraInput.value = r.tara_g
+    taraMensagem.value = { tipo: 'ok', texto: msgOk(r.tara_g) }
+    await balanca.lerUma()
+  } catch (e) {
+    // o backend devolve {"detail": "..."} — mostra só a mensagem
+    let texto = e?.message || 'Erro ao salvar a tara'
+    try { texto = JSON.parse(texto.replace(/^Erro \d+: /, '')).detail || texto } catch (_) { /* texto cru */ }
+    taraMensagem.value = { tipo: 'erro', texto }
+  } finally {
+    salvandoTara.value = false
+  }
+}
+
+const salvarTara = () => executarTara(
+  () => salvarTaraBalanca(Math.round(Number(taraInput.value) || 0)),
+  (g) => `Tara salva: ${g} g`,
+)
+const capturarTara = () => executarTara(
+  () => capturarTaraBalanca(),
+  (g) => `Tara definida com o peso atual: ${g} g`,
+)
+
+async function carregarTara() {
+  try {
+    taraInput.value = (await obterTaraBalanca()).tara_g
+  } catch (_) { /* backend fora: o card já mostra o erro */ }
+}
+
 function alternarBalancaAoVivo() {
   balancaAoVivo.value = !balancaAoVivo.value
   if (balancaAoVivo.value) balanca.start()
@@ -284,7 +351,7 @@ function irConfigurar() {
 }
 
 onMounted(async () => {
-  await Promise.all([carregarTudo(), carregarPortas(), balanca.lerUma()])
+  await Promise.all([carregarTudo(), carregarPortas(), balanca.lerUma(), carregarTara()])
   if (props.showUsbScan && electronDisponivel.value) {
     await buscarUSB()
   }

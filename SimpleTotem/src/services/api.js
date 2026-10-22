@@ -197,6 +197,20 @@ export async function obterPesoBalanca() {
   return apiFetch('/balanca/peso')
 }
 
+/** Tara do prato (g), aplicada pelo backend sobre o peso bruto. */
+export async function obterTaraBalanca() {
+  return apiFetch('/balanca/tara')
+}
+
+export async function salvarTaraBalanca(taraG) {
+  return apiFetch('/balanca/tara', { method: 'PUT', body: JSON.stringify({ tara_g: taraG }) })
+}
+
+/** Define a tara com o peso atual (prato vazio, estável). */
+export async function capturarTaraBalanca() {
+  return apiFetch('/balanca/tara/capturar', { method: 'POST' })
+}
+
 export async function obterStatusHardware() {
   return apiFetch('/hardware/status')
 }
