@@ -6,6 +6,7 @@ import {
   sfVendaCompleta,
 } from '@/services/api'
 import { useDeviceStore } from '@/stores/device'
+import { observacaoComConsumo } from '@/utils/consumo'
 import { useSimpleSfiqueStore } from '@/stores/simplesfique'
 
 const STATUS_FINAL = ['aprovada', 'negada', 'erro']
@@ -133,7 +134,7 @@ export const usePaymentStore = defineStore('payment', () => {
    * Se o terminal emite cupom fiscal, propaga o erro (o caller decide o que fazer).
    * Caso contrário, falha silenciosa — não cancela o pagamento já aprovado.
    */
-  async function registrarPedidoSfique(cartItems, txResult) {
+  async function registrarPedidoSfique(cartItems, txResult, modoConsumo = null) {
     const sfique = useSimpleSfiqueStore()
 
     if (!sfique.isConfigured) {
@@ -147,7 +148,7 @@ export const usePaymentStore = defineStore('payment', () => {
       nome_produto: item.name,
       quantidade: item.quantity,
       valor_unitario: item.unitPrice,
-      observacao: item.notes || null,
+      observacao: observacaoComConsumo(item.notes, modoConsumo),
     }))
 
     const formaRaw = selectedMethod.value?.type || ''
@@ -205,8 +206,8 @@ export const usePaymentStore = defineStore('payment', () => {
     status.value = 'processing'
     errorMessage.value = ''
     try {
-      const { items, txResult } = registroPendente.value
-      await registrarPedidoSfique(items, txResult)
+      const { items, txResult, modoConsumo } = registroPendente.value
+      await registrarPedidoSfique(items, txResult, modoConsumo)
       registroPendente.value = null
       status.value = 'success'
       return true
@@ -277,12 +278,13 @@ export const usePaymentStore = defineStore('payment', () => {
         }
 
         try {
-          await registrarPedidoSfique(cartStore.items, transactionResult.value)
+          await registrarPedidoSfique(cartStore.items, transactionResult.value, cartStore.modoConsumo)
         } catch (err) {
           // Pagamento aprovado mas venda-completa falhou e terminal precisa de XML
           registroPendente.value = {
             items: cartStore.items.map(i => ({ ...i })),
             txResult: { ...transactionResult.value },
+            modoConsumo: cartStore.modoConsumo,
           }
           status.value = 'error'
           registroErroDefinitivo.value = err.status >= 400 && err.status < 500 && ![401, 408, 429].includes(err.status)
@@ -336,6 +338,7 @@ export const usePaymentStore = defineStore('payment', () => {
       discount: cartStore.vendaCalculada?.desconto ?? cartStore.discount,
       total: cartStore.vendaCalculada?.total ?? cartStore.total,
       paymentMethod: selectedMethod.value?.label || '',
+      modoConsumo: cartStore.modoConsumo,
     }
   }
 

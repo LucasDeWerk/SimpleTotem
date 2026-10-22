@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import { useCompanyStore } from '@/stores/company'
 import { useSessionStore } from '@/stores/session'
 import { useSimpleSfiqueStore } from '@/stores/simplesfique'
+import { useCartStore } from '@/stores/cart'
 import * as api from '@/services/api'
 
 // Layout Cliente
@@ -11,6 +12,7 @@ import TotemClienteLayout from '@/layouts/TotemClienteLayout.vue'
 import HomeView from '@/views/cliente/HomeView.vue'
 import CatalogView from '@/views/cliente/CatalogView.vue'
 import CartView from '@/views/cliente/CartView.vue'
+import ConsumptionView from '@/views/cliente/ConsumptionView.vue'
 import PaymentView from '@/views/cliente/PaymentView.vue'
 import ProcessingView from '@/views/cliente/ProcessingView.vue'
 import SuccessView from '@/views/cliente/SuccessView.vue'
@@ -59,10 +61,16 @@ const routes = [
         meta: { title: 'Carrinho', showBack: true, backTo: 'catalog' }
       },
       {
+        path: 'consumo',
+        name: 'consumption',
+        component: ConsumptionView,
+        meta: { title: 'Consumo', showBack: true, backTo: 'cart' }
+      },
+      {
         path: 'pagamento',
         name: 'payment',
         component: PaymentView,
-        meta: { title: 'Pagamento', showBack: true, backTo: 'cart' }
+        meta: { title: 'Pagamento', showBack: true, backTo: 'consumption' }
       },
       {
         path: 'processando',
@@ -132,6 +140,12 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const totemPronto = sfique.isConfigured
+
+  // Pagamento só depois de escolher consumo no local / viagem
+  if (to.name === 'payment' && !useCartStore().modoConsumo) {
+    next({ name: 'consumption' })
+    return
+  }
 
   if (to.meta.requiresCompany && !totemPronto) {
     next({ name: 'totem-login' })

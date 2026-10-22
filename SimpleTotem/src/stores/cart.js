@@ -14,6 +14,8 @@ export const useCartStore = defineStore('cart', () => {
   const total = computed(() => {
     return Math.max(0, subtotal.value - discount.value)
   })
+  // 'local' (consumir no local) | 'viagem' | null — escolhido antes do pagamento
+  const modoConsumo = ref(null)
   const vendaCalculada = ref(null)
   const calculandoVenda = ref(false)
   const erroCalculo = ref(null)
@@ -88,6 +90,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   function clearCart() {
+    modoConsumo.value = null
     items.value = []
     discount.value = 0
     vendaCalculada.value = null
@@ -120,6 +123,7 @@ export const useCartStore = defineStore('cart', () => {
     discount,
     total,
     vendaCalculada,
+    modoConsumo,
     calculandoVenda,
     erroCalculo,
     addItem,

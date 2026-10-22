@@ -74,7 +74,7 @@ function goToCategories() {
 async function goToPayment() {
   await cart.calcularVenda()
   if (!cart.erroCalculo) {
-    router.push({ name: 'payment' })
+    router.push({ name: 'consumption' })
   }
 }
 </script>

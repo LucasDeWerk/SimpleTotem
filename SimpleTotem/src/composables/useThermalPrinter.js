@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { rotuloConsumo } from '@/utils/consumo'
 
 /**
  * Composable para usar a impressora térmica
@@ -120,8 +121,11 @@ export function useThermalPrinter() {
       sepForte,
       center(`Pedido #${orderData.orderNumber || '—'}`),
       center(orderData.date || ''),
-      sep,
     )
+    if (rotuloConsumo(orderData.modoConsumo)) {
+      lines.push(bold(center(rotuloConsumo(orderData.modoConsumo))))
+    }
+    lines.push(sep)
 
     for (const item of orderData.items || []) {
       const qty = item.quantity ?? 1
@@ -176,7 +180,7 @@ export function useThermalPrinter() {
    * Monta o ticket de produção de uma única unidade de um item
    * (ex.: para a cozinha/preparo) — um ticket por unidade, não por linha do pedido.
    */
-  function buildTicketLines(item, orderNumber, unitIndex = 1, unitTotal = 1) {
+  function buildTicketLines(item, orderNumber, unitIndex = 1, unitTotal = 1, modoConsumo = null) {
     const sep = '-'.repeat(RECEIPT_WIDTH)
     const lines = [
       '',
@@ -184,6 +188,10 @@ export function useThermalPrinter() {
       sep,
       center(`Pedido #${orderNumber || '—'}`),
     ]
+
+    if (rotuloConsumo(modoConsumo)) {
+      lines.push(bold(center(rotuloConsumo(modoConsumo))))
+    }
 
     if (unitTotal > 1) {
       lines.push(center(`Unidade ${unitIndex} de ${unitTotal}`))
@@ -219,7 +227,7 @@ export function useThermalPrinter() {
    * não depende do emite_ticket vindo do ERP, que é usado para outro fim (payload de venda).
    * Retorna { success, printed, failed } sem interromper as demais unidades em caso de erro.
    */
-  async function printProductTickets(items, orderNumber) {
+  async function printProductTickets(items, orderNumber, modoConsumo = null) {
     const alvo = items || []
     let printed = 0
     const failed = []
@@ -228,7 +236,7 @@ export function useThermalPrinter() {
       // pesável: quantity é o peso em kg — um único ticket por pesagem
       const qty = item.pesavel ? 1 : Math.max(1, Number(item.quantity) || 1)
       for (let unit = 1; unit <= qty; unit++) {
-        const result = await printLines(buildTicketLines(item, orderNumber, unit, qty), { cut: true })
+        const result = await printLines(buildTicketLines(item, orderNumber, unit, qty, modoConsumo), { cut: true })
         if (result.success) {
           printed++
         } else {
@@ -244,7 +252,7 @@ export function useThermalPrinter() {
    * Ticket de retirada da Ticketera: 1 por ticket devolvido na venda, com QR code
    * (conteúdo = UUID do ticket) em ESC/POS. Falha de um não interrompe os demais.
    */
-  function buildTicketRetiradaBytes(ticket, nomeProduto, senha, pesavel = false) {
+  function buildTicketRetiradaBytes(ticket, nomeProduto, senha, pesavel = false, modoConsumo = null) {
     const enc = new TextEncoder()
     const ascii = (t) => enc.encode(String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '') + '\n')
     const qr = enc.encode(String(ticket.id))
@@ -254,6 +262,7 @@ export function useThermalPrinter() {
       0x1b, 0x40, 0x1b, 0x61, 0x01,
       0x1b, 0x45, 0x01, ...ascii('TICKET DE RETIRADA'), 0x1b, 0x45, 0x00,
       ...ascii(senha ? `SENHA ${senha}` : ''),
+      ...(rotuloConsumo(modoConsumo) ? ascii(rotuloConsumo(modoConsumo)) : []),
       ...ascii((pesavel
         ? `${nomeProduto || ''} ${formatKg(ticket.quantidade)}`
         : `${qty > 1 ? qty + 'x ' : ''}${nomeProduto || ''}`).substring(0, RECEIPT_WIDTH)),
@@ -267,13 +276,13 @@ export function useThermalPrinter() {
     ])
   }
 
-  async function printTicketsRetirada(tickets, items, senha) {
+  async function printTicketsRetirada(tickets, items, senha, modoConsumo = null) {
     const porProduto = new Map((items || []).map(i => [Number(i.productId), i]))
     let printed = 0
     const failed = []
     for (const t of tickets || []) {
       const item = porProduto.get(Number(t.id_produto))
-      const result = await printRaw(Array.from(buildTicketRetiradaBytes(t, item?.name, senha, Boolean(item?.pesavel))))
+      const result = await printRaw(Array.from(buildTicketRetiradaBytes(t, item?.name, senha, Boolean(item?.pesavel), modoConsumo)))
       if (result.success) printed++
       else failed.push({ ticket: t.id, message: result.message })
     }

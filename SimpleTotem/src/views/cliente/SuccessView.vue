@@ -191,12 +191,12 @@ onMounted(async () => {
 
   // Tickets de produção por produto (ex.: cozinha) — independem do comprovante do cliente
   if (tx.value?.tickets?.length && window.electronAPI?.printer) {
-    const resultado = await printTicketsRetirada(tx.value.tickets, order.value?.items, codigoSenha.value)
+    const resultado = await printTicketsRetirada(tx.value.tickets, order.value?.items, codigoSenha.value, order.value?.modoConsumo)
     if (resultado.failed.length) {
       console.warn('[SuccessView] Falha ao imprimir tickets de retirada:', resultado.failed)
     }
   } else if (settings.imprimirTicketsIndividuais && window.electronAPI?.printer) {
-    const resultado = await printProductTickets(order.value?.items, orderNumber.value)
+    const resultado = await printProductTickets(order.value?.items, orderNumber.value, order.value?.modoConsumo)
     if (resultado.failed.length) {
       console.warn('[SuccessView] Falha ao imprimir alguns tickets de produção:', resultado.failed)
     }
@@ -314,6 +314,7 @@ async function printReceipt() {
         },
         orderNumber: orderNumber.value,
         date: new Date().toLocaleString('pt-BR'),
+        modoConsumo: order.value.modoConsumo,
         items: order.value.items.map(item => ({
           name: item.name,
           quantity: item.quantity,
