@@ -4376,5 +4376,115 @@
       "protocolo": "151260000378389",
       "status_sefaz": "autorizado"
     }
+  },
+  {
+    "transacao_id": "737d1be3-f524-4623-9735-53cd5574c557",
+    "data_hora": "2026-10-21T17:43:46.103195",
+    "status": "negada",
+    "cnpj_estabelecimento": "64949971000165",
+    "cupom": "20261021174340",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 999001,
+          "descricao": "TESTE Balança (por kg)",
+          "quantidade": 0.205,
+          "preco_unitario": 69.9
+        }
+      ],
+      "total": 14.33,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "",
+      "nsu_host": "",
+      "autorizacao": "",
+      "documento_pix": "",
+      "campos_sitef": {
+        "4100": "TCP:C:113"
+      },
+      "modalidade": "",
+      "bandeira": "",
+      "linhas_cupom": [
+        "VALOR: R$ 14,33"
+      ],
+      "cupom_bruto": "VALOR: R$ 14,33",
+      "total_cobrado": 14.33,
+      "pix": false,
+      "resultado_codigo": -43
+    }
+  },
+  {
+    "transacao_id": "81255a24-287a-40f0-9b12-d1f81ec5961e",
+    "data_hora": "2026-10-21T17:48:27.985034",
+    "status": "aprovada",
+    "cnpj_estabelecimento": "64949971000165",
+    "cupom": "20261021174714",
+    "contexto_venda": {
+      "itens": [
+        {
+          "produto_id": 999001,
+          "descricao": "TESTE Balança (por kg)",
+          "quantidade": 1.18,
+          "preco_unitario": 69.9
+        }
+      ],
+      "total": 82.48,
+      "metodo_pagamento_id": "4",
+      "id_terminal": null
+    },
+    "pagamento_sitef": {
+      "nsu_sitef": "210002",
+      "nsu_host": "999210002",
+      "autorizacao": "210002",
+      "documento_pix": "",
+      "campos_sitef": {
+        "4100": "TCP:C:113",
+        "136": "515469",
+        "1190": "3642",
+        "1002": "2901",
+        "2021": "515469******3642",
+        "2022": "2901",
+        "2090": "6",
+        "2091": "0",
+        "800": "047AE4E0DD8E1F205E961990FE064EB91B963943",
+        "131": "00005",
+        "2362": "1",
+        "2364": "0",
+        "2421": "0",
+        "132": "20001",
+        "5074": "0",
+        "0": "1448582655",
+        "2333": "5",
+        "951": "02",
+        "952": "210002",
+        "2": "32",
+        "3": "05006000000;022489F2608738E429C5DAF681E9F2701809F10120114A14000420000000400000000000000009F370412AB67979F360201D6950500000080019A032610219C01009F02060000000082485F2A02098682021B809F1A0200769F03060000000000009F34030100025F3401009F6E07007600003231008407A0000000043060;",
+        "161": "0",
+        "100": "0100",
+        "101": "Cartao de Debito a Vista",
+        "102": "T.E.F.",
+        "123": "00",
+        "2010": "00",
+        "133": "210002",
+        "134": "999210002",
+        "135": "210002",
+        "105": "20261021174832",
+        "158": "05",
+        "156": "MASTERCARD DEBIT",
+        "157": "000000000000005",
+        "1": "102121000205;1;192.168.10.76"
+      },
+      "modalidade": "Cartao de Debito a Vista",
+      "bandeira": "MASTERCARD DEBIT",
+      "linhas_cupom": [
+        ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 82,48\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 210002\\MU                      21/10/26 17:48\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999210002\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\"
+      ],
+      "cupom_bruto": ".....S.O.F.T.W.A.R.E.E.X.P.R.E.S.S....\\SI                              Rede 5\\MU               Codigo transacao: 200\\LA               Codigo operacao: 2000\\DO                        Valor: 82,48\\.....S...I...M...U...L...A...D...O....\\SI                   NSU SiTef: 210002\\MU                      21/10/26 17:48\\LA                    ID PDV: ST000001\\DO             Estab.: 000000000000005\\.....S...I...M...U...L...A...D...O....\\SI                     Host: 999210002\\MU         Transacao Simulada Aprovada\\          SiTef from Fiserv\\",
+      "total_cobrado": 82.48,
+      "pix": false,
+      "resultado_codigo": 0
+    }
   }
 ]
